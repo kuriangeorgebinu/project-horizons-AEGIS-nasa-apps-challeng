@@ -1,0 +1,507 @@
+{
+  "metadata": {
+    "name": "AEGIS Health Countermeasures Knowledge Base",
+    "version": "1.0.0",
+    "created": "2026-09-26",
+    "description": "Comprehensive dataset of NASA spaceflight health risks, countermeasures, and intervention protocols for the AEGIS AI health management system",
+    "sources_count": 200,
+    "categories": ["countermeasures", "risks", "protocols", "medications", "monitoring", "nutrition", "exercise", "radiation", "psychology", "autonomy"]
+  },
+
+  "spaceflight_risks": [
+    {
+      "id": "RISK-001",
+      "name": "Space Motion Sickness (SMS)",
+      "category": "sensorimotor",
+      "severity": "moderate",
+      "onset": "hours",
+      "duration": "2-4 days",
+      "incidence": "70%",
+      "symptoms": ["nausea", "vomiting", "vertigo", "headache", "fatigue", "cold_sweating"],
+      "countermeasures": ["promethazine_im", "promethazine_oral", "scopolamine_patch", "preflight_adaptation_training"],
+      "monitoring": ["self_report", "crew_observation"],
+      "source": "NASA NTRS 20110020471"
+    },
+    {
+      "id": "RISK-002",
+      "name": "Bone Loss (Osteopenia)",
+      "category": "musculoskeletal",
+      "severity": "high",
+      "onset": "weeks",
+      "duration": "mission_duration",
+      "rate": "1-2% per month",
+      "affected_areas": ["lumbar_spine", "femoral_neck", "hip"],
+      "countermeasures": ["ARED_resistance_exercise", "bisphosphonates", "vitamin_d_supplementation", "calcium_intake"],
+      "monitoring": ["DXA_scan", "bone_turnover_markers", "urinary_calcium"],
+      "source": "NASA HRP Bone Risk"
+    },
+    {
+      "id": "RISK-003",
+      "name": "Muscle Atrophy",
+      "category": "musculoskeletal", 
+      "severity": "high",
+      "onset": "days",
+      "duration": "mission_duration",
+      "rate": "10-20% loss in 6 months",
+      "affected_areas": ["postural_muscles", "lower_limbs", "back"],
+      "countermeasures": ["ARED_resistance_exercise", "CEVIS_cycling", "T2_treadmill", "protein_supplementation"],
+      "monitoring": ["muscle_volume_ultrasound", "strength_testing", "functional_assessment"],
+      "source": "NASA NTRS 20240016101"
+    },
+    {
+      "id": "RISK-004",
+      "name": "Cardiovascular Deconditioning",
+      "category": "cardiovascular",
+      "severity": "high",
+      "onset": "days",
+      "duration": "mission_duration",
+      "effects": ["cardiac_atrophy", "orthostatic_intolerance", "reduced_exercise_capacity"],
+      "countermeasures": ["aerobic_exercise", "LBNP", "fluid_loading_prereturn", "compression_garments"],
+      "monitoring": ["heart_rate", "blood_pressure", "echocardiogram", "VO2max_testing"],
+      "source": "NASA NTRS 20040201532"
+    },
+    {
+      "id": "RISK-005",
+      "name": "Spaceflight Associated Neuro-Ocular Syndrome (SANS)",
+      "category": "neuro-ocular",
+      "severity": "high",
+      "onset": "weeks",
+      "duration": "mission_duration",
+      "incidence": "81%",
+      "effects": ["optic_disc_edema", "globe_flattening", "choroidal_folds", "hyperopic_shift"],
+      "countermeasures": ["LBNP", "thigh_cuffs", "ITD_breathing", "nutritional_supplementation"],
+      "monitoring": ["OCT_imaging", "fundoscopy", "visual_acuity", "IOP_measurement"],
+      "source": "Nature 2026 SANS Consensus"
+    },
+    {
+      "id": "RISK-006",
+      "name": "Radiation Exposure",
+      "category": "radiation",
+      "severity": "critical",
+      "types": ["GCR", "SPE", "trapped_belt"],
+      "limits": {
+        "career_limit_REID": "3% at 95% CI",
+        "30_day_limit": "250 mSv",
+        "annual_limit": "500 mSv"
+      },
+      "countermeasures": ["shielding", "storm_shelter", "SPE_forecasting", "pharmaceutical_radioprotectants"],
+      "monitoring": ["personal_dosimetry", "biodosimetry", "space_weather_alerts"],
+      "source": "NASA NTRS 20210009708"
+    },
+    {
+      "id": "RISK-007",
+      "name": "Immune Dysregulation",
+      "category": "immunology",
+      "severity": "moderate",
+      "onset": "days",
+      "effects": ["reduced_T_cell_function", "latent_virus_reactivation", "altered_cytokines"],
+      "viruses_affected": ["EBV", "CMV", "VZV", "HSV"],
+      "reactivation_rate": "53-61%",
+      "countermeasures": ["exercise", "nutrition", "stress_management", "probiotics", "vaccination"],
+      "monitoring": ["viral_shedding", "immune_markers", "cytokine_profiles"],
+      "source": "PMC6038331"
+    },
+    {
+      "id": "RISK-008",
+      "name": "Sleep and Circadian Disruption",
+      "category": "behavioral",
+      "severity": "moderate",
+      "average_sleep": "6.5 hours",
+      "effects": ["reduced_sleep_quality", "circadian_misalignment", "fatigue"],
+      "countermeasures": ["lighting_countermeasures", "melatonin", "sleep_scheduling", "sleep_hygiene"],
+      "monitoring": ["actigraphy", "sleep_logs", "alertness_testing"],
+      "source": "NASA Fatigue Countermeasures Lab"
+    },
+    {
+      "id": "RISK-009",
+      "name": "Psychological/Behavioral Health",
+      "category": "behavioral",
+      "severity": "moderate",
+      "stressors": ["isolation", "confinement", "monotony", "communication_delay", "high_workload"],
+      "effects": ["anxiety", "depression", "interpersonal_conflict", "cognitive_decline"],
+      "countermeasures": ["psychological_support", "family_conferences", "private_crew_conferences", "VR_relaxation", "journaling", "plant_growing"],
+      "monitoring": ["mood_assessment", "cognitive_testing", "behavioral_observation"],
+      "source": "NASA BHP Risk"
+    },
+    {
+      "id": "RISK-010",
+      "name": "Renal Stone Formation",
+      "category": "renal",
+      "severity": "moderate",
+      "risk_factors": ["hypercalciuria", "dehydration", "bone_resorption"],
+      "stone_types": ["calcium_oxalate", "uric_acid"],
+      "countermeasures": ["potassium_citrate", "hydration", "dietary_modification"],
+      "monitoring": ["urinary_supersaturation", "ultrasound"],
+      "source": "NASA NTRS 20080046171"
+    },
+    {
+      "id": "RISK-011",
+      "name": "Elevated CO2 Effects",
+      "category": "environmental",
+      "severity": "moderate",
+      "threshold": "2.5 mmHg",
+      "effects": ["headache", "cognitive_impairment", "mental_viscosity"],
+      "countermeasures": ["CDRA_optimization", "exercise_area_ventilation", "personal_fans"],
+      "monitoring": ["cabin_CO2_sensors", "symptom_reporting"],
+      "source": "NASA NTRS 20160013696"
+    },
+    {
+      "id": "RISK-012",
+      "name": "Back Pain and Spinal Changes",
+      "category": "musculoskeletal",
+      "severity": "moderate",
+      "effects": ["spinal_elongation", "disc_hydration", "post_flight_herniation_risk"],
+      "elongation": "4-7 cm",
+      "countermeasures": ["core_exercises", "post_flight_flexion_avoidance", "skinsuit"],
+      "monitoring": ["height_measurement", "MRI_post_flight"],
+      "source": "Frontiers Physiology 2017"
+    },
+    {
+      "id": "RISK-013",
+      "name": "EVA Decompression Sickness",
+      "category": "operational",
+      "severity": "high",
+      "risk_context": "suit_pressure_reduction",
+      "countermeasures": ["prebreathe_protocol", "exercise_prebreathe", "campout_protocol"],
+      "prebreathe_duration": "2-4 hours",
+      "monitoring": ["doppler_VGE", "symptom_monitoring"],
+      "source": "NASA NTRS 20230015380"
+    },
+    {
+      "id": "RISK-014",
+      "name": "Dust Toxicity (Lunar/Mars)",
+      "category": "environmental",
+      "severity": "high",
+      "hazards": ["respiratory_irritation", "oxidative_stress", "allergic_response"],
+      "countermeasures": ["dust_mitigation_systems", "respiratory_protection", "suit_design", "airlock_protocols"],
+      "monitoring": ["air_quality", "symptom_surveillance"],
+      "source": "Nature 2022 Lunar Dust Toxicity"
+    },
+    {
+      "id": "RISK-015",
+      "name": "Medication Degradation",
+      "category": "medical_operations",
+      "severity": "moderate",
+      "degradation_rate": "1.5x terrestrial",
+      "factors": ["radiation", "temperature", "vibration"],
+      "countermeasures": ["radiation_shielded_storage", "drug_selection", "stability_monitoring"],
+      "source": "Nature 2023 Drug Potency"
+    }
+  ],
+
+  "countermeasures": {
+    "exercise": {
+      "ARED": {
+        "name": "Advanced Resistive Exercise Device",
+        "type": "resistance",
+        "frequency": "6 days/week",
+        "duration": "30-60 min",
+        "exercises": ["squats", "deadlifts", "heel_raises", "shoulder_press", "upright_row"],
+        "targets": ["bone_loss", "muscle_atrophy"],
+        "effectiveness": "maintains ~90% bone density",
+        "source": "NASA HRP AEC"
+      },
+      "CEVIS": {
+        "name": "Cycle Ergometer with Vibration Isolation System",
+        "type": "aerobic",
+        "frequency": "6 days/week",
+        "duration": "30 min",
+        "targets": ["cardiovascular_deconditioning", "aerobic_capacity"],
+        "source": "NASA Astronaut Exercise"
+      },
+      "T2_Treadmill": {
+        "name": "T2 Treadmill",
+        "type": "aerobic",
+        "frequency": "6 days/week",
+        "duration": "30 min",
+        "body_load": "70-80% body weight",
+        "targets": ["cardiovascular_deconditioning", "bone_loading"],
+        "source": "NASA NTRS 20230014911"
+      }
+    },
+    "nutrition": {
+      "vitamin_D": {
+        "dose": "800-1000 IU/day",
+        "target": "maintain >50 nmol/L",
+        "importance": "bone_health, immune_function",
+        "source": "NASA Nutritional Biochemistry"
+      },
+      "calcium": {
+        "dose": "1000-1200 mg/day",
+        "source_foods": ["dairy", "fortified_foods"],
+        "target": "bone_health",
+        "source": "NASA Nutrition Requirements"
+      },
+      "omega_3": {
+        "dose": "1-2 g/day EPA+DHA",
+        "benefits": ["anti_inflammatory", "cardiovascular", "cognitive"],
+        "source": "NASA NTRS 20080026254"
+      },
+      "potassium_citrate": {
+        "dose": "40-60 mEq/day",
+        "target": "renal_stone_prevention",
+        "effectiveness": "reduces_calcium_oxalate_supersaturation",
+        "source": "NASA NTRS 20080046171"
+      },
+      "protein": {
+        "dose": "1.2-1.5 g/kg/day",
+        "target": "muscle_maintenance",
+        "timing": "post_exercise",
+        "source": "PMC4206848"
+      }
+    },
+    "pharmacological": {
+      "promethazine": {
+        "indication": "space_motion_sickness",
+        "routes": ["IM", "oral", "suppository"],
+        "dose_IM": "25-50 mg",
+        "effectiveness": "71% improvement",
+        "side_effects": ["sedation"],
+        "source": "NASA NTRS 20110020471"
+      },
+      "melatonin": {
+        "indication": "sleep_circadian",
+        "dose": "0.3-3 mg",
+        "timing": "30 min before sleep",
+        "source": "NASA Sleep Research"
+      },
+      "zolpidem": {
+        "indication": "insomnia",
+        "dose": "5-10 mg",
+        "frequency": "as_needed",
+        "source": "ISS Formulary"
+      },
+      "modafinil": {
+        "indication": "fatigue_alertness",
+        "dose": "100-200 mg",
+        "timing": "start_of_duty",
+        "source": "ISS Formulary"
+      },
+      "bisphosphonates": {
+        "indication": "bone_loss",
+        "example": "alendronate",
+        "status": "research_countermeasure",
+        "source": "NASA Gap 816"
+      }
+    },
+    "mechanical": {
+      "LBNP": {
+        "name": "Lower Body Negative Pressure",
+        "pressure": "40-50 mmHg",
+        "duration": "1-2 hours/day",
+        "targets": ["fluid_shift", "SANS", "cardiovascular"],
+        "source": "NASA NTRS 20140003933"
+      },
+      "thigh_cuffs": {
+        "name": "Venoconstrictive Thigh Cuffs",
+        "mechanism": "restrict_venous_return",
+        "targets": ["headward_fluid_shift", "SANS"],
+        "source": "NASA NTRS 20230000939"
+      },
+      "compression_garments": {
+        "use": "reentry_landing",
+        "targets": ["orthostatic_intolerance"],
+        "source": "NASA-STD-3001"
+      }
+    },
+    "behavioral": {
+      "lighting_therapy": {
+        "wavelength": "blue_enriched_white",
+        "timing": "morning_exposure",
+        "duration": "30-60 min",
+        "targets": ["circadian_entrainment", "alertness"],
+        "source": "NASA HRR Gap 737"
+      },
+      "psychological_support": {
+        "components": ["private_medical_conferences", "family_conferences", "private_crew_conferences"],
+        "frequency": "weekly",
+        "source": "NASA BHP"
+      },
+      "VR_relaxation": {
+        "content": ["nature_scenes", "guided_meditation"],
+        "targets": ["stress", "isolation"],
+        "source": "NASA SIRIUS"
+      }
+    }
+  },
+
+  "emergency_protocols": {
+    "cardiac_arrest": {
+      "name": "Code Blue Protocol",
+      "steps": [
+        "alert_crew_and_ground",
+        "position_patient_restrained",
+        "begin_CPR_modified_technique",
+        "apply_AED",
+        "administer_epinephrine",
+        "continue_CPR_until_ROSC_or_termination"
+      ],
+      "CPR_techniques": ["handstand_method", "straddling_method", "Evetts-Russomano_method"],
+      "equipment": ["AED", "emergency_medical_kit", "restraint_system"],
+      "source": "NASA NTRS 20110011323"
+    },
+    "radiation_shelter": {
+      "name": "Solar Particle Event Protocol",
+      "trigger": "SPE_warning",
+      "steps": [
+        "receive_SWPC_alert",
+        "announce_shelter_in_place",
+        "crew_moves_to_storm_shelter",
+        "minimize_EVA",
+        "monitor_dosimetry",
+        "await_all_clear"
+      ],
+      "shelter_location": "most_shielded_module",
+      "source": "NASA SRAG"
+    },
+    "decompression": {
+      "name": "Rapid Decompression Protocol",
+      "steps": [
+        "don_oxygen_masks",
+        "isolate_affected_module",
+        "locate_and_patch_leak",
+        "assess_crew_for_DCS",
+        "treat_DCS_if_present"
+      ],
+      "source": "NASA-STD-3001"
+    },
+    "toxic_atmosphere": {
+      "name": "Ammonia Leak Protocol",
+      "steps": [
+        "crew_dons_masks",
+        "isolate_USOS",
+        "seal_hatch",
+        "await_atmospheric_clearance",
+        "medical_evaluation"
+      ],
+      "source": "ISS Medical Checklist"
+    },
+    "medical_emergency": {
+      "levels": {
+        "level_1": "minor_treatable_onboard",
+        "level_2": "serious_requires_telemedicine",
+        "level_3": "life_threatening_evac_consider"
+      },
+      "source": "NASA ExMC"
+    }
+  },
+
+  "intervention_protocols": {
+    "elevated_cortisol": {
+      "threshold": ">10% above baseline for 3+ days",
+      "tier": "prevent",
+      "interventions": [
+        {"action": "sleep_schedule_adjustment", "details": "+30 min sleep opportunity"},
+        {"action": "workload_reduction", "details": "defer non-critical tasks 2-3 days"},
+        {"action": "stress_reduction", "details": "VR relaxation, private time allocation"},
+        {"action": "exercise_timing", "details": "move exercise earlier in day"}
+      ],
+      "escalation": "if_no_improvement_7_days_notify_flight_surgeon"
+    },
+    "sleep_deficit": {
+      "threshold": "<6 hrs/night for 3+ nights",
+      "tier": "prevent",
+      "interventions": [
+        {"action": "schedule_review", "details": "identify and remove sleep conflicts"},
+        {"action": "lighting_adjustment", "details": "dim evening, bright morning"},
+        {"action": "melatonin_offer", "details": "0.3-3 mg 30 min before sleep"},
+        {"action": "caffeine_cutoff", "details": "no caffeine after 14:00"}
+      ]
+    },
+    "elevated_heart_rate": {
+      "threshold": ">100 bpm resting for >30 min",
+      "tier": "protect",
+      "interventions": [
+        {"action": "immediate_rest", "details": "cease current activity"},
+        {"action": "hydration_check", "details": "ensure adequate fluid intake"},
+        {"action": "stress_assessment", "details": "query crew member"},
+        {"action": "medical_eval", "details": "ECG if persistent"}
+      ],
+      "escalation": "if_symptomatic_or_>150bpm_call_emergency"
+    },
+    "radiation_dose_elevated": {
+      "threshold": ">2 mSv/day",
+      "tier": "protect",
+      "interventions": [
+        {"action": "activity_review", "details": "assess recent EVA/location"},
+        {"action": "location_optimization", "details": "move to lower dose areas"},
+        {"action": "EVA_limitation", "details": "postpone non-critical EVA"},
+        {"action": "storm_shelter_prep", "details": "if SPE forecast"}
+      ]
+    },
+    "mood_decline": {
+      "threshold": "POMS negative score increase >20%",
+      "tier": "prevent",
+      "interventions": [
+        {"action": "private_conference", "details": "crew surgeon or psychologist"},
+        {"action": "family_communication", "details": "schedule additional call"},
+        {"action": "crew_interaction", "details": "shared meal or activity"},
+        {"action": "exercise_prescription", "details": "ensure daily exercise"}
+      ]
+    }
+  },
+
+  "monitoring_parameters": {
+    "vital_signs": {
+      "heart_rate": {"unit": "bpm", "normal": "60-100", "alert_high": 120, "critical_high": 150},
+      "blood_pressure": {"unit": "mmHg", "normal_systolic": "90-120", "alert_high": 140},
+      "SpO2": {"unit": "%", "normal": ">95", "alert_low": 92, "critical_low": 88},
+      "temperature": {"unit": "°C", "normal": "36.5-37.5", "alert_high": 38.5},
+      "respiratory_rate": {"unit": "breaths/min", "normal": "12-20", "alert_high": 25}
+    },
+    "environmental": {
+      "CO2": {"unit": "mmHg", "nominal": "<2.5", "alert": 5.0, "critical": 7.5},
+      "O2": {"unit": "%", "nominal": "20.9", "alert_low": 19.5},
+      "pressure": {"unit": "psia", "nominal": "14.7", "alert_low": 14.0},
+      "radiation": {"unit": "mSv/day", "nominal": "<1", "alert": 2, "critical": 5}
+    },
+    "biomarkers": {
+      "cortisol": {"unit": "μg/dL", "normal_AM": "10-20", "alert_high": 25},
+      "vitamin_D": {"unit": "nmol/L", "optimal": ">50", "deficient": "<25"},
+      "hemoglobin": {"unit": "g/dL", "normal_male": "13.5-17.5", "normal_female": "12-16"}
+    }
+  },
+
+  "data_sources": {
+    "NASA_NTRS": {
+      "description": "NASA Technical Reports Server",
+      "url": "https://ntrs.nasa.gov",
+      "documents_indexed": 85
+    },
+    "NASA_HRR": {
+      "description": "Human Research Roadmap",
+      "url": "https://humanresearchroadmap.nasa.gov",
+      "risks_tracked": 32
+    },
+    "NASA_OSDR": {
+      "description": "Open Science Data Repository / GeneLab",
+      "url": "https://osdr.nasa.gov",
+      "api": "https://osdr.nasa.gov/osdr/data/api",
+      "studies": ">455"
+    },
+    "NOAA_SWPC": {
+      "description": "Space Weather Prediction Center",
+      "url": "https://swpc.noaa.gov",
+      "api": "https://services.swpc.noaa.gov",
+      "products": ["kp_index", "solar_wind", "proton_flux", "xray_flux", "alerts"]
+    },
+    "NASA_STD_3001": {
+      "description": "Spaceflight Human System Standard",
+      "volumes": ["v1_crew_health", "v2_human_factors"],
+      "url": "https://www.nasa.gov/reference/nasa-std-3001v1/"
+    },
+    "HRP_Evidence_Reports": {
+      "description": "Risk-specific evidence reports",
+      "examples": ["bone_loss", "cardiovascular", "sensorimotor", "radiation"]
+    }
+  },
+
+  "api_endpoints": {
+    "OSDR_search": "https://osdr.nasa.gov/osdr/data/api/v2/studies",
+    "SWPC_alerts": "https://services.swpc.noaa.gov/products/alerts.json",
+    "SWPC_kp": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+    "SWPC_solar_wind": "https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json",
+    "SWPC_proton_flux": "https://services.swpc.noaa.gov/products/solar/proton-flux.json",
+    "SWPC_xray": "https://services.swpc.noaa.gov/products/goes/primary/xray-flares-7-day.json"
+  }
+}

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AEGIS — User Interaction Flows</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;--blue:#0066cc;--green:#059669;--yellow:#d97706;--red:#dc2626;--purple:#7c3aed;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;padding:2rem;max-width:1000px;margin:0 auto;}
+h1{font-size:2rem;color:var(--blue);margin-bottom:.5rem;border-bottom:3px solid var(--blue);padding-bottom:.5rem;}
+h2{font-size:1.4rem;color:var(--text);margin:2rem 0 1rem;padding-bottom:.5rem;border-bottom:2px solid var(--border);}
+h3{font-size:1.1rem;color:var(--blue);margin:1.5rem 0 .75rem;}
+p{margin-bottom:1rem;}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:2rem;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin:1rem 0;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.card-blue{border-left:4px solid var(--blue);}
+.card-green{border-left:4px solid var(--green);}
+.card-yellow{border-left:4px solid var(--yellow);}
+.card-red{border-left:4px solid var(--red);}
+.card-purple{border-left:4px solid var(--purple);}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem;}
+th,td{padding:.75rem;text-align:left;border:1px solid var(--border);}
+th{background:#f1f5f9;font-weight:600;}
+.flow-box{background:#f0f9ff;border:2px solid #bae6fd;border-radius:8px;padding:1rem;margin:.75rem 0;font-family:monospace;font-size:.85rem;white-space:pre-wrap;}
+.flow-arrow{text-align:center;color:var(--blue);font-size:1.5rem;margin:.5rem 0;}
+ul{margin:1rem 0 1rem 1.5rem;}
+li{margin:.5rem 0;}
+.quote{background:#eff6ff;border-left:4px solid var(--blue);padding:1rem 1.5rem;margin:1rem 0;font-style:italic;color:#1e40af;}
+.toc{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:1rem 1.5rem;margin:1.5rem 0;}
+.toc-title{font-weight:600;margin-bottom:.75rem;color:var(--blue);}
+.toc a{color:var(--text);text-decoration:none;display:block;padding:.25rem 0;}
+.toc a:hover{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<h1>◈ AEGIS — User Interaction Flows</h1>
+<p class="subtitle">UX specification for astronaut, commander, and flight surgeon interactions</p>
+
+<div class="toc">
+  <div class="toc-title">📑 Contents</div>
+  <a href="#personas">User Personas</a>
+  <a href="#flow-a">Flow A: Daily Health Check</a>
+  <a href="#flow-b">Flow B: Recommendation Response</a>
+  <a href="#flow-c">Flow C: Emergency Alert</a>
+  <a href="#flow-d">Flow D: What-If Planning</a>
+  <a href="#flow-e">Flow E: Voice Interaction</a>
+  <a href="#flow-f">Flow F: Crew Roster Deep Dive</a>
+  <a href="#demo">Demo Script (5 minutes)</a>
+</div>
+
+<h2 id="personas">User Personas</h2>
+<table>
+  <tr><th>Persona</th><th>Role</th><th>Primary Actions</th></tr>
+  <tr><td><strong>Astronaut</strong></td><td>Crew member on Mars</td><td>View personal health, respond to recommendations, voice queries</td></tr>
+  <tr><td><strong>Commander</strong></td><td>Mission commander</td><td>Monitor all crew, approve protocols, manage EVA schedules</td></tr>
+  <tr><td><strong>Flight Surgeon</strong></td><td>Earth-based (when available)</td><td>Review trends, validate AI recommendations, override if needed</td></tr>
+</table>
+
+<h2 id="flow-a">Flow A: Daily Health Check (Passive Monitoring)</h2>
+<div class="card card-blue">
+  <div class="flow-box">USER ACTION: Opens AEGIS dashboard (morning routine)</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">SYSTEM: Shows Mission Control tab with:
+• Agent Network (all green = nominal)
+• Personal vitals summary
+• Any overnight recommendations (Tier 2 PREVENT)
+• Radiation forecast for the day</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">USER ACTION: Reviews recommendations, clicks Accept/Defer
+USER ACTION: Optionally asks AEGIS via voice: "Any concerns?"</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">SYSTEM: AEGIS responds with natural language summary
+"Good morning, Commander. All crew nominal. One recommendation
+ pending: Dr. Okonkwo's sleep schedule adjustment."</div>
+</div>
+
+<h2 id="flow-b">Flow B: Recommendation Response (Tier 2 PREVENT)</h2>
+<div class="card card-green">
+  <div class="flow-box">TRIGGER: PULSE detects cortisol trend (+12% over 3 days)
+→ PULSE notifies AEGIS
+→ AEGIS queries RAG for intervention protocols
+→ AEGIS creates recommendation card</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">UI UPDATE: New card appears in Recommendations panel
+• Shows: PULSE → AEGIS attribution
+• Shows: Detection reasoning
+• Shows: Recommended intervention
+• Shows: Evidence source (HRP Protocol X.X.X)</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">USER ACTION: Clicks one of three buttons
+
+[✓ Accept]  → Intervention scheduled, crew notified
+[◷ Defer]   → Re-evaluate in 4 hours, stays visible
+[✕ Dismiss] → Logged for review, removed from active list</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">SYSTEM: Logs decision, updates crew schedule if accepted
+SYSTEM: AEGIS confirms via voice panel</div>
+</div>
+
+<h2 id="flow-c">Flow C: Emergency Alert Response (Tier 3 PROTECT)</h2>
+<p><strong>Note:</strong> This is a <em>real emergency</em> based on actual sensor data, not a simulation. The What-If Simulator (Flow D) is for planning; this flow is for live response.</p>
+
+<div class="card card-red">
+  <div class="flow-box">TRIGGER: Multi-agent convergence detected (REAL DATA)
+• SOLARIS: Radiation spike incoming (sensor threshold exceeded)
+• GENE: Immune markers elevated
+• PULSE: HR/HRV abnormal
+• MIRROR: Stress indicators rising</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">UI UPDATE: Alert panel activates (red border, pulsing icon)
+AUDIO: Alert tone plays
+VOICE: AEGIS announces: "Cascade alert detected..."</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">USER ACTION: Reviews alert, clicks [Confirm Protocol Alpha-3]
+
+OR if no response in 30 seconds:
+SYSTEM: Auto-executes protocol (autonomous mode)</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">SYSTEM: Opens Spacecraft Simulation View
+→ Triggers via URL: aegis-spacecraft-sim-2d.html?alert=cascade&protocol=alpha-3
+
+SPACECRAFT SIM SHOWS:
+• Shelter room highlights in green
+• Astronaut icons animate walking to shelter
+• Radiation direction indicator (arrow from threat vector)
+• Real-time crew position tracking
+• Countdown timer for shelter-in-place duration</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">SYSTEM: Dashboard shows confirmation
+• Celebration animation (green pulse, checkmarks)
+• All agents show synchronized confirmation
+VOICE: "Protocol Alpha-3 confirmed. Crew moving to shelter."
+
+SPACECRAFT SIM UPDATES:
+• Astronauts arrive at shelter (animated)
+• Shelter door closes indicator
+• Status: "All crew secured — 4/4 in shelter"</div>
+</div>
+
+<h3>PROTECT vs What-If: Key Differences</h3>
+<table>
+  <tr><th>Aspect</th><th>Tier 3 PROTECT (Real Alert)</th><th>What-If Simulator</th></tr>
+  <tr><td><strong>Trigger</strong></td><td>Actual sensor data crosses thresholds</td><td>User clicks What-If button</td></tr>
+  <tr><td><strong>Urgency</strong></td><td>Immediate — auto-executes in 30s</td><td>No time pressure</td></tr>
+  <tr><td><strong>UI Style</strong></td><td>Red pulsing alert, audio alarm</td><td>Calm modal window</td></tr>
+  <tr><td><strong>Spacecraft Sim</strong></td><td>Shows REAL crew positions, live tracking</td><td>Shows PROJECTED movements</td></tr>
+  <tr><td><strong>Outcome</strong></td><td>Actual countermeasures activated</td><td>Educational — nothing changes</td></tr>
+</table>
+
+<h3>Technical: Dashboard ↔ Spacecraft Sim Communication</h3>
+<div class="card card-blue">
+  <p><strong>Method:</strong> URL Parameters + localStorage (no backend required for demo)</p>
+  <div class="flow-box">Dashboard confirms protocol
+    ↓
+window.open('aegis-spacecraft-sim-2d.html?alert=cascade&protocol=alpha-3&severity=critical')
+    ↓
+Spacecraft Sim reads URL params on load:
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('alert') === 'cascade') {
+    triggerShelterSequence(params.get('protocol'));
+  }
+    ↓
+Sim animates crew to shelter, shows radiation vector</div>
+  <p style="margin-top:1rem;color:var(--muted);font-size:.9rem;"><strong>Future (with backend):</strong> WebSocket push from server to both dashboard and sim for real-time sync.</p>
+</div>
+
+<h2 id="flow-d">Flow D: What-If Scenario Planning</h2>
+<div class="card card-purple">
+  <div class="flow-box">USER ACTION: Clicks [🔮 What-If] button</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">UI: Modal opens with scenario presets:
+• Solar Particle Event
+• Crew Member Illness
+• Equipment Failure
+• Communication Blackout
+• Custom scenario</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">USER ACTION: Selects scenario, adjusts parameters
+• Radiation level: [slider 0-500 mSv]
+• Duration: [slider 1-72 hours]
+• Crew affected: [checkboxes]</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">SYSTEM: Shows animated agent cascade:
+1. SOLARIS detecting... ✓
+2. AEGIS analyzing...   ✓
+3. MIRROR consulting... ✓
+4. Recommendation ready ✓</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">UI: Shows comparison:
+• WITHOUT intervention: projected outcomes
+• WITH intervention: improved outcomes
+• AEGIS recommendation with evidence</div>
+</div>
+
+<h2 id="flow-e">Flow E: Voice Interaction</h2>
+<div class="card card-blue">
+  <div class="flow-box">USER ACTION: Clicks microphone (or says "Hey AEGIS")</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">UI: Mic turns red, "Listening..." status
+USER: "AEGIS, what's Maria's status?"</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">SYSTEM: Speech-to-text → Query processing
+SYSTEM: AEGIS queries agents + RAG
+SYSTEM: Synthesizes response</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">UI: Response appears (typewriter effect)
+AUDIO: Text-to-speech reads response
+"Dr. Santos is nominal. Sleep quality 89%, stress low.
+ No active recommendations. Last check: 2 minutes ago."</div>
+</div>
+
+<h2 id="flow-f">Flow F: Crew Roster Deep Dive</h2>
+<div class="card card-yellow">
+  <div class="flow-box">USER ACTION: Clicks [👥 Crew Roster] tab</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">UI: Shows all 4 crew cards with status badges:
+• Cmdr. Chen — Elevated (yellow)
+• Dr. Okonkwo — Nominal (green)
+• Dr. Santos — Nominal (green)
+• Eng. Kowalski — Nominal (green)</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">USER ACTION: Clicks on Cmdr. Chen's card</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box">UI: Expands to detailed view:
+• 7-day trend charts (HR, HRV, sleep, stress)
+• Active recommendations for this crew member
+• Intervention history
+• Upcoming schedule (EVAs, experiments)</div>
+</div>
+
+<h2 id="demo">Demo Script (5-minute walkthrough)</h2>
+
+<div class="card card-blue">
+  <h3>Minute 0-1: Introduction</h3>
+  <div class="quote">"This is AEGIS — our autonomous health monitoring system for deep space missions. Let me show you how it keeps astronauts safe when Earth is 20 minutes away."</div>
+  <ul>
+    <li>Show Mission Control tab</li>
+    <li>Point out agent network (all connected to AEGIS)</li>
+    <li>Mention the three tiers: Predict, Prevent, Protect</li>
+  </ul>
+</div>
+
+<div class="card card-green">
+  <h3>Minute 1-2: Prevention in Action</h3>
+  <div class="quote">"AEGIS doesn't wait for problems — it prevents them. Here, PULSE detected elevated cortisol in Commander Chen, and AEGIS is recommending a sleep adjustment."</div>
+  <ul>
+    <li>Scroll to Recommendations panel</li>
+    <li>Click Accept on the cortisol recommendation</li>
+    <li>Show the confirmation animation</li>
+  </ul>
+</div>
+
+<div class="card card-purple">
+  <h3>Minute 2-3: What-If Planning</h3>
+  <div class="quote">"Astronauts can also ask 'what if' questions. Let's simulate a solar particle event."</div>
+  <ul>
+    <li>Click What-If button</li>
+    <li>Select SPE scenario</li>
+    <li>Run simulation</li>
+    <li>Show agent cascade and recommendation</li>
+  </ul>
+</div>
+
+<div class="card card-red">
+  <h3>Minute 3-4: Emergency Response</h3>
+  <div class="quote">"When prevention isn't enough, AEGIS protects. Watch what happens in a cascade alert."</div>
+  <ul>
+    <li>Trigger the cascade alert</li>
+    <li>Click Confirm Protocol</li>
+    <li>Show celebration animation</li>
+  </ul>
+</div>
+
+<div class="card card-yellow">
+  <h3>Minute 4-5: Voice Interaction</h3>
+  <div class="quote">"And astronauts can just ask AEGIS directly."</div>
+  <ul>
+    <li>Click microphone</li>
+    <li>Ask "What's the crew status?"</li>
+    <li>Show typewriter response</li>
+  </ul>
+</div>
+
+<div class="card" style="background:linear-gradient(135deg,#0066cc,#7c3aed);color:white;text-align:center;padding:2rem;">
+  <h3 style="color:white;margin-bottom:1rem;">Closing</h3>
+  <p style="font-size:1.1rem;font-weight:600;">"AEGIS: Predict problems days early. Prevent them with intervention. Protect the crew when all else fails. Zero Earth dependence."</p>
+</div>
+
+<hr style="margin:2rem 0;"/>
+<p style="text-align:center;color:var(--muted);font-size:.85rem;"><em>Last updated: 2026-09-27</em></p>
+
+</body>
+</html>

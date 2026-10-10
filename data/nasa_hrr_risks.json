@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "source": "NASA Human Research Roadmap",
+    "url": "https://humanresearchroadmap.nasa.gov/risks/",
+    "retrieved": "2026-09-27",
+    "total_risks": 22
+  },
+  "risks": [
+    {"id": 78, "name": "Concern of Intervertebral Disc Damage upon and immediately after re-exposure to Gravity", "status": "inactive", "category": "musculoskeletal"},
+    {"id": 99, "name": "Risk of Adverse Cognitive or Behavioral Changes and Psychiatric Disorders", "status": "active", "category": "behavioral", "effects": ["in-mission health", "performance", "long-term health"]},
+    {"id": 95, "name": "Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission", "status": "active", "category": "medical", "effects": ["in-mission", "long-term health"]},
+    {"id": 80, "name": "Risk of Adverse In-Mission and Long-Term Health Effects Due to Host-Microorganism Interactions", "status": "active", "category": "immunology"},
+    {"id": 82, "name": "Risk of Adverse In-Mission Health and Performance Effects Due to Celestial Dust Exposure", "status": "active", "category": "environmental", "effects": ["lunar dust", "martian dust"]},
+    {"id": 175, "name": "Risk of Adverse Mission Outcomes Due to Earth Independent Human-Systems Operations", "status": "active", "category": "autonomy", "effects": ["communication delays", "autonomous operations"]},
+    {"id": 88, "name": "Risk of Altered Sensorimotor/Vestibular Function Impacting Critical Mission Tasks", "status": "active", "category": "sensorimotor", "effects": ["spatial orientation", "locomotion", "manual control"]},
+    {"id": 77, "name": "Risk of Bone Fracture due to Spaceflight-induced Changes to Bone", "status": "active", "category": "musculoskeletal", "effects": ["bone loss", "fracture risk"]},
+    {"id": 179, "name": "Risk of Cardiovascular Adaptations Contributing to Adverse Mission Performance and Health Outcomes", "status": "active", "category": "cardiovascular"},
+    {"id": 85, "name": "Risk of In Mission Impacts, Adverse Health Events or Long-Term Health Impacts due to Altered Immune Response", "status": "active", "category": "immunology"},
+    {"id": 167, "name": "Risk of In-Mission Injury and Performance Decrements Due to Dynamic Loads", "status": "active", "category": "environmental", "effects": ["launch", "landing", "EVA"]},
+    {"id": 101, "name": "Risk of In-Mission Performance and Behavioral Health Decrements Due to Inadequate Team Cooperation", "status": "active", "category": "behavioral", "effects": ["coordination", "communication", "psychosocial"]},
+    {"id": 177, "name": "Risk of Ineffective or Toxic Medications During Long-Duration Exploration Spaceflight", "status": "active", "category": "medical", "effects": ["medication stability", "shelf life"]},
+    {"id": 84, "name": "Risk of Mission Impacting Injury and Compromised Performance Due to EVA Operations", "status": "active", "category": "eva"},
+    {"id": 168, "name": "Risk of Mission Impacts and Long-Term Health Issues due to Decompression Sickness", "status": "active", "category": "environmental"},
+    {"id": 180, "name": "Risk of Mission Performance Decrements and Adverse Health Outcomes from Reduced Cardiorespiratory and Musculoskeletal Fitness", "status": "active", "category": "musculoskeletal"},
+    {"id": 176, "name": "Risk of Performance Decrement and Crew Illness Due to Inadequate Food and Nutrition", "status": "active", "category": "nutrition"},
+    {"id": 100, "name": "Risk of Performance Decrements from Sleep Loss, Circadian Desynchronization, and Work Overload", "status": "active", "category": "sleep", "effects": ["fatigue", "performance"]},
+    {"id": 96, "name": "Risk of Radiation Carcinogenesis", "status": "active", "category": "radiation", "effects": ["cancer", "CNS effects", "cardiovascular"]},
+    {"id": 173, "name": "Risk of Reduced Crew Health and Performance Due to Hypoxia", "status": "active", "category": "environmental"},
+    {"id": 81, "name": "Risk of Renal Stone Formation", "status": "active", "category": "medical"},
+    {"id": 105, "name": "Risk of Spaceflight Associated Neuro-ocular Syndrome (SANS)", "status": "active", "category": "neuro-ocular", "effects": ["optic disc edema", "vision changes"]}
+  ]
+}

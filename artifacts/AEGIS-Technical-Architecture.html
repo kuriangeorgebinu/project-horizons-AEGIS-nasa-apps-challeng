@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS Technical Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #ffffff;
+            color: #1a1a2e;
+            line-height: 1.6;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 3px solid #0066cc;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: 700;
+            color: #0066cc;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            font-size: 18px;
+            color: #666;
+            font-weight: 300;
+        }
+
+        .doc-title {
+            font-size: 28px;
+            color: #1a1a2e;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        /* Section Styling */
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: #0066cc;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-number {
+            background: #0066cc;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Overview Box */
+        .overview-box {
+            background: #f8f9fa;
+            border-left: 4px solid #0066cc;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .overview-box p {
+            font-size: 16px;
+            color: #444;
+        }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 40px;
+            margin: 30px 0;
+        }
+
+        .diagram-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 20px;
+        }
+
+        .diagram-box {
+            background: white;
+            border: 2px solid #0066cc;
+            border-radius: 10px;
+            padding: 20px 30px;
+            text-align: center;
+            min-width: 180px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .diagram-box.primary {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+
+        .diagram-box.secondary {
+            background: #e8f4fc;
+            border-color: #0066cc;
+        }
+
+        .diagram-box.alert {
+            background: #fff3f3;
+            border-color: #dc3545;
+        }
+
+        .diagram-box .icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .diagram-box .label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .diagram-box .sublabel {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .arrow-down {
+            font-size: 24px;
+            color: #0066cc;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .arrow-right {
+            font-size: 24px;
+            color: #0066cc;
+        }
+
+        .decision-diamond {
+            width: 140px;
+            height: 140px;
+            background: #fff8e6;
+            border: 2px solid #ffc107;
+            transform: rotate(45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+        }
+
+        .decision-diamond .content {
+            transform: rotate(-45deg);
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #856404;
+        }
+
+        .branch-container {
+            display: flex;
+            justify-content: center;
+            gap: 100px;
+            margin-top: 20px;
+        }
+
+        .branch {
+            text-align: center;
+        }
+
+        .branch-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .branch-label.yes {
+            color: #28a745;
+        }
+
+        .branch-label.no {
+            color: #dc3545;
+        }
+
+        /* Flow Steps */
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            position: relative;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #0066cc;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .step-line {
+            position: absolute;
+            left: 19px;
+            top: 40px;
+            width: 2px;
+            height: calc(100% + 20px);
+            background: #0066cc;
+        }
+
+        .flow-step:last-child .step-line {
+            display: none;
+        }
+
+        .step-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            flex: 1;
+            margin-bottom: 20px;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .step-description {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .step-tech {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #0066cc;
+            font-family: 'Courier New', monospace;
+            background: #e8f4fc;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* Component Grid */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
+        }
+
+        .component-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+            transition: box-shadow 0.2s;
+        }
+
+        .component-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .component-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+
+        .component-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+        }
+
+        .component-desc {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .component-tech {
+            font-size: 12px;
+            color: #0066cc;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* MCP Tools Table */
+        .tools-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .tools-table th,
+        .tools-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .tools-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .tools-table tr:hover {
+            background: #fafafa;
+        }
+
+        .tool-name {
+            font-family: 'Courier New', monospace;
+            color: #0066cc;
+            font-weight: 600;
+        }
+
+        /* Timeline */
+        .timeline {
+            background: linear-gradient(90deg, #0066cc 0%, #28a745 100%);
+            border-radius: 8px;
+            padding: 20px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .timeline-point {
+            text-align: center;
+        }
+
+        .timeline-time {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .timeline-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .timeline-arrow {
+            font-size: 20px;
+            opacity: 0.7;
+        }
+
+        /* Key Points */
+        .key-points {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .key-point {
+            text-align: center;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .key-point .value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0066cc;
+        }
+
+        .key-point .label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+
+        @media print {
+            body {
+                padding: 20px;
+            }
+            .diagram-box {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">AEGIS</div>
+        <div class="tagline">Autonomous Expert Group for Integrated Space Health</div>
+        <div class="doc-title">Technical Architecture Document</div>
+        <div style="margin-top:15px;font-size:14px;color:#666;font-weight:500;">Predict → Prevent → Protect</div>
+    </header>
+
+    <!-- Section 1: Overview -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">1</span>
+            System Overview
+        </h2>
+        
+        <div class="overview-box">
+            <p><strong>AEGIS</strong> is a three-tier autonomous health system designed for zero-Earth-dependence missions. 
+            <strong>Tier 1 (Predict)</strong> uses multi-agent AI to detect emerging health cascades days to weeks before they become critical. 
+            <strong>Tier 2 (Prevent)</strong> delivers proactive intervention recommendations to stop problems before they escalate. 
+            <strong>Tier 3 (Protect)</strong> executes autonomous emergency protocols within 10 seconds when prevention fails — no Earth delay, no waiting for Mission Control.</p>
+            <p style="margin-top:15px;"><strong>Knowledge-Grounded:</strong> All decisions are backed by <strong>RAG-powered access</strong> to NASA HRP protocols, OSDR research datasets, and real-time space weather feeds — ensuring evidence-based responses, not guesswork.</p>
+        </div>
+
+        <!-- Three-Tier Visual -->
+        <div style="display:flex;gap:20px;margin:30px 0;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;background:linear-gradient(135deg,#e8f4fc,#f8f9fa);border:2px solid #0066cc;border-radius:10px;padding:20px;text-align:center;">
+                <div style="font-size:28px;margin-bottom:8px;">🔮</div>
+                <div style="font-size:18px;font-weight:700;color:#0066cc;margin-bottom:4px;">PREDICT</div>
+                <div style="font-size:12px;color:#666;">Days to weeks early</div>
+                <div style="font-size:11px;color:#888;margin-top:8px;">Cascade detection across<br/>5 specialized agents</div>
+            </div>
+            <div style="flex:1;min-width:200px;background:linear-gradient(135deg,#e8f8f0,#f8f9fa);border:2px solid #059669;border-radius:10px;padding:20px;text-align:center;">
+                <div style="font-size:28px;margin-bottom:8px;">🛡️</div>
+                <div style="font-size:18px;font-weight:700;color:#059669;margin-bottom:4px;">PREVENT</div>
+                <div style="font-size:12px;color:#666;">Hours to days ahead</div>
+                <div style="font-size:11px;color:#888;margin-top:8px;">Proactive intervention<br/>recommendations</div>
+            </div>
+            <div style="flex:1;min-width:200px;background:linear-gradient(135deg,#fef2f2,#f8f9fa);border:2px solid #dc3545;border-radius:10px;padding:20px;text-align:center;">
+                <div style="font-size:28px;margin-bottom:8px;">⚡</div>
+                <div style="font-size:18px;font-weight:700;color:#dc3545;margin-bottom:4px;">PROTECT</div>
+                <div style="font-size:12px;color:#666;">10-second response</div>
+                <div style="font-size:11px;color:#888;margin-top:8px;">Autonomous emergency<br/>protocol execution</div>
+            </div>
+        </div>
+
+        <div class="key-points">
+            <div class="key-point">
+                <div class="value">7+ days</div>
+                <div class="label">Early Detection Window</div>
+            </div>
+            <div class="key-point">
+                <div class="value">10s</div>
+                <div class="label">Emergency Response</div>
+            </div>
+            <div class="key-point">
+                <div class="value">5</div>
+                <div class="label">Specialized AI Agents</div>
+            </div>
+            <div class="key-point">
+                <div class="value">0</div>
+                <div class="label">Earth Dependence</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: Architecture Diagram -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">2</span>
+            System Architecture
+        </h2>
+
+        <div class="architecture-diagram">
+            <!-- Layer 1: Data Sources -->
+            <div class="diagram-row">
+                <div class="diagram-box secondary">
+                    <div class="icon">❤️</div>
+                    <div class="label">Biometric Sensors</div>
+                    <div class="sublabel">Heart Rate, SpO2, Temp</div>
+                </div>
+                <div class="diagram-box secondary">
+                    <div class="icon">🛰️</div>
+                    <div class="label">Spacecraft Sensors</div>
+                    <div class="sublabel">Radiation, Pressure, O2</div>
+                </div>
+                <div class="diagram-box secondary">
+                    <div class="icon">📍</div>
+                    <div class="label">Location Tracking</div>
+                    <div class="sublabel">Crew Positions</div>
+                </div>
+            </div>
+
+            <div class="arrow-down">▼</div>
+
+            <!-- Layer 2: AEGIS Core -->
+            <div class="diagram-row">
+                <div class="diagram-box primary" style="min-width: 400px;">
+                    <div class="icon">🤖</div>
+                    <div class="label">AEGIS AI Agent</div>
+                    <div class="sublabel">Monitors • Analyzes • Decides • Acts</div>
+                </div>
+            </div>
+
+            <div class="arrow-down">▼</div>
+
+            <!-- Layer 3: MCP Servers -->
+            <div class="diagram-row">
+                <div class="diagram-box" style="border-color: #28a745;">
+                    <div class="icon">⚡</div>
+                    <div class="label">AEGIS Protocol Server</div>
+                    <div class="sublabel">run_simulation() • execute_protocol()</div>
+                </div>
+                <div class="diagram-box" style="border-color: #9333ea;">
+                    <div class="icon">🧠</div>
+                    <div class="label">Knowledge RAG Server</div>
+                    <div class="sublabel">query_protocols() • search_research()</div>
+                </div>
+                <div class="diagram-box" style="border-color: #611f69;">
+                    <div class="icon">💬</div>
+                    <div class="label">Slack MCP Server</div>
+                    <div class="sublabel">alert_mission_control() • send_report()</div>
+                </div>
+                <div class="diagram-box" style="border-color: #0066cc;">
+                    <div class="icon">💾</div>
+                    <div class="label">Data MCP Server</div>
+                    <div class="sublabel">log_incident() • get_history()</div>
+                </div>
+            </div>
+
+            <div class="arrow-down">▼</div>
+
+            <!-- Layer 4: Outputs -->
+            <div class="diagram-row">
+                <div class="diagram-box secondary">
+                    <div class="icon">🖥️</div>
+                    <div class="label">Mission Control UI</div>
+                    <div class="sublabel">Dashboard</div>
+                </div>
+                <div class="diagram-box secondary">
+                    <div class="icon">🗣️</div>
+                    <div class="label">Voice Interface</div>
+                    <div class="sublabel">Crew Announcements</div>
+                </div>
+                <div class="diagram-box secondary" style="border-color: #611f69;">
+                    <div class="icon">📱</div>
+                    <div class="label">Slack Alerts</div>
+                    <div class="sublabel">Earth Mission Control</div>
+                </div>
+                <div class="diagram-box secondary">
+                    <div class="icon">🚀</div>
+                    <div class="label">Spacecraft Systems</div>
+                    <div class="sublabel">Doors, Lights, Comms</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Tier 1 - Predictive Detection (PREDICT) -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">3</span>
+            Tier 1: PREDICT — Cascade Detection
+        </h2>
+        
+        <p style="color:#666;margin-bottom:25px;">Five specialized AI agents continuously monitor different health domains and correlate signals across time to detect emerging problems days to weeks before they become critical.</p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:30px;">
+            <div style="background:#f8f4ff;border:2px solid #7c3aed;border-radius:8px;padding:15px;text-align:center;">
+                <div style="font-size:24px;margin-bottom:5px;">🧬</div>
+                <div style="font-weight:700;color:#7c3aed;">GENE</div>
+                <div style="font-size:11px;color:#666;">Genomic Drift Analyst</div>
+            </div>
+            <div style="background:#fff4f4;border:2px solid #dc2626;border-radius:8px;padding:15px;text-align:center;">
+                <div style="font-size:24px;margin-bottom:5px;">💓</div>
+                <div style="font-weight:700;color:#dc2626;">PULSE</div>
+                <div style="font-size:11px;color:#666;">Physiological Monitor</div>
+            </div>
+            <div style="background:#fff8f0;border:2px solid #d97706;border-radius:8px;padding:15px;text-align:center;">
+                <div style="font-size:24px;margin-bottom:5px;">☀️</div>
+                <div style="font-weight:700;color:#d97706;">SOLARIS</div>
+                <div style="font-size:11px;color:#666;">Radiation Tracker</div>
+            </div>
+            <div style="background:#f0fdf4;border:2px solid #059669;border-radius:8px;padding:15px;text-align:center;">
+                <div style="font-size:24px;margin-bottom:5px;">🪞</div>
+                <div style="font-weight:700;color:#059669;">MIRROR</div>
+                <div style="font-size:11px;color:#666;">Behavioral Analyst</div>
+            </div>
+            <div style="background:#eff6ff;border:2px solid #0066cc;border-radius:8px;padding:15px;text-align:center;">
+                <div style="font-size:24px;margin-bottom:5px;">🎯</div>
+                <div style="font-weight:700;color:#0066cc;">AEGIS</div>
+                <div style="font-size:11px;color:#666;">Orchestrator</div>
+            </div>
+        </div>
+
+        <!-- Cascade Detection Timeline -->
+        <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:10px;padding:25px;margin-top:20px;">
+            <div style="font-weight:700;color:#333;margin-bottom:15px;">Example: Multi-Day Cascade Detection</div>
+            <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="background:#7c3aed;color:white;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;min-width:60px;text-align:center;">Day 47</span>
+                    <span style="color:#7c3aed;font-weight:600;">GENE:</span>
+                    <span style="color:#666;">Cortisol +12% from baseline</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="background:#059669;color:white;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;min-width:60px;text-align:center;">Day 49</span>
+                    <span style="color:#059669;font-weight:600;">MIRROR:</span>
+                    <span style="color:#666;">Mood shift detected in voice patterns</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="background:#dc2626;color:white;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;min-width:60px;text-align:center;">Day 51</span>
+                    <span style="color:#dc2626;font-weight:600;">PULSE:</span>
+                    <span style="color:#666;">HR variability declining, sleep fragmented</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="background:#d97706;color:white;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;min-width:60px;text-align:center;">Day 52</span>
+                    <span style="color:#d97706;font-weight:600;">SOLARIS:</span>
+                    <span style="color:#666;">Cumulative radiation dose linked to symptoms</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;background:#eff6ff;padding:10px;border-radius:6px;border:1px solid #0066cc;">
+                    <span style="background:#0066cc;color:white;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;min-width:60px;text-align:center;">Day 53</span>
+                    <span style="color:#0066cc;font-weight:600;">AEGIS:</span>
+                    <span style="color:#333;font-weight:500;">Cascade pattern recognized → Alert + Recommendations</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: Tier 2 - Preventive Intervention (PREVENT) -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">4</span>
+            Tier 2: PREVENT — Proactive Intervention
+        </h2>
+        
+        <p style="color:#666;margin-bottom:25px;">Once a cascade is detected, AEGIS recommends specific interventions to stop the problem before it escalates to an emergency.</p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;">
+            <div style="background:white;border:1px solid #e0e0e0;border-radius:10px;padding:20px;border-left:4px solid #059669;">
+                <div style="font-size:13px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Sleep Optimization</div>
+                <div style="font-size:14px;color:#666;">Adjust circadian lighting schedule, recommend melatonin timing, reduce pre-sleep screen exposure</div>
+            </div>
+            <div style="background:white;border:1px solid #e0e0e0;border-radius:10px;padding:20px;border-left:4px solid #d97706;">
+                <div style="font-size:13px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">EVA Scheduling</div>
+                <div style="font-size:14px;color:#666;">Delay non-critical EVAs during elevated radiation periods, reduce exposure duration</div>
+            </div>
+            <div style="background:white;border:1px solid #e0e0e0;border-radius:10px;padding:20px;border-left:4px solid #7c3aed;">
+                <div style="font-size:13px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Pharmacological</div>
+                <div style="font-size:14px;color:#666;">Recommend anti-inflammatory protocols, stress-reduction supplements, immune support</div>
+            </div>
+            <div style="background:white;border:1px solid #e0e0e0;border-radius:10px;padding:20px;border-left:4px solid #dc2626;">
+                <div style="font-size:13px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Workload Adjustment</div>
+                <div style="font-size:14px;color:#666;">Reduce mission task load, increase rest periods, redistribute duties among crew</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Tier 3 - Emergency Response Flow (PROTECT) -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">5</span>
+            Tier 3: PROTECT — Emergency Response Flow
+        </h2>
+        
+        <p style="color:#666;margin-bottom:25px;">When predictive detection (Tier 1) and preventive intervention (Tier 2) have failed or weren't possible, Tier 3 activates immediate autonomous response.</p>
+
+        <div class="timeline">
+            <div class="timeline-point">
+                <div class="timeline-time">T+0s</div>
+                <div class="timeline-label">Alert Detected</div>
+            </div>
+            <div class="timeline-arrow">→</div>
+            <div class="timeline-point">
+                <div class="timeline-time">T+1s</div>
+                <div class="timeline-label">Crew Notified</div>
+            </div>
+            <div class="timeline-arrow">→</div>
+            <div class="timeline-point">
+                <div class="timeline-time">T+10s</div>
+                <div class="timeline-label">Decision Point</div>
+            </div>
+            <div class="timeline-arrow">→</div>
+            <div class="timeline-point">
+                <div class="timeline-time">T+11s</div>
+                <div class="timeline-label">Protocol Executes</div>
+            </div>
+            <div class="timeline-arrow">→</div>
+            <div class="timeline-point">
+                <div class="timeline-time">T+12s</div>
+                <div class="timeline-label">Earth Notified</div>
+            </div>
+        </div>
+
+        <div class="flow-steps">
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-line"></div>
+                <div class="step-content">
+                    <div class="step-title">🚨 Emergency Detected</div>
+                    <div class="step-description">
+                        Biometric sensors detect abnormal readings (high heart rate, low SpO2, elevated temperature)
+                        or spacecraft sensors detect hazardous conditions (radiation spike, pressure drop).
+                    </div>
+                    <div class="step-tech">event: { type: "biometric_alert", crew: "chen", metric: "heart_rate", value: 145 }</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-line"></div>
+                <div class="step-content">
+                    <div class="step-title">📢 AEGIS Alerts Crew</div>
+                    <div class="step-description">
+                        AEGIS immediately announces the emergency via voice interface and visual alerts.
+                        Crew members are informed of the situation and given the option to respond.
+                    </div>
+                    <div class="step-tech">AEGIS.speak("Commander Chen, elevated heart rate detected. Do you need assistance?")</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-line"></div>
+                <div class="step-content">
+                    <div class="step-title">⏱️ 10-Second Response Window</div>
+                    <div class="step-description">
+                        AEGIS waits exactly 10 seconds for any human response. This gives crew members
+                        time to acknowledge the alert, provide context, or take manual control of the situation.
+                    </div>
+                    <div class="step-tech">await waitForResponse({ timeout: 10000, listenFor: ["voice", "button", "gesture"] })</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="step-number">4</div>
+                <div class="step-line"></div>
+                <div class="step-content">
+                    <div class="step-title">🔀 Decision Point</div>
+                    <div class="step-description">
+                        <strong>If response received:</strong> Human takes control. AEGIS provides support as requested.<br>
+                        <strong>If no response:</strong> AEGIS assumes crew is incapacitated and initiates autonomous response.
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="step-number">5</div>
+                <div class="step-line"></div>
+                <div class="step-content">
+                    <div class="step-title">⚡ MCP Server Triggered</div>
+                    <div class="step-description">
+                        AEGIS calls the MCP server to run simulations and determine the optimal emergency protocol
+                        based on current crew positions, health status, and environmental conditions.
+                    </div>
+                    <div class="step-tech">mcp.run_simulation({ scenario: "high_heart_rate", affected: "chen", crew_state: {...} })</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="step-number">6</div>
+                <div class="step-line"></div>
+                <div class="step-content">
+                    <div class="step-title">🚀 Protocol Executed</div>
+                    <div class="step-description">
+                        The MCP server returns the recommended protocol. AEGIS executes it automatically:
+                        moving crew to safe positions, sealing modules, adjusting life support.
+                    </div>
+                    <div class="step-tech">mcp.execute_protocol({ name: "stress_response", steps: ["dim_lights", "play_calm_audio", "move_to_quarters"] })</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="step-number">7</div>
+                <div class="step-content">
+                    <div class="step-title">📱 Earth Mission Control Notified via Slack</div>
+                    <div class="step-description">
+                        AEGIS sends an alert to Earth Mission Control via Slack, including incident details,
+                        crew status, actions taken, and request for guidance if needed. This creates an audit
+                        trail and allows ground support to monitor the situation.
+                    </div>
+                    <div class="step-tech">slack.alert_mission_control({ severity: "high", incident: "elevated_hr", crew: "chen", protocol: "SIGMA-1", status: "executing" })</div>
+                </div>
+            </div>
+                    <div class="step-tech">mcp.execute_protocol({ name: "stress_response", steps: ["dim_lights", "play_calm_audio", "move_to_quarters"] })</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: System Components -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">6</span>
+            System Components
+        </h2>
+
+        <div class="component-grid">
+            <div class="component-card">
+                <div class="component-icon">🤖</div>
+                <div class="component-name">AEGIS AI Agent</div>
+                <div class="component-desc">
+                    The central intelligence that monitors all inputs, makes decisions, and coordinates responses.
+                    Built on LLM technology with real-time sensor integration.
+                </div>
+                <div class="component-tech">Python + LLM + Real-time Processing</div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">⚡</div>
+                <div class="component-name">AEGIS Protocol Server</div>
+                <div class="component-desc">
+                    Exposes simulation and protocol execution tools via the Model Context Protocol.
+                    Handles the logic of running emergency scenarios and commanding spacecraft systems.
+                </div>
+                <div class="component-tech">FastMCP + Python + JSON-RPC</div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">💬</div>
+                <div class="component-name">Slack MCP Server</div>
+                <div class="component-desc">
+                    Sends alerts and status reports to Earth Mission Control via Slack. Enables 
+                    real-time notification of incidents, protocol executions, and requests for guidance.
+                </div>
+                <div class="component-tech">@modelcontextprotocol/server-slack</div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">💾</div>
+                <div class="component-name">Data MCP Server</div>
+                <div class="component-desc">
+                    Persistent storage for incident logs, crew health history, and protocol outcomes.
+                    Enables trend analysis and post-incident review.
+                </div>
+                <div class="component-tech">SQLite + mcp-server-sqlite</div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">🧠</div>
+                <div class="component-name">Knowledge RAG Server</div>
+                <div class="component-desc">
+                    Semantic search over NASA HRP research, mission protocols, and OSDR datasets.
+                    Agents retrieve evidence-based medical protocols and research findings in real-time.
+                </div>
+                <div class="component-tech">ChromaDB + SentenceTransformers + FastMCP</div>
+            </div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">🖥️</div>
+                <div class="component-name">Mission Control Dashboard</div>
+                <div class="component-desc">
+                    Real-time visualization of crew status, spacecraft state, and emergency protocols.
+                    Includes 2D simulation view of astronaut movements.
+                </div>
+                <div class="component-tech">HTML/CSS/JS + WebSocket</div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">🗣️</div>
+                <div class="component-name">Voice Interface</div>
+                <div class="component-desc">
+                    Bidirectional voice communication with crew. AEGIS speaks alerts and instructions;
+                    crew can respond verbally to acknowledge or override.
+                </div>
+                <div class="component-tech">Web Speech API + TTS + STT</div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">📊</div>
+                <div class="component-name">Sensor Integration Layer</div>
+                <div class="component-desc">
+                    Aggregates data from biometric wearables, spacecraft environmental sensors,
+                    and location tracking systems into a unified data stream.
+                </div>
+                <div class="component-tech">MQTT + Sensor APIs + Data Fusion</div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">🔐</div>
+                <div class="component-name">Safety Override System</div>
+                <div class="component-desc">
+                    Hardware-level controls that allow crew or Mission Control to override any
+                    autonomous action. Human authority is always preserved.
+                </div>
+                <div class="component-tech">Hardware Interlocks + Auth Layer</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 7: Knowledge RAG Architecture -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">7</span>
+            Knowledge RAG Architecture
+        </h2>
+
+        <p style="color:#666;margin-bottom:25px;">AEGIS agents access NASA research and protocols through a Retrieval-Augmented Generation (RAG) system. This enables evidence-based decision making grounded in actual mission protocols and medical research.</p>
+
+        <div class="architecture-diagram" style="background:#faf5ff;">
+            <!-- RAG Flow Diagram -->
+            <div style="text-align:center;margin-bottom:20px;font-weight:600;color:#9333ea;">RAG Query Flow</div>
+            
+            <!-- Query Input -->
+            <div class="diagram-row">
+                <div class="diagram-box" style="border-color:#9333ea;background:#f3e8ff;">
+                    <div class="icon">💬</div>
+                    <div class="label">Agent Query</div>
+                    <div class="sublabel">"What's the radiation protocol for CME events?"</div>
+                </div>
+            </div>
+
+            <div class="arrow-down">▼</div>
+
+            <!-- Embedding + Search -->
+            <div class="diagram-row">
+                <div class="diagram-box" style="border-color:#7c3aed;background:#ede9fe;">
+                    <div class="icon">🔢</div>
+                    <div class="label">Embedding Model</div>
+                    <div class="sublabel">all-MiniLM-L6-v2</div>
+                </div>
+                <div style="font-size:24px;color:#9333ea;">→</div>
+                <div class="diagram-box" style="border-color:#7c3aed;background:#ede9fe;">
+                    <div class="icon">🔍</div>
+                    <div class="label">Vector Search</div>
+                    <div class="sublabel">ChromaDB</div>
+                </div>
+            </div>
+
+            <div class="arrow-down">▼</div>
+
+            <!-- Knowledge Sources -->
+            <div class="diagram-row">
+                <div class="diagram-box secondary" style="border-color:#9333ea;">
+                    <div class="icon">📚</div>
+                    <div class="label">HRP Documents</div>
+                    <div class="sublabel">4 PDFs • Protocols</div>
+                </div>
+                <div class="diagram-box secondary" style="border-color:#9333ea;">
+                    <div class="icon">🧬</div>
+                    <div class="label">OSDR Data</div>
+                    <div class="sublabel">Flight Studies</div>
+                </div>
+                <div class="diagram-box secondary" style="border-color:#9333ea;">
+                    <div class="icon">☀️</div>
+                    <div class="label">Space Weather</div>
+                    <div class="sublabel">NOAA/GOES Feeds</div>
+                </div>
+                <div class="diagram-box secondary" style="border-color:#9333ea;">
+                    <div class="icon">💊</div>
+                    <div class="label">Medical Protocols</div>
+                    <div class="sublabel">Procedures</div>
+                </div>
+            </div>
+
+            <div class="arrow-down">▼</div>
+
+            <!-- Context Assembly -->
+            <div class="diagram-row">
+                <div class="diagram-box" style="border-color:#9333ea;background:#f3e8ff;min-width:400px;">
+                    <div class="icon">📋</div>
+                    <div class="label">Context Assembly</div>
+                    <div class="sublabel">Top-K chunks + Query → LLM Response</div>
+                </div>
+            </div>
+
+            <div class="arrow-down">▼</div>
+
+            <!-- Response -->
+            <div class="diagram-row">
+                <div class="diagram-box primary" style="background:#9333ea;border-color:#9333ea;min-width:500px;">
+                    <div class="icon">✅</div>
+                    <div class="label">Grounded Response</div>
+                    <div class="sublabel">"Per EIMO ConOps 2024 §4.2: Initiate shelter protocol within 15 min of CME detection..."</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Sources Table -->
+        <h3 style="color:#9333ea;margin:30px 0 15px;font-size:18px;">📊 Indexed Knowledge Sources (200+ Documents)</h3>
+        <table class="tools-table">
+            <thead>
+                <tr>
+                    <th>Source Category</th>
+                    <th>Content</th>
+                    <th>Documents</th>
+                    <th>Agent Users</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tool-name">aegis_knowledge_base.json</td>
+                    <td>Master countermeasures database: 15 risks, 50+ interventions, emergency protocols, monitoring thresholds</td>
+                    <td>1 (compiled)</td>
+                    <td>ALL AGENTS</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">NASA NTRS Reports</td>
+                    <td>Technical reports on exercise, sleep, radiation, cardiovascular, SANS, nutrition, medical ops</td>
+                    <td>85 PDFs</td>
+                    <td>AEGIS, PULSE, SOLARIS</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">HRP Evidence Reports</td>
+                    <td>Risk-specific evidence: bone loss, immune dysregulation, behavioral health, sensorimotor</td>
+                    <td>32 reports</td>
+                    <td>ALL AGENTS</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">Peer-Reviewed Studies</td>
+                    <td>Nature, Frontiers, PMC publications on countermeasures, drug stability, wound healing</td>
+                    <td>60 papers</td>
+                    <td>GENE, PULSE</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">NASA-STD-3001 Standards</td>
+                    <td>Crew health requirements, human factors, medical certification standards</td>
+                    <td>2 volumes + briefs</td>
+                    <td>AEGIS</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">OSDR/GeneLab API</td>
+                    <td>455+ spaceflight biological studies, omics data, flight experiments</td>
+                    <td>API access</td>
+                    <td>GENE</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">NOAA SWPC APIs</td>
+                    <td>Real-time: Kp index, solar wind, proton flux, X-ray flux, geomagnetic alerts</td>
+                    <td>6 endpoints</td>
+                    <td>SOLARIS</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">HRP Docs (Local)</td>
+                    <td>EIMO ConOps, Mars Autonomy, Comm Delays, Autonomous Habitats</td>
+                    <td>4 PDFs</td>
+                    <td>AEGIS, MIRROR</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Implementation Stack -->
+        <h3 style="color:#9333ea;margin:30px 0 15px;font-size:18px;">🛠️ Implementation Stack</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;">
+            <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:15px;">
+                <div style="font-weight:600;color:#9333ea;margin-bottom:8px;">Vector Store</div>
+                <div style="font-size:14px;color:#666;">ChromaDB (local, persistent)</div>
+            </div>
+            <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:15px;">
+                <div style="font-weight:600;color:#9333ea;margin-bottom:8px;">Embeddings</div>
+                <div style="font-size:14px;color:#666;">SentenceTransformers (MiniLM)</div>
+            </div>
+            <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:15px;">
+                <div style="font-weight:600;color:#9333ea;margin-bottom:8px;">Document Loader</div>
+                <div style="font-size:14px;color:#666;">LlamaIndex / PyPDF2</div>
+            </div>
+            <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:15px;">
+                <div style="font-weight:600;color:#9333ea;margin-bottom:8px;">MCP Interface</div>
+                <div style="font-size:14px;color:#666;">FastMCP + JSON-RPC</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 8: MCP Server Tools -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">8</span>
+            MCP Server APIs
+        </h2>
+
+        <h3 style="color: #28a745; margin: 20px 0 15px; font-size: 18px;">⚡ AEGIS Protocol Server</h3>
+        <table class="tools-table">
+            <thead>
+                <tr>
+                    <th>Tool Name</th>
+                    <th>Description</th>
+                    <th>Parameters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tool-name">run_simulation</td>
+                    <td>Analyze an emergency scenario and determine the optimal response protocol</td>
+                    <td>scenario, affected_crew, crew_state, environment</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">execute_protocol</td>
+                    <td>Execute a specific emergency protocol, moving crew and adjusting systems</td>
+                    <td>protocol_name, target_crew, priority</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">get_crew_status</td>
+                    <td>Retrieve current location, health metrics, and status for all crew members</td>
+                    <td>crew_id (optional)</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">get_ship_status</td>
+                    <td>Retrieve current spacecraft environmental readings and system states</td>
+                    <td>module (optional)</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">move_crew</td>
+                    <td>Direct a crew member to relocate to a specific module</td>
+                    <td>crew_id, destination_module</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">seal_module</td>
+                    <td>Seal or unseal a spacecraft module for isolation protocols</td>
+                    <td>module_id, seal_state</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">adjust_environment</td>
+                    <td>Modify lighting, temperature, or life support in a module</td>
+                    <td>module_id, settings</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">broadcast_alert</td>
+                    <td>Send voice or visual alert to specific crew or entire spacecraft</td>
+                    <td>message, target, severity</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="color: #611f69; margin: 30px 0 15px; font-size: 18px;">💬 Slack MCP Server</h3>
+        <table class="tools-table">
+            <thead>
+                <tr>
+                    <th>Tool Name</th>
+                    <th>Description</th>
+                    <th>Parameters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tool-name">alert_mission_control</td>
+                    <td>Send emergency alert to Earth Mission Control with incident details and severity</td>
+                    <td>severity, incident_type, affected_crew, actions_taken</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">send_status_report</td>
+                    <td>Send periodic crew health and spacecraft status summary to Mission Control</td>
+                    <td>report_type, crew_vitals, ship_status</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">request_guidance</td>
+                    <td>Request Earth guidance for complex decisions that can tolerate communication delay</td>
+                    <td>situation, options, urgency, context</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">log_incident</td>
+                    <td>Post incident report to Slack thread for documentation and Earth review</td>
+                    <td>incident_id, timeline, outcome, crew_feedback</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="color: #0066cc; margin: 30px 0 15px; font-size: 18px;">💾 Data MCP Server</h3>
+        <table class="tools-table">
+            <thead>
+                <tr>
+                    <th>Tool Name</th>
+                    <th>Description</th>
+                    <th>Parameters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tool-name">log_health_reading</td>
+                    <td>Store crew biometric reading to health history database</td>
+                    <td>crew_id, metric, value, timestamp</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">get_health_history</td>
+                    <td>Retrieve historical health data for trend analysis</td>
+                    <td>crew_id, metric, time_range</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">log_incident</td>
+                    <td>Record incident details to database for post-mission analysis</td>
+                    <td>incident_type, severity, crew_involved, protocol_used, outcome</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">get_protocol_history</td>
+                    <td>Retrieve past protocol executions and their outcomes</td>
+                    <td>protocol_name, time_range, outcome_filter</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="color: #9333ea; margin: 30px 0 15px; font-size: 18px;">🧠 Knowledge RAG Server</h3>
+        <table class="tools-table">
+            <thead>
+                <tr>
+                    <th>Tool Name</th>
+                    <th>Description</th>
+                    <th>Parameters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tool-name">query_protocols</td>
+                    <td>Search NASA HRP protocols and medical procedures for evidence-based responses</td>
+                    <td>query, top_k, filter_category</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">search_research</td>
+                    <td>Retrieve relevant research from OSDR datasets and HRP publications</td>
+                    <td>query, top_k, source_filter</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">get_radiation_guidelines</td>
+                    <td>Fetch radiation exposure limits and countermeasures from NASA guidelines</td>
+                    <td>exposure_type, crew_role</td>
+                </tr>
+                <tr>
+                    <td class="tool-name">lookup_medication</td>
+                    <td>Retrieve medication protocols, dosages, and contraindications for space use</td>
+                    <td>medication_name, condition, crew_medical_history</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Section 9: Emergency Protocols -->
+    <section class="section">
+        <h2 class="section-title">
+            <span class="section-number">9</span>
+            Emergency Protocols
+        </h2>
+
+        <div class="component-grid">
+            <div class="component-card">
+                <div class="component-icon">💓</div>
+                <div class="component-name">Stress Response</div>
+                <div class="component-desc">
+                    Activated for elevated heart rate or stress indicators. Dims lights, plays calming audio,
+                    guides crew member to rest quarters.
+                </div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">☢️</div>
+                <div class="component-name">Radiation Shelter</div>
+                <div class="component-desc">
+                    Activated for radiation spikes. Immediately moves all crew to the shielded shelter module
+                    and seals non-essential areas.
+                </div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">😴</div>
+                <div class="component-name">Sleep Adjustment</div>
+                <div class="component-desc">
+                    Activated for fatigue or circadian disruption. Enforces rest period, adjusts lighting
+                    schedule, reduces workload assignments.
+                </div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">🏥</div>
+                <div class="component-name">Medical Emergency</div>
+                <div class="component-desc">
+                    Activated for medical alerts. Moves patient to medbay, dispatches trained crew member,
+                    prepares medical equipment, alerts Earth.
+                </div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">🚶</div>
+                <div class="component-name">EVA Halt</div>
+                <div class="component-desc">
+                    Activated during spacewalk emergencies. Immediately recalls EVA crew, prepares airlock,
+                    and stands by medical support.
+                </div>
+            </div>
+
+            <div class="component-card">
+                <div class="component-icon">🚨</div>
+                <div class="component-name">General Emergency</div>
+                <div class="component-desc">
+                    Activated for unclassified emergencies. All crew to command module, full system check,
+                    direct communication with Mission Control.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>AEGIS</strong> — Autonomous Expert Group for Integrated Space Health</p>
+        <p>NASA Space Apps Challenge 2024 • Technical Architecture v1.0</p>
+    </footer>
+
+</body>
+</html>

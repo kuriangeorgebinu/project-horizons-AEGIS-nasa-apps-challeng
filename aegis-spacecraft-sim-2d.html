@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AEGIS Spacecraft Simulation</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0c1018;--panel:#12181f;--border:#2a3a4a;
+  --text:#c0d0e0;--muted:#5a7080;--heading:#fff;
+  --aegis:#5a9fd4;--pulse:#d08080;--solaris:#d0b060;--gene:#a090c0;--mirror:#70a090;
+  --green:#50b080;--yellow:#d0b050;--red:#d06060;
+  --room-bg:#1a2530;--room-border:#3a5060;--corridor:#141c24;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh;}
+.sim-container{display:grid;grid-template-columns:1fr 300px;height:100vh;}
+
+/* Ship Canvas */
+.ship-view{position:relative;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0f1520 0%,#080c12 100%);}
+.ship-wrapper{position:relative;width:700px;height:500px;}
+
+/* Ship Hull Outline */
+.ship-hull{position:absolute;inset:0;border:3px solid var(--room-border);border-radius:40px;background:var(--corridor);box-shadow:0 0 60px rgba(90,159,212,0.1),inset 0 0 40px rgba(0,0,0,0.5);}
+
+/* Rooms */
+.room{position:absolute;background:var(--room-bg);border:2px solid var(--room-border);border-radius:8px;display:flex;flex-direction:column;transition:all .3s;}
+.room:hover{border-color:var(--aegis);box-shadow:0 0 20px rgba(90,159,212,0.2);}
+.room.alert{border-color:var(--red);animation:room-pulse 1s infinite;}
+.room.dim{opacity:0.5;}
+@keyframes room-pulse{50%{box-shadow:0 0 25px rgba(208,96,96,0.4);}}
+
+.room-label{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);white-space:nowrap;}
+.room-icon{position:absolute;bottom:6px;right:6px;font-size:16px;opacity:0.4;}
+
+/* Room positions */
+.room-command{left:270px;top:20px;width:160px;height:100px;}
+.room-quarters{left:20px;top:120px;width:140px;height:120px;}
+.room-hab{left:200px;top:150px;width:200px;height:140px;}
+.room-lab{left:440px;top:120px;width:140px;height:120px;}
+.room-medbay{left:250px;top:320px;width:120px;height:90px;}
+.room-shelter{left:400px;top:330px;width:100px;height:80px;background:#1a2828;border-color:#2a5050;}
+
+/* Corridors */
+.corridor{position:absolute;background:var(--corridor);border:1px solid var(--room-border);}
+.corridor-h{height:24px;border-radius:4px;}
+.corridor-v{width:24px;border-radius:4px;}
+.cor-cmd-hab{left:310px;top:120px;width:80px;}
+.cor-hab-quarters{left:160px;top:200px;width:42px;}
+.cor-hab-lab{left:398px;top:200px;width:44px;}
+.cor-hab-medbay{left:288px;top:288px;height:34px;width:24px;}
+.cor-hab-shelter{left:388px;top:288px;height:44px;width:24px;}
+
+/* Astronauts */
+.astronaut{position:absolute;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;cursor:pointer;transition:all .4s ease;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.4);}
+.astronaut::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid transparent;transition:border-color .3s;}
+.astronaut:hover::after{border-color:rgba(255,255,255,0.5);}
+.astronaut.walking{animation:walk .3s infinite alternate;}
+@keyframes walk{to{transform:translateY(-2px);}}
+
+.astronaut.chen{background:linear-gradient(135deg,#4a8aca,#2a5a8a);}
+.astronaut.nakamura{background:linear-gradient(135deg,#ca5a7a,#8a2a4a);}
+.astronaut.kowalski{background:linear-gradient(135deg,#5aba6a,#2a7a4a);}
+.astronaut.okonkwo{background:linear-gradient(135deg,#baa040,#7a6a20);}
+
+.astronaut-name{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--heading);white-space:nowrap;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px;opacity:0;transition:opacity .2s;}
+.astronaut:hover .astronaut-name{opacity:1;}
+
+/* Status indicator on astronaut */
+.astronaut-status{position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-radius:50%;border:2px solid var(--room-bg);}
+.astronaut-status.nominal{background:var(--green);}
+.astronaut-status.elevated{background:var(--yellow);}
+.astronaut-status.alert{background:var(--red);animation:pulse 1s infinite;}
+@keyframes pulse{50%{opacity:.5;}}
+
+/* Control Panel */
+.control-panel{background:var(--panel);border-left:1px solid var(--border);padding:1rem;display:flex;flex-direction:column;gap:1rem;overflow-y:auto;}
+.panel-header{text-align:center;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.panel-header h1{font-size:1rem;color:var(--aegis);letter-spacing:2px;margin-bottom:4px;}
+.panel-header p{font-size:.7rem;color:var(--muted);}
+
+/* Status cards */
+.status-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;}
+.status-card h3{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:.6rem;display:flex;align-items:center;gap:6px;}
+.status-card.log-card{flex:1;display:flex;flex-direction:column;}
+.status-card.log-card h3{margin-bottom:8px;}
+
+/* Crew list */
+.crew-row{display:flex;align-items:center;gap:.5rem;padding:.4rem;border-radius:6px;cursor:pointer;transition:background .2s;margin-bottom:.2rem;}
+.crew-row:hover{background:rgba(90,159,212,.1);}
+.crew-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff;}
+.crew-info{flex:1;}
+.crew-name{font-size:.75rem;color:var(--heading);}
+.crew-loc{font-size:.6rem;color:var(--muted);}
+.crew-status{width:8px;height:8px;border-radius:50%;}
+.crew-status.nominal{background:var(--green);}
+.crew-status.elevated{background:var(--yellow);}
+.crew-status.alert{background:var(--red);animation:pulse 1s infinite;}
+
+/* Scenario buttons */
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:.3rem;}
+.scenario-btn{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.4rem;font-size:.65rem;color:var(--text);cursor:pointer;transition:all .2s;text-align:center;}
+.scenario-btn:hover{border-color:var(--aegis);color:var(--aegis);}
+.scenario-btn.danger:hover{border-color:var(--red);color:var(--red);}
+.scenario-btn .icon{font-size:.9rem;display:block;margin-bottom:2px;}
+
+/* Protocol panel */
+.protocol-panel{background:var(--bg);border:1px solid var(--aegis);border-radius:8px;padding:.8rem;display:none;}
+.protocol-panel.active{display:block;}
+.protocol-header{display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;}
+.protocol-header h4{color:var(--aegis);font-size:.75rem;}
+.protocol-steps{display:flex;flex-direction:column;gap:.3rem;}
+.step{display:flex;align-items:center;gap:.4rem;font-size:.65rem;padding:.25rem;border-radius:4px;}
+.step-icon{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:8px;}
+.step-icon.done{background:var(--green);border-color:var(--green);color:#fff;}
+.step-icon.active{border-color:var(--aegis);animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Log */
+.log-feed{flex:1;min-height:100px;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:8px;}
+.log-entry{padding:6px 8px;margin-bottom:4px;background:rgba(255,255,255,0.02);border-radius:4px;border-left:2px solid var(--border);display:flex;gap:8px;align-items:flex-start;}
+.log-entry:hover{background:rgba(255,255,255,0.04);}
+.log-time{color:var(--muted);font-size:10px;font-family:'Consolas',monospace;min-width:42px;opacity:0.7;}
+.log-msg{font-size:11px;line-height:1.4;color:var(--text);}
+.log-entry.alert{border-left-color:var(--red);}
+.log-entry.alert .log-msg{color:var(--red);}
+.log-entry.action{border-left-color:var(--aegis);}
+.log-entry.action .log-msg{color:var(--aegis);}
+.log-entry.success{border-left-color:var(--green);}
+.log-entry.success .log-msg{color:var(--green);}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--aegis);border-radius:8px;padding:.6rem 1.2rem;font-size:.8rem;display:none;z-index:1000;}
+.toast.active{display:block;animation:slideDown .3s ease;}
+.toast.alert{border-color:var(--red);}
+@keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px);}}
+</style>
+</head>
+<body>
+
+<div class="sim-container">
+  <div class="ship-view">
+    <div class="ship-wrapper">
+      <div class="ship-hull"></div>
+      
+      <!-- Corridors (behind rooms) -->
+      <div class="corridor corridor-h cor-cmd-hab"></div>
+      <div class="corridor corridor-h cor-hab-quarters"></div>
+      <div class="corridor corridor-h cor-hab-lab"></div>
+      <div class="corridor corridor-v cor-hab-medbay"></div>
+      <div class="corridor corridor-v cor-hab-shelter"></div>
+      
+      <!-- Rooms -->
+      <div class="room room-command" id="room-command">
+        <span class="room-label">Command Bridge</span>
+        <span class="room-icon">🎛️</span>
+      </div>
+      <div class="room room-quarters" id="room-quarters">
+        <span class="room-label">Crew Quarters</span>
+        <span class="room-icon">🛏️</span>
+      </div>
+      <div class="room room-hab" id="room-hab">
+        <span class="room-label">Habitation</span>
+        <span class="room-icon">🏠</span>
+      </div>
+      <div class="room room-lab" id="room-lab">
+        <span class="room-label">Science Lab</span>
+        <span class="room-icon">🔬</span>
+      </div>
+      <div class="room room-medbay" id="room-medbay">
+        <span class="room-label">Medical Bay</span>
+        <span class="room-icon">🏥</span>
+      </div>
+      <div class="room room-shelter" id="room-shelter">
+        <span class="room-label">Shelter</span>
+        <span class="room-icon">☢️</span>
+      </div>
+      
+      <!-- Astronauts (positioned via JS) -->
+      <div class="astronaut chen" id="astro-chen">
+        <span class="astronaut-name">Cmdr. Chen</span>
+        SC
+        <div class="astronaut-status nominal"></div>
+      </div>
+      <div class="astronaut nakamura" id="astro-nakamura">
+        <span class="astronaut-name">Dr. Nakamura</span>
+        KN
+        <div class="astronaut-status alert"></div>
+      </div>
+      <div class="astronaut kowalski" id="astro-kowalski">
+        <span class="astronaut-name">Dr. Kowalski</span>
+        AK
+        <div class="astronaut-status nominal"></div>
+      </div>
+      <div class="astronaut okonkwo" id="astro-okonkwo">
+        <span class="astronaut-name">D. Okonkwo</span>
+        DO
+        <div class="astronaut-status elevated"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="control-panel">
+    <div class="panel-header">
+      <h1>🛸 AEGIS SIM</h1>
+      <p>Autonomous Expert Group for Integrated Space Health</p>
+    </div>
+
+    <div class="status-card">
+      <h3>👥 Crew Status</h3>
+      <div id="crewList">
+        <div class="crew-row" data-crew="chen">
+          <div class="crew-avatar" style="background:linear-gradient(135deg,#4a8aca,#2a5a8a);">SC</div>
+          <div class="crew-info"><div class="crew-name">Cmdr. S. Chen</div><div class="crew-loc" id="loc-chen">Command</div></div>
+          <div class="crew-status nominal" id="status-chen"></div>
+        </div>
+        <div class="crew-row" data-crew="nakamura">
+          <div class="crew-avatar" style="background:linear-gradient(135deg,#ca5a7a,#8a2a4a);">KN</div>
+          <div class="crew-info"><div class="crew-name">Dr. K. Nakamura</div><div class="crew-loc" id="loc-nakamura">Lab</div></div>
+          <div class="crew-status alert" id="status-nakamura"></div>
+        </div>
+        <div class="crew-row" data-crew="kowalski">
+          <div class="crew-avatar" style="background:linear-gradient(135deg,#5aba6a,#2a7a4a);">AK</div>
+          <div class="crew-info"><div class="crew-name">Dr. A. Kowalski</div><div class="crew-loc" id="loc-kowalski">Hab</div></div>
+          <div class="crew-status nominal" id="status-kowalski"></div>
+        </div>
+        <div class="crew-row" data-crew="okonkwo">
+          <div class="crew-avatar" style="background:linear-gradient(135deg,#baa040,#7a6a20);">DO</div>
+          <div class="crew-info"><div class="crew-name">D. Okonkwo</div><div class="crew-loc" id="loc-okonkwo">Hab</div></div>
+          <div class="crew-status elevated" id="status-okonkwo"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-card">
+      <h3>⚡ Trigger Scenario</h3>
+      <div class="scenario-grid">
+        <button class="scenario-btn" onclick="triggerScenario('stress')"><span class="icon">😰</span>Stress</button>
+        <button class="scenario-btn danger" onclick="triggerScenario('radiation')"><span class="icon">☢️</span>Radiation</button>
+        <button class="scenario-btn" onclick="triggerScenario('sleep')"><span class="icon">😴</span>Sleep</button>
+        <button class="scenario-btn" onclick="triggerScenario('medical')"><span class="icon">🏥</span>Medical</button>
+        <button class="scenario-btn" onclick="triggerScenario('eva')"><span class="icon">🚀</span>EVA Halt</button>
+        <button class="scenario-btn danger" onclick="triggerScenario('emergency')"><span class="icon">🚨</span>Emergency</button>
+      </div>
+    </div>
+
+    <div class="protocol-panel" id="protocolPanel">
+      <div class="protocol-header">
+        <span>⚙️</span>
+        <h4 id="protocolName">Protocol</h4>
+      </div>
+      <div class="protocol-steps" id="protocolSteps"></div>
+    </div>
+
+    <div class="status-card log-card">
+      <h3>📋 Activity Log</h3>
+      <div class="log-feed" id="logFeed"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Room center positions for astronaut placement
+const ROOMS = {
+  command:  { x: 350, y: 70, w: 160, h: 100 },
+  quarters: { x: 90, y: 180, w: 140, h: 120 },
+  hab:      { x: 300, y: 220, w: 200, h: 140 },
+  lab:      { x: 510, y: 180, w: 140, h: 120 },
+  medbay:   { x: 310, y: 365, w: 120, h: 90 },
+  shelter:  { x: 450, y: 370, w: 100, h: 80 }
+};
+
+// Crew data
+const CREW = {
+  chen:     { name: 'Cmdr. S. Chen', location: 'command', status: 'nominal' },
+  nakamura: { name: 'Dr. K. Nakamura', location: 'lab', status: 'alert' },
+  kowalski: { name: 'Dr. A. Kowalski', location: 'hab', status: 'nominal' },
+  okonkwo:  { name: 'D. Okonkwo', location: 'hab', status: 'elevated' }
+};
+
+// Protocols
+const PROTOCOLS = {
+  stress: {
+    name: 'CALM-1: Stress Reduction',
+    steps: [
+      { text: 'Pause current task', duration: 800 },
+      { text: 'Move Nakamura to Quarters', duration: 2000, move: { crew: 'nakamura', to: 'quarters' } },
+      { text: 'Dim cabin lights', duration: 800, action: 'dimLights' },
+      { text: 'Begin breathing exercise', duration: 1000 },
+      { text: 'Schedule follow-up', duration: 800 }
+    ]
+  },
+  radiation: {
+    name: 'SHELTER-1: Radiation Shelter',
+    steps: [
+      { text: 'Sound radiation alert', duration: 600, action: 'redAlert' },
+      { text: 'All crew to shelter', duration: 3000, action: 'allToShelter' },
+      { text: 'Seal outer modules', duration: 1000, action: 'dimOuter' },
+      { text: 'Monitor radiation', duration: 800 },
+      { text: 'Await all-clear', duration: 1000 }
+    ]
+  },
+  sleep: {
+    name: 'SLEEP-2: Sleep Protocol',
+    steps: [
+      { text: 'Adjust schedule', duration: 800 },
+      { text: 'Move Okonkwo to Quarters', duration: 2000, move: { crew: 'okonkwo', to: 'quarters' } },
+      { text: 'Activate sleep lighting', duration: 800, action: 'dimLights' },
+      { text: 'Dispense melatonin', duration: 1000 },
+      { text: 'Set wake alarm', duration: 800 }
+    ]
+  },
+  medical: {
+    name: 'MEDIC-1: Medical Consult',
+    steps: [
+      { text: 'Alert medical officer', duration: 600 },
+      { text: 'Guide Nakamura to Medbay', duration: 2500, move: { crew: 'nakamura', to: 'medbay' } },
+      { text: 'Display vital history', duration: 800 },
+      { text: 'Queue ground consult', duration: 1000 },
+      { text: 'Begin monitoring', duration: 800 }
+    ]
+  },
+  eva: {
+    name: 'GAMMA-1: EVA Halt',
+    steps: [
+      { text: 'Halt EVA operations', duration: 600 },
+      { text: 'All crew inside', duration: 2000, action: 'allToHab' },
+      { text: 'Secure airlocks', duration: 800 },
+      { text: 'Check suit integrity', duration: 1000 },
+      { text: 'Log incident', duration: 800 }
+    ]
+  },
+  // RECOVER-3 targets one crew member (the one flagged by the AEGIS cascade)
+  recover: (crew = 'chen') => {
+    const who = CREW[crew] ? CREW[crew].name : crew;
+    return {
+      name: `RECOVER-3: Cascade Recovery · ${who}`,
+      crew,
+      steps: [
+        { text: `Flag ${who} for recovery`, duration: 700, action: 'flagCrew' },
+        { text: 'Guide to Medbay for IL-6 / CRP draw', duration: 2200, move: { crew, to: 'medbay' } },
+        { text: 'Hydration + antioxidant supplements', duration: 1000 },
+        { text: 'Reduce exertion: rest in Quarters', duration: 2200, move: { crew, to: 'quarters' }, action: 'dimLights' },
+        { text: 'Schedule daily biomarker check-ins', duration: 900, action: 'recovering' }
+      ]
+    };
+  },
+  emergency: {
+    name: 'EMERGENCY-1: Emergency Response',
+    steps: [
+      { text: 'Sound emergency klaxon', duration: 500, action: 'redAlert' },
+      { text: 'Alert all crew', duration: 600 },
+      { text: 'Converge on Medbay', duration: 2500, action: 'allToMedbay' },
+      { text: 'Display procedures', duration: 800 },
+      { text: 'Prepare emergency comms', duration: 1000 }
+    ]
+  }
+};
+
+// Initialize
+function init() {
+  positionAstronauts();
+  log('Simulation initialized');
+}
+
+// Position astronauts in their rooms
+function positionAstronauts() {
+  Object.entries(CREW).forEach(([id, data], idx) => {
+    const el = document.getElementById(`astro-${id}`);
+    const room = ROOMS[data.location];
+    // Offset each astronaut slightly within room
+    const offsetX = (idx % 2) * 30 - 15;
+    const offsetY = Math.floor(idx / 2) * 25 - 12;
+    el.style.left = (room.x + offsetX) + 'px';
+    el.style.top = (room.y + offsetY) + 'px';
+  });
+}
+
+// Move astronaut to room
+function moveAstronaut(crewId, roomId) {
+  return new Promise(resolve => {
+    const el = document.getElementById(`astro-${crewId}`);
+    const room = ROOMS[roomId];
+    const offsetX = (Math.random() - 0.5) * 40;
+    const offsetY = (Math.random() - 0.5) * 30;
+    
+    el.classList.add('walking');
+    el.style.left = (room.x + offsetX) + 'px';
+    el.style.top = (room.y + offsetY) + 'px';
+    
+    CREW[crewId].location = roomId;
+    document.getElementById(`loc-${crewId}`).textContent = roomId.charAt(0).toUpperCase() + roomId.slice(1);
+    
+    setTimeout(() => {
+      el.classList.remove('walking');
+      resolve();
+    }, 400);
+  });
+}
+
+// Move all crew to a room
+async function moveAllTo(roomId) {
+  const promises = Object.keys(CREW).map((id, i) => {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        moveAstronaut(id, roomId).then(resolve);
+      }, i * 300);
+    });
+  });
+  await Promise.all(promises);
+}
+
+// Visual effects
+function dimLights() {
+  document.querySelectorAll('.room').forEach(r => {
+    if (!r.id.includes('shelter')) r.classList.add('dim');
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.room').forEach(r => r.classList.remove('dim'));
+  }, 5000);
+}
+
+function dimOuter() {
+  ['quarters', 'lab', 'command'].forEach(id => {
+    document.getElementById(`room-${id}`).classList.add('dim');
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.room').forEach(r => r.classList.remove('dim'));
+  }, 8000);
+}
+
+function redAlert() {
+  document.querySelectorAll('.room').forEach(r => r.classList.add('alert'));
+  showToast('⚠️ ALERT CONDITION', true);
+  setTimeout(() => {
+    document.querySelectorAll('.room').forEach(r => r.classList.remove('alert'));
+  }, 6000);
+}
+
+// Trigger scenario
+let protocolRunning = false;
+async function triggerScenario(type, opts = {}) {
+  if (!PROTOCOLS[type]) { log(`Unknown protocol: ${type}`, 'alert'); return; }
+  if (protocolRunning) {
+    if (!opts.queue) return;                 // manual clicks are ignored while running
+    while (protocolRunning) await sleep(250); // AEGIS-triggered runs wait their turn
+  }
+  protocolRunning = true;
+  
+  const protocol = typeof PROTOCOLS[type] === 'function' ? PROTOCOLS[type](opts.crew) : PROTOCOLS[type];
+  if (opts.source) log(`Triggered by ${opts.source}`, 'action');
+  log(`Protocol ${protocol.name} initiated`, 'alert');
+  showToast(`🚀 ${protocol.name}`);
+  
+  // Show protocol panel
+  const panel = document.getElementById('protocolPanel');
+  const stepsEl = document.getElementById('protocolSteps');
+  document.getElementById('protocolName').textContent = protocol.name;
+  
+  stepsEl.innerHTML = protocol.steps.map((s, i) => `
+    <div class="step" id="step-${i}">
+      <div class="step-icon" id="stepIcon-${i}"></div>
+      <span>${s.text}</span>
+    </div>
+  `).join('');
+  
+  panel.classList.add('active');
+  
+  // Execute steps
+  for (let i = 0; i < protocol.steps.length; i++) {
+    const step = protocol.steps[i];
+    const icon = document.getElementById(`stepIcon-${i}`);
+    
+    icon.classList.add('active');
+    log(step.text, 'action');
+    
+    // Execute action
+    if (step.move) {
+      await moveAstronaut(step.move.crew, step.move.to);
+    }
+    if (step.action === 'allToShelter') {
+      await moveAllTo('shelter');
+      const n = Object.values(CREW).filter(c => c.location === 'shelter').length;
+      const total = Object.keys(CREW).length;
+      log(`${n}/${total} crew secured in shelter`, 'success');
+      showToast(`🛡️ ${n}/${total} crew secured in shelter`);
+    }
+    if (step.action === 'flagCrew' && protocol.crew) window.AEGIS_SIM.setCrewStatus(protocol.crew, 'alert');
+    if (step.action === 'recovering' && protocol.crew) window.AEGIS_SIM.setCrewStatus(protocol.crew, 'elevated');
+    if (step.action === 'allToHab') await moveAllTo('hab');
+    if (step.action === 'allToMedbay') await moveAllTo('medbay');
+    if (step.action === 'dimLights') dimLights();
+    if (step.action === 'dimOuter') dimOuter();
+    if (step.action === 'redAlert') redAlert();
+    
+    await sleep(step.duration);
+    
+    icon.classList.remove('active');
+    icon.classList.add('done');
+    icon.textContent = '✓';
+  }
+  
+  log(`Protocol ${protocol.name} complete`, 'success');
+  showToast('✅ Protocol Complete');
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'aegis-protocol-complete', protocol: protocol.name }, location.origin);
+  }
+  
+  setTimeout(() => {
+    panel.classList.remove('active');
+    protocolRunning = false;
+  }, 2000);
+}
+
+// Utilities
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function log(msg, type = '') {
+  const feed = document.getElementById('logFeed');
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const entryClass = type ? `log-entry ${type}` : 'log-entry';
+  feed.innerHTML = `<div class="${entryClass}"><span class="log-time">${time}</span><span class="log-msg">${msg}</span></div>` + feed.innerHTML;
+}
+
+function showToast(msg, isAlert = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast active' + (isAlert ? ' alert' : '');
+  setTimeout(() => toast.classList.remove('active'), 3000);
+}
+
+// Expose API for external calls
+window.AEGIS_SIM = {
+  moveAstronaut,
+  triggerScenario,
+  setCrewStatus: (id, status) => {
+    CREW[id].status = status;
+    const el = document.querySelector(`#astro-${id} .astronaut-status`);
+    const panelEl = document.getElementById(`status-${id}`);
+    el.className = `astronaut-status ${status}`;
+    panelEl.className = `crew-status ${status}`;
+  }
+};
+
+init();
+
+// ── AEGIS link: run a protocol from the Mission Control dashboard ──
+// Protocol names used by the AEGIS backend → sim protocol keys
+const PROTOCOL_KEYS = {
+  'SHELTER-1': 'radiation', 'RECOVER-3': 'recover', 'CALM-1': 'stress',
+  'SLEEP-2': 'sleep', 'MEDIC-1': 'medical', 'GAMMA-1': 'eva', 'EMERGENCY-1': 'emergency'
+};
+function runAegisProtocol(protocolName, crew) {
+  const key = PROTOCOL_KEYS[String(protocolName || '').toUpperCase()] || String(protocolName || '').toLowerCase();
+  if (!PROTOCOLS[key]) { log(`AEGIS requested unknown protocol ${protocolName}`, 'alert'); return; }
+  const crewKey = CREW[crew] ? crew : 'chen';
+  triggerScenario(key, { crew: crewKey, queue: true, source: 'AEGIS Mission Control' });
+}
+window.AEGIS_SIM.runAegisProtocol = runAegisProtocol;
+
+// 1) URL: aegis-spacecraft-sim-2d.html?protocol=SHELTER-1  or  ?protocol=RECOVER-3&crew=chen
+const _params = new URLSearchParams(location.search);
+if (_params.get('protocol')) setTimeout(() => runAegisProtocol(_params.get('protocol'), _params.get('crew')), 700);
+
+// 2) Messages from the dashboard when the sim is embedded (no reload needed)
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
+  const d = e.data || {};
+  if (d.type === 'aegis-protocol') runAegisProtocol(d.protocol, d.crew);
+});
+
+// Scale the ship to fit smaller windows / the embedded pop-up
+function fitShip() {
+  const view = document.querySelector('.ship-view');
+  const ship = document.querySelector('.ship-wrapper');
+  if (!view || !ship) return;
+  const s = Math.min(1, (view.clientWidth - 24) / 700, (view.clientHeight - 24) / 500);
+  ship.style.transform = s < 1 ? `scale(${s})` : '';
+}
+window.addEventListener('resize', fitShip);
+fitShip();
+</script>
+</body>
+</html>

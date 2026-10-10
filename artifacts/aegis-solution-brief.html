@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AEGIS — Solution Brief | Project Horizons</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f8fafc;
+    --bg3: #f1f5f9;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --nasa-blue: #0b3d91;
+    --nasa-red: #fc3d21;
+    --accent: #0066cc;
+    --accent2: #0066cc;
+    --text: #1a202c;
+    --text-muted: #4a5568;
+    --green: #059669;
+    --yellow: #d97706;
+    --orange: #ea580c;
+    --purple: #7c3aed;
+    --gene-color: #7c3aed;
+    --pulse-color: #dc2626;
+    --solaris-color: #d97706;
+    --mirror-color: #059669;
+    --aegis-color: #0066cc;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── CLEAN BACKGROUND ── */
+  body::before {
+    display: none;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 2rem; height: 54px;
+    overflow-x: auto; gap: 0;
+  }
+  .nav-logo {
+    font-size: 15px; font-weight: 800; letter-spacing: .08em;
+    color: var(--nasa-blue); margin-right: 2rem; white-space: nowrap;
+    text-transform: uppercase;
+  }
+  .nav-logo span { color: var(--nasa-red); }
+  nav a {
+    color: var(--text-muted); text-decoration: none;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    padding: 0 .8rem; height: 54px; display: flex; align-items: center;
+    border-bottom: 2px solid transparent; transition: all .2s;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  nav a:hover { color: var(--text); border-color: var(--nasa-blue); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; z-index: 1;
+    min-height: 92vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; padding: 5rem 2rem 4rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  }
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .15em; color: var(--nasa-red);
+    border: 1px solid rgba(252,61,33,.4); padding: .3rem 1rem;
+    border-radius: 2px; margin-bottom: 1.5rem; display: inline-block;
+  }
+  .hero h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900; letter-spacing: -.02em; line-height: 1;
+    margin-bottom: .5rem;
+    background: linear-gradient(135deg, var(--nasa-blue) 0%, var(--accent) 50%, var(--purple) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-subtitle {
+    font-size: clamp(.9rem, 2vw, 1.15rem);
+    color: var(--text-muted); max-width: 640px;
+    margin: 0 auto 1rem; line-height: 1.6;
+  }
+  .hero-full-name {
+    font-size: .85rem; color: var(--nasa-blue); letter-spacing: .05em;
+    margin-bottom: 2.5rem; font-weight: 500;
+  }
+  .hero-tags { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+  .hero-tag {
+    font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+    padding: .35rem .9rem; border-radius: 3px; border: 1px solid;
+  }
+  .tag-blue { border-color: rgba(59,158,255,.5); color: var(--accent2); background: rgba(59,158,255,.08); }
+  .tag-red { border-color: rgba(252,61,33,.5); color: var(--nasa-red); background: rgba(252,61,33,.08); }
+  .tag-purple { border-color: rgba(167,139,250,.5); color: var(--purple); background: rgba(167,139,250,.08); }
+  .tag-green { border-color: rgba(0,230,118,.5); color: var(--green); background: rgba(0,230,118,.08); }
+
+  .scroll-hint {
+    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    color: var(--text-muted); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .1em; display: flex; flex-direction: column; align-items: center; gap: .4rem;
+  }
+  .scroll-arrow { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--text-muted), transparent); }
+
+  /* ── MAIN ── */
+  main { max-width: 1060px; margin: 0 auto; padding: 0 1.5rem 6rem; position: relative; z-index: 1; }
+
+  section { margin-bottom: 5rem; padding-top: 1rem; }
+
+  h2 {
+    font-size: 1.5rem; font-weight: 800; color: var(--text);
+    margin-bottom: 1.5rem; padding-bottom: .75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: .75rem;
+    letter-spacing: -.01em;
+  }
+  .sec-pill {
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
+    padding: .25rem .6rem; border-radius: 3px;
+    background: var(--nasa-blue); color: #fff;
+  }
+
+  h3 { font-size: 1.05rem; font-weight: 700; color: var(--text); margin: 1.8rem 0 .6rem; }
+  p { color: var(--text-muted); margin-bottom: .9rem; }
+  p strong { color: var(--text); }
+
+  /* ── PROBLEM BLOCK ── */
+  .problem-block {
+    background: linear-gradient(135deg, rgba(252,61,33,.05) 0%, rgba(11,61,145,.05) 100%);
+    border: 1px solid rgba(11,61,145,.2);
+    border-radius: 10px; padding: 2rem;
+    font-size: 1.05rem; line-height: 1.8;
+    color: var(--text-muted);
+  }
+  .problem-block strong { color: var(--text); }
+
+  /* ── TAGLINE ── */
+  .tagline {
+    text-align: center; padding: 2.5rem;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    margin: 2rem 0;
+  }
+  .tagline-text {
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    font-weight: 700; color: var(--text); line-height: 1.4;
+  }
+  .tagline-text em { font-style: normal; color: var(--nasa-blue); }
+
+  /* ── AGENT CARDS ── */
+  .agent-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+  .agent-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .agent-header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .agent-icon {
+    font-size: 2rem; width: 52px; height: 52px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; flex-shrink: 0;
+  }
+  .agent-name-block {}
+  .agent-codename { font-size: 1.2rem; font-weight: 800; letter-spacing: .05em; }
+  .agent-fullname { font-size: .8rem; color: var(--text-muted); font-weight: 500; margin-top: .1rem; }
+  .agent-tagline { font-size: .82rem; font-style: italic; color: var(--text-muted); margin-left: auto; max-width: 280px; text-align: right; }
+  .agent-body { padding: 1.25rem 1.5rem; }
+  .agent-body p { font-size: .88rem; }
+  .agent-innovation {
+    background: var(--bg2); border-radius: 6px;
+    padding: .9rem 1rem; margin: .8rem 0;
+    border-left: 3px solid;
+  }
+  .agent-innovation-label {
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
+    margin-bottom: .35rem;
+  }
+  .agent-innovation p { font-size: .84rem; margin: 0; }
+  .agent-example {
+    background: var(--bg3); border-radius: 6px;
+    padding: .9rem 1rem; margin-top: .8rem;
+    border: 1px solid var(--border);
+    font-size: .84rem; font-style: italic; color: var(--text-muted);
+  }
+  .agent-example::before {
+    content: 'Example output: ';
+    font-style: normal; font-weight: 700; color: var(--text-muted);
+    font-size: .78rem; text-transform: uppercase; letter-spacing: .06em;
+    display: block; margin-bottom: .4rem;
+  }
+  .agent-tools {
+    display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .9rem;
+  }
+  .tool-chip {
+    font-size: 11px; font-weight: 600;
+    padding: .2rem .55rem; border-radius: 3px;
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  /* Agent color themes */
+  .agent-gene .agent-codename { color: var(--gene-color); }
+  .agent-gene .agent-icon { background: rgba(167,139,250,.12); }
+  .agent-gene .agent-innovation { border-color: var(--gene-color); }
+  .agent-gene .agent-innovation-label { color: var(--gene-color); }
+
+  .agent-pulse .agent-codename { color: var(--pulse-color); }
+  .agent-pulse .agent-icon { background: rgba(248,113,113,.12); }
+  .agent-pulse .agent-innovation { border-color: var(--pulse-color); }
+  .agent-pulse .agent-innovation-label { color: var(--pulse-color); }
+
+  .agent-solaris .agent-codename { color: var(--solaris-color); }
+  .agent-solaris .agent-icon { background: rgba(251,191,36,.12); }
+  .agent-solaris .agent-innovation { border-color: var(--solaris-color); }
+  .agent-solaris .agent-innovation-label { color: var(--solaris-color); }
+
+  .agent-mirror .agent-codename { color: var(--mirror-color); }
+  .agent-mirror .agent-icon { background: rgba(52,211,153,.12); }
+  .agent-mirror .agent-innovation { border-color: var(--mirror-color); }
+  .agent-mirror .agent-innovation-label { color: var(--mirror-color); }
+
+  .agent-aegis .agent-codename { color: var(--aegis-color); }
+  .agent-aegis .agent-icon { background: rgba(59,158,255,.12); }
+  .agent-aegis .agent-innovation { border-color: var(--aegis-color); }
+  .agent-aegis .agent-innovation-label { color: var(--aegis-color); }
+
+  /* ── ARCHITECTURE ── */
+  .arch-diagram {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 2rem; overflow-x: auto;
+  }
+  .arch-pre {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: .8rem; line-height: 1.7; color: var(--text-muted);
+    white-space: pre;
+  }
+  .arch-pre .c-blue { color: var(--accent); }
+  .arch-pre .c-red { color: var(--nasa-red); }
+  .arch-pre .c-purple { color: var(--gene-color); }
+  .arch-pre .c-pulse { color: var(--pulse-color); }
+  .arch-pre .c-solaris { color: var(--solaris-color); }
+  .arch-pre .c-mirror { color: var(--mirror-color); }
+  .arch-pre .c-aegis { color: var(--aegis-color); }
+  .arch-pre .c-muted { color: #94a3b8; }
+
+  /* ── CASCADE DEMO ── */
+  .cascade-timeline { display: flex; flex-direction: column; gap: 0; }
+  .cascade-event {
+    display: flex; gap: 1.25rem; align-items: flex-start;
+    padding: 1rem 0;
+    border-left: 2px solid var(--border);
+    padding-left: 1.5rem;
+    position: relative;
+  }
+  .cascade-event::before {
+    content: '';
+    position: absolute; left: -6px; top: 1.2rem;
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+  .cascade-event.gene::before { background: var(--gene-color); }
+  .cascade-event.pulse::before { background: var(--pulse-color); }
+  .cascade-event.solaris::before { background: var(--solaris-color); }
+  .cascade-event.mirror::before { background: var(--mirror-color); }
+  .cascade-event.aegis::before { background: var(--aegis-color); box-shadow: 0 0 12px var(--aegis-color); width: 14px; height: 14px; left: -8px; }
+  .cascade-event.resolved::before { background: var(--green); }
+  .cascade-day {
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .08em; min-width: 52px; margin-top: .2rem;
+    color: var(--text-muted);
+  }
+  .cascade-agent-badge {
+    font-size: 10px; font-weight: 800; padding: .15rem .5rem; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: .06em; margin-bottom: .3rem;
+    display: inline-block;
+  }
+  .badge-gene { background: rgba(124,58,237,.15); color: var(--gene-color); }
+  .badge-pulse { background: rgba(220,38,38,.15); color: var(--pulse-color); }
+  .badge-solaris { background: rgba(217,119,6,.15); color: var(--solaris-color); }
+  .badge-mirror { background: rgba(5,150,105,.15); color: var(--mirror-color); }
+  .badge-aegis { background: rgba(0,102,204,.15); color: var(--aegis-color); }
+  .badge-resolved { background: rgba(5,150,105,.15); color: var(--green); }
+  .cascade-text { font-size: .86rem; color: var(--text-muted); line-height: 1.55; }
+  .cascade-text strong { color: var(--text); }
+  .cascade-alert {
+    background: linear-gradient(135deg, rgba(0,102,204,.08), rgba(252,61,33,.05));
+    border: 1px solid rgba(0,102,204,.25);
+    border-radius: 8px; padding: 1rem 1.25rem;
+    margin-top: .5rem;
+    font-size: .86rem; color: var(--text);
+    line-height: 1.6;
+  }
+  .cascade-alert-header {
+    font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--nasa-red); margin-bottom: .5rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+
+  /* ── AWARD TABLE ── */
+  .award-table { width: 100%; border-collapse: collapse; }
+  .award-table th {
+    background: var(--bg3); color: var(--text-muted);
+    font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    padding: .65rem 1rem; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .award-table td {
+    padding: .8rem 1rem; border-bottom: 1px solid var(--border);
+    font-size: .87rem; color: var(--text-muted);
+    vertical-align: top;
+  }
+  .award-table tr:last-child td { border-bottom: none; }
+  .award-table tr:hover td { background: var(--bg2); }
+  .award-table td:first-child { color: var(--text); font-weight: 700; white-space: nowrap; }
+  .award-yes { color: var(--green); font-weight: 700; }
+
+  /* ── DATA SOURCES ── */
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: .75rem;
+  }
+  .data-chip {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; padding: .75rem 1rem;
+  }
+  .data-chip-name { font-size: .88rem; font-weight: 700; color: var(--accent2); margin-bottom: .25rem; }
+  .data-chip-desc { font-size: .78rem; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 2.5rem 1.5rem; text-align: center;
+    color: var(--text-muted); font-size: .8rem;
+    max-width: 1060px; margin: 0 auto;
+  }
+  footer a { color: var(--accent2); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo"><span>NASA</span> · AEGIS</span>
+  <a href="#problem">Problem</a>
+  <a href="#solution">Solution</a>
+  <a href="#agents">The Crew</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#demo">Demo Scenario</a>
+  <a href="#hardware">Hardware Path</a>
+  <a href="#awards">Why It Wins</a>
+</nav>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-eyebrow">NASA Space Apps Challenge 2026 · Project Horizons</div>
+  <h1>AEGIS</h1>
+  <div class="hero-full-name">Autonomous Expert Group for Integrated Space Health</div>
+  <p class="hero-subtitle">A three-tier autonomous health system that <strong>predicts</strong> problems days before they emerge, <strong>prevents</strong> them through early intervention, and <strong>protects</strong> the crew when all else fails — with zero reliance on Earth.</p>
+  <div class="hero-tags">
+    <span class="hero-tag tag-blue">Predict</span>
+    <span class="hero-tag tag-green">Prevent</span>
+    <span class="hero-tag tag-red">Protect</span>
+    <span class="hero-tag tag-purple">Multi-Agent AI</span>
+    <span class="hero-tag tag-purple">NASA Inspiration4 Data</span>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ── PROBLEM ── -->
+  <section id="problem">
+    <h2><span class="sec-pill">01</span> The Problem</h2>
+    <div class="problem-block">
+      A crew en route to Mars has <strong>no flight surgeon</strong>, <strong>no emergency evacuation</strong>, and a <strong>24-minute communication delay</strong>. Space radiation is silently rewriting their DNA. Microgravity is deconditioning their cardiovascular system. Isolation is degrading their cognition. And the only person who can catch these changes early enough to act — <strong>is the astronaut themselves</strong>, with no medical training and a mission to run.
+    </div>
+
+    <div class="tagline" style="margin-top:1.5rem;">
+      <div class="tagline-text"><em>Predict</em> problems days early. <em>Prevent</em> them with timely intervention.<br/><em>Protect</em> the crew when prevention fails.<br/>Three tiers. Earth-independent decision-making.</div>
+    </div>
+
+    <p style="margin-top:1.5rem;">The core medical challenge of deep-space flight is not data collection — it is <strong>interpretation without experts</strong>. An astronaut can measure their heart rate variability. They cannot know whether a 14% drop over 8 days, combined with a subtle shift in their inflammatory cytokine panel and a recent solar particle event, is the early signature of an immune cascade that will peak in 5 days. AEGIS can.</p>
+  </section>
+
+  <!-- ── SOLUTION ── -->
+  <section id="solution">
+    <h2><span class="sec-pill">02</span> The Solution</h2>
+    <p>AEGIS is not a dashboard. It is a <strong>crew member</strong> — a team of five specialized AI agents operating across a three-tier autonomous health system designed for zero-Earth-dependence missions.</p>
+    
+    <!-- Three-Tier System -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;">
+      <div style="background:linear-gradient(135deg,rgba(0,102,204,.08),rgba(0,102,204,.02));border:1px solid rgba(0,102,204,.25);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:.75rem;right:.75rem;font-size:2rem;opacity:.15;">🔮</div>
+        <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.4rem;">Tier 1</div>
+        <div style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:.5rem;">PREDICT</div>
+        <div style="font-size:.85rem;color:var(--text-muted);line-height:1.6;">Multi-agent cascade detection identifies emerging health issues <strong>days to weeks</strong> before they become critical. Correlates genomic, physiological, environmental, and behavioral signals across time.</div>
+        <div style="margin-top:.75rem;font-size:.75rem;font-weight:600;color:var(--accent);">→ Day 47: subtle pattern detected</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.25);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:.75rem;right:.75rem;font-size:2rem;opacity:.15;">🛡️</div>
+        <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--green);margin-bottom:.4rem;">Tier 2</div>
+        <div style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:.5rem;">PREVENT</div>
+        <div style="font-size:.85rem;color:var(--text-muted);line-height:1.6;">Proactive intervention recommendations — adjusted sleep schedules, modified EVA plans, pharmacological countermeasures — delivered <strong>hours to days</strong> before a cascade reaches crisis.</div>
+        <div style="margin-top:.75rem;font-size:.75rem;font-weight:600;color:var(--green);">→ Day 51: "reduce EVA exposure, adjust sleep"</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(220,38,38,.02));border:1px solid rgba(220,38,38,.25);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:.75rem;right:.75rem;font-size:2rem;opacity:.15;">⚡</div>
+        <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--nasa-red);margin-bottom:.4rem;">Tier 3</div>
+        <div style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:.5rem;">PROTECT</div>
+        <div style="font-size:.85rem;color:var(--text-muted);line-height:1.6;">When prevention fails, autonomous emergency protocols alert the crew immediately with a <strong>30-second override window</strong>. No Earth delay. No waiting for Mission Control. If no crew response, the protocol auto-executes.</div>
+        <div style="margin-top:.75rem;font-size:.75rem;font-weight:600;color:var(--nasa-red);">→ T+1s: crew alerted · T+30s: auto-execute if no override</div>
+      </div>
+    </div>
+
+    <p style="margin-top:1.5rem;">The system is built on three scientific pillars:</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:1.5rem 0;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;border-top:3px solid var(--gene-color);">
+        <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gene-color);margin-bottom:.5rem;">Pillar 1 — Genomics</div>
+        <div style="font-size:.88rem;color:var(--text-muted);">Personal biomarker baselines using NASA's Inspiration4 and OSDR data. AEGIS tracks individual response profiles to radiation and microgravity stressors, with reference ranges drawn from real spaceflight omics research.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;border-top:3px solid var(--aegis-color);">
+        <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--aegis-color);margin-bottom:.5rem;">Pillar 2 — Multi-Agent Intelligence</div>
+        <div style="font-size:.88rem;color:var(--text-muted);">Five specialized agents translate raw biomarker data into plain-English crew guidance using rule-based detection and personal statistical baselines. The orchestrator synthesizes all five streams into a unified health narrative the astronaut can act on. LLM enhancement is a configuration option, not a dependency.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;border-top:3px solid var(--solaris-color);">
+        <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--solaris-color);margin-bottom:.5rem;">Pillar 3 — Space Context</div>
+        <div style="font-size:.88rem;color:var(--text-muted);">Real-time space weather data, radiation dose accumulation, and mission context are first-class inputs — not afterthoughts. AEGIS understands the difference between an abnormal reading on Earth and the same reading on day 90 of a Mars transit.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── AGENTS ── -->
+  <section id="agents">
+    <h2><span class="sec-pill">03</span> The Agent Crew</h2>
+    <div class="agent-grid">
+
+      <!-- GENE -->
+      <div class="agent-card agent-gene">
+        <div class="agent-header">
+          <div class="agent-icon">🧬</div>
+          <div class="agent-name-block">
+            <div class="agent-codename">GENE</div>
+            <div class="agent-fullname">Genomic Drift Analyst</div>
+          </div>
+          <div class="agent-tagline">"I read your DNA so you don't have to."</div>
+        </div>
+        <div class="agent-body">
+          <p>GENE is the scientific core of the system. Reference ranges and response profiles are drawn from NASA's Inspiration4 multi-omic dataset — the only publicly available multi-layered genomic data from real civilian astronauts — it tracks how the astronaut's biomarkers drift from their personal pre-mission baseline across key dimensions: inflammatory markers (IL-6, CRP from blood panels), immune response indicators, and radiation exposure correlations from the RAG knowledge base.</p>
+          <div class="agent-innovation">
+            <div class="agent-innovation-label">🔬 Key Innovation</div>
+            <p>GENE detects <strong>multi-stressor response patterns</strong> — biomarker changes that emerge when radiation AND microgravity stress combine. Reference profiles are drawn from Inspiration4 and OSDR spaceflight omics research, applied to individual crew baselines for personalized monitoring.</p>
+          </div>
+          <p>A RAG (Retrieval-Augmented Generation) knowledge base of NASA research papers allows GENE to contextualize its findings against published spaceflight medicine literature in real time.</p>
+          <div class="agent-example">"Your inflammatory markers are elevated — IL-6 is 2.3× above your pre-flight baseline and CRP is trending up. This pattern is consistent with the immune stress response we'd expect after cumulative radiation exposure, correlating with the M-class solar flare SOLARIS flagged on Day 47. Within expected range for now, but the trajectory is worth watching. Flagging to AEGIS for trend monitoring."</div>
+          <div class="agent-tools">
+            <span class="tool-chip">NASA OSDR API</span>
+            <span class="tool-chip">Inspiration4 Dataset</span>
+            <span class="tool-chip">ChromaDB RAG</span>
+            <span class="tool-chip">Anomaly Scoring Model</span>
+            <span class="tool-chip">MiniLM Embeddings</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PULSE -->
+      <div class="agent-card agent-pulse">
+        <div class="agent-header">
+          <div class="agent-icon">💓</div>
+          <div class="agent-name-block">
+            <div class="agent-codename">PULSE</div>
+            <div class="agent-fullname">Physiological Time-Series Monitor</div>
+          </div>
+          <div class="agent-tagline">"I watch the numbers you forget to check."</div>
+        </div>
+        <div class="agent-body">
+          <p>PULSE runs continuous anomaly detection using statistical baselines (z-score, EWMA) on rolling physiological time-series: heart rate variability, sleep stage quality, resting heart rate, blood pressure trend, SpO2, and activity patterns. It works on simulated mission data modeled on published ISS physiological studies — or can ingest real wearable data when available.</p>
+          <div class="agent-innovation">
+            <div class="agent-innovation-label">📈 Key Innovation</div>
+            <p>PULSE compares the astronaut to <strong>themselves</strong>, not population norms. And it tracks <strong>trajectory</strong>, not snapshots. A heart rate of 68 bpm is meaningless. A heart rate that has trended from 58 → 68 over 12 days while sleep quality degrades simultaneously is a signal — and that distinction is what separates predictive medicine from reactive monitoring.</p>
+          </div>
+          <p>When the statistical model flags an anomaly, PULSE contextualizes it against mission history and known spaceflight physiology patterns from the RAG knowledge base — producing a crew-readable finding instead of a raw statistical deviation alert.</p>
+          <div class="agent-example">"Cardiovascular: 🟡 Watch. HRV has dropped 18% over 6 days — a pattern that in the Inspiration4 cohort correlated with onset of stress-related immune suppression. Sleep quality declining for 4 consecutive nights. Recommend reviewing exercise load and confirming CO₂ scrubber efficiency."</div>
+          <div class="agent-tools">
+            <span class="tool-chip">Z-Score Baseline</span>
+            <span class="tool-chip">EWMA Trending</span>
+            <span class="tool-chip">Time-Series DB</span>
+            <span class="tool-chip">Personal Baseline Model</span>
+            <span class="tool-chip">ISS Physiology Reference Data</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOLARIS -->
+      <div class="agent-card agent-solaris">
+        <div class="agent-header">
+          <div class="agent-icon">☀️</div>
+          <div class="agent-name-block">
+            <div class="agent-codename">SOLARIS</div>
+            <div class="agent-fullname">Space Weather & Radiation Liaison</div>
+          </div>
+          <div class="agent-tagline">"I watch the sun so the crew doesn't get surprised."</div>
+        </div>
+        <div class="agent-body">
+          <p>SOLARIS ingests real-time DSCOVR solar wind data and GOES satellite solar particle event feeds. It maintains a running cumulative radiation dose estimate per crew member based on mission profile, shielding parameters, and detected SPE events. It forecasts EVA risk windows 24–48 hours ahead using historical solar event data.</p>
+          <div class="agent-innovation">
+            <div class="agent-innovation-label">🔗 Key Innovation</div>
+            <p>SOLARIS feeds dose events directly to GENE as <strong>causal context</strong>. When GENE detects an inflammatory response (elevated IL-6, CRP), SOLARIS can confirm or deny whether a recent solar particle event explains it — creating a validated causal chain from environmental radiation to biological response. This cross-agent causal linking strengthens the system's explainability.</p>
+          </div>
+          <p>Translates raw space weather telemetry (proton flux, Kp index, Bz component) into crew-actionable, plain-English guidance — not numbers the astronaut has to interpret.</p>
+          <div class="agent-example">"⚠️ Moderate SPE in progress. Projected additional dose for tomorrow's 4-hour EVA: 8 mSv. Cumulative mission dose post-EVA: 142 mSv (24% of career limit). EVA is GO but I've already alerted GENE to watch your biomarkers for radiation response signatures over the next 72 hours."</div>
+          <div class="agent-tools">
+            <span class="tool-chip">DSCOVR API (live)</span>
+            <span class="tool-chip">GOES Satellite Feed</span>
+            <span class="tool-chip">RadLab (OSDR)</span>
+            <span class="tool-chip">Dose Accumulation Model</span>
+            <span class="tool-chip">Threshold Alerting</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MIRROR -->
+      <div class="agent-card agent-mirror">
+        <div class="agent-header">
+          <div class="agent-icon">🧠</div>
+          <div class="agent-name-block">
+            <div class="agent-codename">MIRROR</div>
+            <div class="agent-fullname">Behavioral & Cognitive Health Monitor</div>
+          </div>
+          <div class="agent-tagline">"I notice what you haven't noticed yet."</div>
+        </div>
+        <div class="agent-body">
+          <p>MIRROR addresses what NASA HRP identifies as the #1 long-duration mission risk: psychological health. No recent Space Apps team has tackled this domain — which means it's our white space. MIRROR does it through two mechanisms, both consent-driven and non-invasive.</p>
+          <div class="agent-innovation">
+            <div class="agent-innovation-label">🧠 Key Innovation</div>
+            <p><strong>Daily 90-second cognitive check-in</strong> using clinically validated instruments (Psychomotor Vigilance Test for reaction time, short n-back task for working memory — the same tools used on ISS). MIRROR tracks the astronaut's cognitive performance curve across the entire mission and detects degradation before it becomes impairment. Optional: aggregate linguistic drift analysis on crew journal entries — not mood surveillance, but early warning pattern detection validated in analogue studies.</p>
+          </div>
+          <p>MIRROR never labels the astronaut. It identifies patterns and offers context. The framing is always: "here's what the data shows, here's what it has historically preceded, here's what you can do about it."</p>
+          <div class="agent-example">"Cognitive performance is 14% below your personal 30-day average. This pattern in long-duration analogue studies typically precedes motivational decline by 2–3 weeks. Sleep fragmentation is the likely driver based on PULSE data. Recommended: confirm rest day Thursday, review habitat lighting schedule for circadian realignment."</div>
+          <div class="agent-tools">
+            <span class="tool-chip">PVT (Reaction Time)</span>
+            <span class="tool-chip">n-Back Memory Test</span>
+            <span class="tool-chip">Trend Scoring</span>
+            <span class="tool-chip">HRP Behavioural Data</span>
+            <span class="tool-chip">Personal Baseline</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AEGIS -->
+      <div class="agent-card agent-aegis">
+        <div class="agent-header">
+          <div class="agent-icon">🛡️</div>
+          <div class="agent-name-block">
+            <div class="agent-codename">AEGIS</div>
+            <div class="agent-fullname">Chief Medical Officer & Orchestrator</div>
+          </div>
+          <div class="agent-tagline">"The flight surgeon that never sleeps."</div>
+        </div>
+        <div class="agent-body">
+          <p>AEGIS is the agent the crew talks to. It orchestrates GENE, PULSE, SOLARIS, and MIRROR — calling each for their latest structured summaries, synthesizing them, and handling any crew question in natural language. It is the only endpoint the frontend communicates with directly.</p>
+          <div class="agent-innovation">
+            <div class="agent-innovation-label">⚡ Key Innovation — The Cascade Alarm</div>
+            <p>AEGIS implements a <strong>convergence detector</strong>: when three or more agents reach amber status within a 7-day window, it fires a qualitatively different escalation — a Cascade Alert. Because a signal that appears independently across genomic, physiological, environmental, and behavioral streams simultaneously is not noise. <strong>It is a pattern that warrants action.</strong> AEGIS applies multi-domain convergence detection, the principle behind clinical early-warning scores, to spaceflight stressors.</p>
+          </div>
+          <p>AEGIS also maintains the <strong>Mission Memory</strong> — a full timeline of every health event, agent finding, recommendation, and crew response across the entire mission. The crew can ask "What happened to my health during weeks 6–8?" and receive a narrative answer, not a data dump.</p>
+          <div class="agent-example">"Four independent health systems are reporting a converging pattern. SOLARIS detected an SPE on Day 47. GENE flagged elevated inflammatory markers (IL-6, CRP) on Day 49. PULSE detected HRV decline and sleep fragmentation on Day 51. MIRROR noted 14% cognitive slowing on Day 53. Together, these match the early profile of radiation-induced immune stress cascade. Initiating countermeasure protocol RECOVER-3: increased hydration, reduced physical exertion for 72 hours, antioxidant supplement schedule."</div>
+          <div class="agent-tools">
+            <span class="tool-chip">Rule-based Orchestrator</span>
+            <span class="tool-chip">Agent Status Aggregation</span>
+            <span class="tool-chip">Mission Memory (SQLite)</span>
+            <span class="tool-chip">Cascade Detector</span>
+            <span class="tool-chip">LLM Chat (optional)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── ARCHITECTURE ── -->
+  <section id="architecture">
+    <h2><span class="sec-pill">04</span> Technical Architecture</h2>
+    <div class="arch-diagram">
+      <pre class="arch-pre"><span class="c-muted">┌──────────────────────────────────────────────────────────────────┐</span>
+<span class="c-muted">│</span>                  <span class="c-blue">Static Frontend (HTML/CSS/JS)</span>                    <span class="c-muted">│</span>
+<span class="c-muted">│</span>   <span class="c-muted">┌─────────────────────┐</span>  <span class="c-muted">┌──────────────────────────┐</span>       <span class="c-muted">│</span>
+<span class="c-muted">│</span>   <span class="c-muted">│</span>  <span class="c-blue">Mission Control UI</span>   <span class="c-muted">│</span>  <span class="c-muted">│</span>  <span class="c-blue">Spacecraft 2D Sim</span>        <span class="c-muted">│</span>       <span class="c-muted">│</span>
+<span class="c-muted">│</span>   <span class="c-muted">│</span>  Crew Health Cards   <span class="c-muted">│</span>  <span class="c-muted">│</span>  Shelter Protocol Viz    <span class="c-muted">│</span>       <span class="c-muted">│</span>
+<span class="c-muted">│</span>   <span class="c-muted">│</span>  Cascade Alerts      <span class="c-muted">│</span>  <span class="c-muted">│</span>  Real-time Status        <span class="c-muted">│</span>       <span class="c-muted">│</span>
+<span class="c-muted">│</span>   <span class="c-muted">└──────────┬──────────┘</span>  <span class="c-muted">└──────────────────────────┘</span>       <span class="c-muted">│</span>
+<span class="c-muted">└─────────────┼────────────────────────────────────────────────────┘</span>
+              <span class="c-muted">│</span> REST API
+<span class="c-muted">┌─────────────▼────────────────────────────────────────────────────┐</span>
+<span class="c-muted">│</span>                <span class="c-aegis">AEGIS Orchestrator (FastAPI)</span>                      <span class="c-muted">│</span>
+<span class="c-muted">│</span>   • Rule-based detection + statistical baselines (z-score/EWMA) <span class="c-muted">│</span>
+<span class="c-muted">│</span>   • Cascade convergence detector (≥3 agents amber in 7 days)    <span class="c-muted">│</span>
+<span class="c-muted">│</span>   • Mission memory store (SQLite)                                <span class="c-muted">│</span>
+<span class="c-muted">│</span>   • RAG query handler (ChromaDB + MiniLM embeddings)             <span class="c-muted">│</span>
+<span class="c-muted">│</span>   • Optional: LLM enhancement (GPT-4o/DeepSeek) — roadmap        <span class="c-muted">│</span>
+<span class="c-muted">└────┬───────────┬─────────────┬────────────┬──────────────────────┘</span>
+     <span class="c-muted">│</span>           <span class="c-muted">│</span>             <span class="c-muted">│</span>            <span class="c-muted">│</span>
+<span class="c-muted">┌────▼────┐</span> <span class="c-muted">┌────▼────┐</span> <span class="c-muted">┌──────▼──┐</span> <span class="c-muted">┌───▼────┐</span>
+<span class="c-muted">│</span> <span class="c-purple">GENE</span>    <span class="c-muted">│</span> <span class="c-muted">│</span> <span class="c-pulse">PULSE</span>   <span class="c-muted">│</span> <span class="c-muted">│</span><span class="c-solaris">SOLARIS</span> <span class="c-muted">│</span> <span class="c-muted">│</span><span class="c-mirror">MIRROR</span>  <span class="c-muted">│</span>
+<span class="c-muted">│</span>         <span class="c-muted">│</span> <span class="c-muted">│</span>         <span class="c-muted">│</span> <span class="c-muted">│</span>         <span class="c-muted">│</span> <span class="c-muted">│</span>        <span class="c-muted">│</span>
+<span class="c-muted">│</span> RAG     <span class="c-muted">│</span> <span class="c-muted">│</span> Z-score <span class="c-muted">│</span> <span class="c-muted">│</span> DSCOVR  <span class="c-muted">│</span> <span class="c-muted">│</span> PVT    <span class="c-muted">│</span>
+<span class="c-muted">│</span> OSDR    <span class="c-muted">│</span> <span class="c-muted">│</span> EWMA    <span class="c-muted">│</span> <span class="c-muted">│</span> API     <span class="c-muted">│</span> <span class="c-muted">│</span> n-back <span class="c-muted">│</span>
+<span class="c-muted">│</span> I4 data <span class="c-muted">│</span> <span class="c-muted">│</span> trends  <span class="c-muted">│</span> <span class="c-muted">│</span> GOES    <span class="c-muted">│</span> <span class="c-muted">│</span> scores <span class="c-muted">│</span>
+<span class="c-muted">└─────────┘</span> <span class="c-muted">└─────────┘</span> <span class="c-muted">└─────────┘</span> <span class="c-muted">└────────┘</span>
+
+      Runs fully offline · No API costs · LLM optional enhancement</pre>
+    </div>
+
+    <h3>Data Sources</h3>
+    <p style="font-size:.88rem;margin-bottom:1rem;">Every dataset used by AEGIS is publicly available, citable, and directly accessible via NASA APIs. All sources verified. <strong>Total: 237 indexed documents.</strong></p>
+    
+    <!-- Knowledge Base Summary -->
+    <div style="background:linear-gradient(135deg,#faf5ff,#f8f9fa);border:2px solid #9333ea;border-radius:12px;padding:20px;margin-bottom:20px;">
+        <div style="font-size:18px;font-weight:700;color:#9333ea;margin-bottom:12px;">🧠 AEGIS Knowledge Base</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:15px;">
+            <div style="text-align:center;padding:10px;background:white;border-radius:8px;">
+                <div style="font-size:24px;font-weight:700;color:#9333ea;">237</div>
+                <div style="font-size:11px;color:#666;">Documents</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:white;border-radius:8px;">
+                <div style="font-size:24px;font-weight:700;color:#9333ea;">15</div>
+                <div style="font-size:11px;color:#666;">Risk Categories</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:white;border-radius:8px;">
+                <div style="font-size:24px;font-weight:700;color:#9333ea;">50+</div>
+                <div style="font-size:11px;color:#666;">Interventions</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:white;border-radius:8px;">
+                <div style="font-size:24px;font-weight:700;color:#9333ea;">6</div>
+                <div style="font-size:11px;color:#666;">Live APIs</div>
+            </div>
+        </div>
+        <div style="font-size:13px;color:#666;line-height:1.6;">
+            <strong>Sources:</strong> 85 NASA NTRS technical reports • 32 HRP evidence reports • 60 peer-reviewed papers (Nature, Frontiers, PMC) • NASA-STD-3001 standards • OSDR/GeneLab API (455+ studies) • NOAA SWPC real-time feeds
+        </div>
+    </div>
+
+    <div class="data-grid">
+
+      <div class="data-chip">
+        <div class="data-chip-name">🧬 Inspiration4 (I4) Mission Dataset</div>
+        <div class="data-chip-desc">~12 datasets from 4 civilian astronauts (Sep 2021): metagenomics, comprehensive metabolic panels, clonal hematopoiesis, spatial transcriptomics, proteomics, cytokine panels. The <strong>only publicly available multi-omic human spaceflight dataset</strong>. First-ever commercial astronaut data in OSDR.</div>
+        <div style="margin-top:.6rem;display:flex;flex-direction:column;gap:.25rem;">
+          <a href="https://genelab.nasa.gov/I4data_OSDR" style="font-size:.77rem;color:var(--accent2);">genelab.nasa.gov/I4data_OSDR ↗</a>
+          <a href="https://link.springer.com/10.1038/s41526-024-00393-5" style="font-size:.77rem;color:var(--accent2);">npj Microgravity — I4 OSDR Access (2024) ↗</a>
+          <a href="https://ntrs.nasa.gov/citations/20230014307" style="font-size:.77rem;color:var(--accent2);">NASA NTRS — I4 Data Access Paper (2023) ↗</a>
+        </div>
+      </div>
+
+      <div class="data-chip">
+        <div class="data-chip-name">🔬 NASA GeneLab / OSDR</div>
+        <div class="data-chip-desc">460+ spaceflight biology studies. RNA-seq, microarray, proteomics, metabolomics, metagenomics from spaceflight and space-analog experiments. REST API + AWS S3 access. FAIR-compliant. Includes ALSDA (Ames Life Sciences Data Archive) with decades of ISS experiment data.</div>
+        <div style="margin-top:.6rem;display:flex;flex-direction:column;gap:.25rem;">
+          <a href="https://osdr.nasa.gov" style="font-size:.77rem;color:var(--accent2);">osdr.nasa.gov — Main Repository ↗</a>
+          <a href="https://genelab.nasa.gov" style="font-size:.77rem;color:var(--accent2);">genelab.nasa.gov — Omics Platform ↗</a>
+          <a href="https://www.nasa.gov/osdr-api/" style="font-size:.77rem;color:var(--accent2);">nasa.gov/osdr-api — REST API Docs ↗</a>
+        </div>
+      </div>
+
+      <div class="data-chip">
+        <div class="data-chip-name">☢️ RadLab (OSDR Component)</div>
+        <div class="data-chip-desc">NASA HRP-funded database of radiation dosimetry from ISS detectors and multiple spacecraft. REST API + visual interface. Connects radiation dose telemetry to biological response data — the causal link enabling SOLARIS → GENE chain. Includes GCR, SAA, and cumulative dose data.</div>
+        <div style="margin-top:.6rem;display:flex;flex-direction:column;gap:.25rem;">
+          <a href="https://ntrs.nasa.gov/citations/20240001998" style="font-size:.77rem;color:var(--accent2);">NASA NTRS — RadLab Paper (2024) ↗</a>
+          <a href="https://ntrs.nasa.gov/citations/20230014315" style="font-size:.77rem;color:var(--accent2);">NASA NTRS — RadLab Interfaces ↗</a>
+          <a href="https://genelab.nasa.gov/radiation_article" style="font-size:.77rem;color:var(--accent2);">genelab.nasa.gov/radiation_article ↗</a>
+        </div>
+      </div>
+
+      <div class="data-chip">
+        <div class="data-chip-name">☀️ NOAA DSCOVR Real-Time Solar Wind</div>
+        <div class="data-chip-desc">NASA/NOAA Deep Space Climate Observatory at L1. Real-time solar wind speed, density, magnetic field (Bz), and proton flux. Public REST API. Operational quality data for space weather alerts. Same source used by Space Apps 2023 global winner Storm Prophet.</div>
+        <div style="margin-top:.6rem;display:flex;flex-direction:column;gap:.25rem;">
+          <a href="https://www.swpc.noaa.gov/products/real-time-solar-wind" style="font-size:.77rem;color:var(--accent2);">swpc.noaa.gov — Real-Time Solar Wind ↗</a>
+          <a href="https://www.ncei.noaa.gov/products/deep-space-climate-observatory-dscovr" style="font-size:.77rem;color:var(--accent2);">NOAA NCEI — DSCOVR Data Access ↗</a>
+        </div>
+      </div>
+
+      <div class="data-chip">
+        <div class="data-chip-name">🛰️ NOAA GOES Solar Particle Events</div>
+        <div class="data-chip-desc">GOES satellite real-time proton flux at multiple energy channels — acute radiation hazard data for SPE detection and EVA go/no-go decisions. Freely available from NOAA SWPC. JSON REST API for programmatic access.</div>
+        <div style="margin-top:.6rem;display:flex;flex-direction:column;gap:.25rem;">
+          <a href="https://www.swpc.noaa.gov" style="font-size:.77rem;color:var(--accent2);">swpc.noaa.gov — SWPC Forecasts & Data ↗</a>
+          <span style="font-size:.77rem;color:var(--text-muted);">JSON API: services.swpc.noaa.gov/json/</span>
+        </div>
+      </div>
+
+      <div class="data-chip">
+        <div class="data-chip-name">🏥 NASA HRP / EIMO Clinical Data</div>
+        <div class="data-chip-desc">HRP physiological data: bed rest studies (bone/muscle/cardiovascular deconditioning analogs), ISS physiological telemetry, wearable cardiovascular monitoring (2025 Space Health ISS Investigation). EIMO ConOps formally defines the on-board clinical decision support requirement that AEGIS directly addresses.</div>
+        <div style="margin-top:.6rem;display:flex;flex-direction:column;gap:.25rem;">
+          <a href="https://ntrs.nasa.gov/citations/20250000009" style="font-size:.77rem;color:var(--accent2);">NTRS — EIMO ConOps (2025) ↗</a>
+          <a href="https://ntrs.nasa.gov/citations/20220017856" style="font-size:.77rem;color:var(--accent2);">NTRS — Clinical Decision Support ConOps (2022) ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── CASCADE DEMO ── -->
+  <section id="demo">
+    <h2><span class="sec-pill">05</span> The Demo That Wins the Room</h2>
+    <p>A simulated 90-day Mars transit. Five agents. One converging pattern. Watch it unfold in real time.</p>
+
+    <div class="cascade-timeline" style="margin:2rem 0 1rem 1rem;">
+      <div class="cascade-event solaris">
+        <div class="cascade-day">Day 47</div>
+        <div>
+          <span class="cascade-agent-badge badge-solaris">SOLARIS</span>
+          <div class="cascade-text"><strong>M-class solar particle event detected.</strong> Proton flux elevated. SOLARIS issues EVA caution for next 48 hours and notifies GENE to begin biomarker watch protocol.</div>
+        </div>
+      </div>
+      <div class="cascade-event gene">
+        <div class="cascade-day">Day 49</div>
+        <div>
+          <span class="cascade-agent-badge badge-gene">GENE</span>
+          <div class="cascade-text"><strong>IL-6 and CRP elevated — 2.1× above pre-flight baseline.</strong> Inflammatory response activation confirmed from today's blood panel. GENE cross-references SOLARIS's SPE event as the likely causal trigger. This pattern is consistent with the radiation × immune stress synergy documented in spaceflight omics research.</div>
+        </div>
+      </div>
+      <div class="cascade-event pulse">
+        <div class="cascade-day">Day 51</div>
+        <div>
+          <span class="cascade-agent-badge badge-pulse">PULSE</span>
+          <div class="cascade-text"><strong>HRV drops 18% from rolling baseline. Sleep stage fragmentation detected for 3rd consecutive night.</strong> Z-score vs. personal baseline flags as anomalous (>2 SD). Pattern matches pre-immune-suppression physiological profile in reference dataset.</div>
+        </div>
+      </div>
+      <div class="cascade-event mirror">
+        <div class="cascade-day">Day 53</div>
+        <div>
+          <span class="cascade-agent-badge badge-mirror">MIRROR</span>
+          <div class="cascade-text"><strong>Reaction time 14% slower than 30-day personal average.</strong> Working memory performance below baseline. Cognitive degradation pattern consistent with early immune stress response in analogue mission studies.</div>
+        </div>
+      </div>
+      <div class="cascade-event aegis">
+        <div class="cascade-day">Day 54</div>
+        <div>
+          <span class="cascade-agent-badge badge-aegis">AEGIS — CASCADE ALERT</span>
+          <div class="cascade-alert">
+            <div class="cascade-alert-header">🔴 CASCADE ALERT — Four converging signals</div>
+            Four independent health systems are reporting a converging pattern. SOLARIS detected an SPE on Day 47. GENE confirmed elevated inflammatory markers on Day 49. PULSE flagged HRV decline and sleep fragmentation on Day 51. MIRROR detected 14% cognitive slowing on Day 53.<br/><br/>
+            Together, these four independent streams match the early signature of <strong>radiation-induced immune stress cascade</strong>. This is not coincidence — it is a pattern consistent with the radiation × immune response correlation documented in NASA's HRP biomarker research and Inspiration4 omics data.<br/><br/>
+            <strong>Initiating Countermeasure Protocol RECOVER-3:</strong> Increased hydration (3L/day for 5 days), reduced physical exertion for 72 hours, antioxidant supplement schedule, daily biomarker check-ins for the next 7 days.
+          </div>
+        </div>
+      </div>
+      <div class="cascade-event resolved">
+        <div class="cascade-day">Day 61</div>
+        <div>
+          <span class="cascade-agent-badge badge-resolved">ALL AGENTS — RESOLVED</span>
+          <div class="cascade-text"><strong>All indicators normalized.</strong> HRV returned to baseline. Cognitive performance recovered. GENE reports IL-6 and CRP back within baseline range. AEGIS closes the cascade event and logs the full sequence to Mission Memory.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tagline" style="margin-top:2rem;">
+      <div class="tagline-text">Five agents. Four independent data streams.<br/><em>One converging pattern no single sensor could have caught.</em></div>
+    </div>
+  </section>
+
+  <!-- ── SPACECRAFT HARDWARE ── -->
+  <section id="hardware">
+    <h2><span class="sec-pill">07</span> From Prototype to Spacecraft Hardware</h2>
+    <p>A judge will ask: <em>"This uses OpenAI and cloud services — how does that work on a Mars mission with no internet?"</em> The answer is that AEGIS is explicitly architected for deployment autonomy. The prototype uses cloud services for rapid development. The production path replaces them entirely with on-board systems — and the abstraction layer makes that swap a configuration change, not a redesign.</p>
+
+    <div class="tagline" style="margin:1.5rem 0;">
+      <div class="tagline-text">The cloud is the <em>development environment.</em><br/>The spacecraft is the <em>deployment target.</em></div>
+    </div>
+
+    <h3>The Real Constraint — Backed by NASA Research</h3>
+    <p>A Mars-bound spacecraft cannot call the OpenAI API. NASA's own published data confirms one-way communication delays to Mars range from <strong>3 to 22 minutes</strong>, peaking near solar conjunction when the Sun can interrupt communications entirely — making any round-trip query take up to 44 minutes. <sup><a href="https://ntrs.nasa.gov/api/citations/20220013418/downloads/ASCEND-Communication%20Delays,%20Disruptions,%20and%20Blackouts%20for%20Crewed%20Mars%20Missions.pdf" style="color:var(--accent2);text-decoration:none;">[1]</a></sup> NASA's Software Engineering Handbook explicitly states that <em>"autonomous operation of system and subsystem functions that prevent catastrophic events is essential for ensuring mission success and crew survival."</em> <sup><a href="https://swehb.nasa.gov/spaces/SWEHBVD/pages/171508213/HR-39+-+Autonomous+Operation" style="color:var(--accent2);text-decoration:none;">[2]</a></sup></p>
+    <p>NASA's published Earth-Independent Medical Operations (EIMO) Concept of Operations — a real active program — states that crew health management for deep-space missions requires <em>"a comprehensive, multi-functional on-board clinical decision support system"</em> because <em>"communication time with ground-based personnel is delayed or non-existent during significant portions of the mission."</em> <sup><a href="https://ntrs.nasa.gov/citations/20220017856" style="color:var(--accent2);text-decoration:none;">[3]</a></sup> AEGIS is a prototype of exactly that system.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin:2rem 0;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;">
+        <div style="font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--nasa-red);margin-bottom:.75rem;">☁️ Prototype (Today)</div>
+        <div style="display:flex;flex-direction:column;gap:.6rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Agent logic</span><span style="color:var(--text);font-weight:600;">Rule-based + statistical baselines</span></div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Vector store</span><span style="color:var(--text);font-weight:600;">ChromaDB (local file)</span></div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Embeddings</span><span style="color:var(--text);font-weight:600;">MiniLM (local, no API)</span></div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Space weather</span><span style="color:var(--text);font-weight:600;">DSCOVR/GOES cached feeds</span></div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Deployment</span><span style="color:var(--text);font-weight:600;">Local FastAPI (LLM optional)</span></div>
+        </div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;">
+        <div style="font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin-bottom:.75rem;">🚀 Flight System (Mars Mission)</div>
+        <div style="display:flex;flex-direction:column;gap:.6rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">LLM inference</span><span style="color:var(--green);font-weight:600;">Llama 3.1 8B via Ollama (local)</span></div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Vector store</span><span style="color:var(--green);font-weight:600;">ChromaDB in-process (local file)</span></div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Embeddings</span><span style="color:var(--green);font-weight:600;">Pre-computed on Earth, stored on-board</span></div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Space weather</span><span style="color:var(--green);font-weight:600;">On-board dosimeters + cached forecasts</span></div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Deployment</span><span style="color:var(--green);font-weight:600;">Docker on HPSC compute node</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>The Hardware: NASA's HPSC — Built for Exactly This</h3>
+    <p>NASA's <strong>High Performance Spaceflight Computing (HPSC)</strong> program is developing a next-generation system-on-chip that delivers <strong>over 100× the computing capability of current space processors</strong> — specifically designed for AI workloads at the edge of space. NASA's own documentation states: <em>"HPSC was designed for autonomy and AI at the edge of space and the demanding fault-tolerance needs of Human Exploration and Operations (HEO) missions."</em> <sup><a href="https://www.nasa.gov/wp-content/uploads/2024/07/hpsc-white-paper-tmg-26jun2024-final.pdf" style="color:var(--accent2);text-decoration:none;">[4]</a></sup> A 2026 NASA paper on autonomous lunar habitats explicitly cites HPSC as the compute substrate for AI-driven autonomous systems. <sup><a href="https://ntrs.nasa.gov/citations/20260000719" style="color:var(--accent2);text-decoration:none;">[5]</a></sup></p>
+    <p>For context: most current spacecraft run on the RAD750 — a radiation-hardened processor roughly equivalent to a late-1990s desktop. HPSC delivers 100× more performance per watt, placing it firmly in the territory capable of running quantized LLM inference.</p>
+
+    <h3>Why Quantized LLMs Are Feasible On-Board</h3>
+    <p>A Llama 3.1 8B model quantized to Q4_K_M format requires approximately <strong>3.8–5 GB of RAM</strong> and runs at usable inference speeds even on CPU-only hardware. Verified benchmark data from llama.cpp (the open-source inference engine Ollama is built on) shows Q4_K_M at the quality-per-byte sweet spot — <em>"roughly 3.80 GB with a perplexity increase of only +0.0535"</em> versus the full-precision model. <sup><a href="https://markaicode.com/benchmarks/llamacpp-inference-benchmark/" style="color:var(--accent2);text-decoration:none;">[6]</a></sup> Independent benchmarks report 40–150 tokens/second on modern hardware at this quantization level. <sup><a href="https://markaicode.com/benchmarks/llamacpp-rtx-4090-benchmark/" style="color:var(--accent2);text-decoration:none;">[7]</a></sup> For medical consultation use — where a response in 5–15 seconds is perfectly acceptable — this is more than sufficient.</p>
+
+    <h3>Why the Code Swap Is Trivial</h3>
+    <p>AEGIS is <strong>designed for LLM provider portability</strong>. The architecture supports swapping between providers (e.g. OpenAI, DeepSeek, Ollama) via environment configuration — when LLM enhancement is enabled. The prototype runs fully offline with rule-based agents; LLM integration is a configuration option, not a dependency. ChromaDB already runs in-process as a local file store with no server or network requirement. The entire AEGIS stack containerises via Docker and deploys on any Linux compute node, including HPSC.</p>
+
+    <h3>On-Board Deployment Model</h3>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1rem 0;">
+      <div style="font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.82rem;line-height:1.8;color:var(--text-muted);">
+        <span style="color:var(--accent2);">Pre-departure (Earth):</span><br/>
+        &nbsp;&nbsp;→ Embed all NASA/HRP research into vector store (ChromaDB local file)<br/>
+        &nbsp;&nbsp;→ Quantize Llama 3.1 8B to Q4_K_M (~3.8 GB, CPU-runnable)<br/>
+        &nbsp;&nbsp;→ Fine-tune on spaceflight medicine domain data<br/>
+        &nbsp;&nbsp;→ Package AEGIS stack into Docker image<br/>
+        &nbsp;&nbsp;→ Load onto spacecraft HPSC compute node<br/><br/>
+        <span style="color:var(--green);">In-flight (zero network dependency):</span><br/>
+        &nbsp;&nbsp;→ All LLM inference runs locally via Ollama on HPSC<br/>
+        &nbsp;&nbsp;→ Vector search runs in-process via ChromaDB (local SSD)<br/>
+        &nbsp;&nbsp;→ SOLARIS reads on-board radiation dosimeters directly<br/>
+        &nbsp;&nbsp;→ Knowledge base updates downlinked during Earth comms windows<br/>
+        &nbsp;&nbsp;→ Applied incrementally — never blocking active health monitoring
+      </div>
+    </div>
+
+    <h3>Sources</h3>
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">
+      <div style="font-size:.82rem;color:var(--text-muted);">[1] NASA NTRS — <a href="https://ntrs.nasa.gov/api/citations/20220013418/downloads/ASCEND-Communication%20Delays,%20Disruptions,%20and%20Blackouts%20for%20Crewed%20Mars%20Missions.pdf" style="color:var(--accent2);">Communication Delays, Disruptions, and Blackouts for Crewed Mars Missions</a> (2022)</div>
+      <div style="font-size:.82rem;color:var(--text-muted);">[2] NASA Software Engineering Handbook — <a href="https://swehb.nasa.gov/spaces/SWEHBVD/pages/171508213/HR-39+-+Autonomous+Operation" style="color:var(--accent2);">HR-39: Autonomous Operation Requirement</a></div>
+      <div style="font-size:.82rem;color:var(--text-muted);">[3] NASA NTRS — <a href="https://ntrs.nasa.gov/citations/20220017856" style="color:var(--accent2);">Exploration Medical Capability Clinical Decision Support System Concept of Operations</a> (2022)</div>
+      <div style="font-size:.82rem;color:var(--text-muted);">[4] NASA HPSC White Paper — <a href="https://www.nasa.gov/wp-content/uploads/2024/07/hpsc-white-paper-tmg-26jun2024-final.pdf" style="color:var(--accent2);">High Performance Spaceflight Computing</a> (June 2024)</div>
+      <div style="font-size:.82rem;color:var(--text-muted);">[5] NASA NTRS — <a href="https://ntrs.nasa.gov/citations/20260000719" style="color:var(--accent2);">Enabling Reliable, Fault-Tolerant Autonomous Lunar Habitats with HPSC</a> (2026)</div>
+      <div style="font-size:.82rem;color:var(--text-muted);">[6] llama.cpp Quantization Benchmark — <a href="https://markaicode.com/benchmarks/llamacpp-inference-benchmark/" style="color:var(--accent2);">Verified GGUF Data: Q4_K_M at 3.80 GB</a> (2026)</div>
+      <div style="font-size:.82rem;color:var(--text-muted);">[7] llama.cpp Inference Benchmarks — <a href="https://markaicode.com/benchmarks/llamacpp-rtx-4090-benchmark/" style="color:var(--accent2);">40–150 tokens/sec at Q4_K_M</a> (2026)</div>
+      <div style="font-size:.82rem;color:var(--text-muted);">[8] NASA HPSC Project Page — <a href="https://www.nasa.gov/game-changing-development-projects/high-performance-spaceflight-computing-hpsc/" style="color:var(--accent2);">100× performance over legacy rad-hard CPUs, AI dataflow processing</a> (2026)</div>
+      <div style="font-size:.82rem;color:var(--text-muted);">[9] NASA NTRS — <a href="https://ntrs.nasa.gov/citations/20250000009" style="color:var(--accent2);">Earth-Independent Medical Operations (EIMO) Concept of Operations</a> (2025)</div>
+    </div>
+
+    <div style="background:linear-gradient(135deg,rgba(0,230,118,.06),rgba(59,158,255,.06));border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:1.25rem 1.5rem;margin-top:1.5rem;">
+      <div style="font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin-bottom:.6rem;">Bottom Line for Judges</div>
+      <p style="font-size:.88rem;margin:0;">AEGIS is not theorising about spacecraft AI. NASA already has a chip (HPSC) designed for exactly this, a published concept of operations (EIMO) calling for exactly this system, and a quantified communication constraint (3–22 min delay) that makes exactly this architecture mandatory. We built a working prototype of what NASA's own roadmap describes.</p>
+    </div>
+  </section>
+
+  <!-- ── WHY IT WINS ── -->
+  <section id="awards">
+    <h2><span class="sec-pill">06</span> Why AEGIS Wins</h2>
+    <table class="award-table">
+      <thead><tr><th>Award Category</th><th>Why AEGIS Qualifies</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>🏆 Best Use of Science</td>
+          <td><span class="award-yes">Primary Target.</span> Multi-stressor convergence detection grounded in NASA Inspiration4/OSDR reference data and HRP biomarker research. Personal baselines compared against spaceflight-validated response profiles.</td>
+        </tr>
+        <tr>
+          <td>📊 Best Use of Data</td>
+          <td><span class="award-yes">Secondary Target.</span> Six NASA data sources integrated — OSDR, GeneLab, Inspiration4, DSCOVR, GOES, RadLab. The Inspiration4 dataset is underutilized by hackathon teams; our RAG uses reference ranges from real human spaceflight data.</td>
+        </tr>
+        <tr>
+          <td>⚙️ Best Use of Technology</td>
+          <td>Multi-agent architecture with explainable cascade detection, personal statistical baselines (z-score/EWMA), local RAG (ChromaDB + MiniLM), and real-time space weather integration in a unified system.</td>
+        </tr>
+        <tr>
+          <td>🌍 Galactic Impact</td>
+          <td>Directly addresses the #1 unsolved problem in deep-space medicine: crew autonomous health management without ground support. Applicable to Artemis lunar surface missions and Mars transit missions within this decade.</td>
+        </tr>
+        <tr>
+          <td>✨ Most Inspirational</td>
+          <td>Behavioral health monitoring done tastefully + the narrative of an AI crew that keeps astronauts alive and psychologically healthy when no one else can. The MIRROR agent's story resonates with anyone who has experienced isolation.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:2rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:2rem;">
+      <h3 style="margin-top:0;color:var(--accent2);">What Makes This Scientifically Defensible</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1rem;">
+        <div style="font-size:.85rem;color:var(--text-muted);">✅ Reference ranges drawn from real Inspiration4 omics data from actual human spaceflight</div>
+        <div style="font-size:.85rem;color:var(--text-muted);">✅ Biomarker thresholds from published NASA HRP research literature</div>
+        <div style="font-size:.85rem;color:var(--text-muted);">✅ Cognitive tests are clinically validated instruments used on ISS</div>
+        <div style="font-size:.85rem;color:var(--text-muted);">✅ Radiation dose model uses actual NASA dosimetry data (RadLab)</div>
+        <div style="font-size:.85rem;color:var(--text-muted);">✅ Open-source on GitHub — FAIR data principles, NASA TOPS aligned</div>
+        <div style="font-size:.85rem;color:var(--text-muted);">⏳ Live deployment URL (planned) — judges will experience the working system</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <strong style="color:var(--accent2);">Project Horizons · AEGIS</strong> &nbsp;·&nbsp;
+  NASA Space Apps Challenge 2026 &nbsp;·&nbsp; November 14–15, 2026 &nbsp;·&nbsp;
+  Stack: HTML/JS · FastAPI · SQLite · ChromaDB · MiniLM &nbsp;·&nbsp;
+  Data: <a href="https://genelab.nasa.gov/I4data_OSDR">Inspiration4</a> ·
+  <a href="https://osdr.nasa.gov">NASA OSDR</a> ·
+  <a href="https://www.ngdc.noaa.gov/dscovr/">DSCOVR</a>
+</footer>
+
+</body>
+</html>

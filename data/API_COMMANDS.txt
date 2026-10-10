@@ -1,0 +1,195 @@
+================================================================================
+ AEGIS — Project Horizons | NASA Space Apps Challenge 2026
+ API Data Access Commands Reference
+ Generated: September 2026
+================================================================================
+
+All endpoints below are publicly accessible REST APIs requiring no authentication.
+Run these with curl (bash/WSL) or Invoke-WebRequest (PowerShell).
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 1. NOAA SPACE WEATHER PREDICTION CENTER (SWPC)
+    Used by: SOLARIS agent
+    Base URL: https://services.swpc.noaa.gov
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Real-Time Solar Wind (DSCOVR / SOLAR-1 instrument)
+curl "https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json" -o solar_wind_realtime.json
+# Returns: 1-minute cadence solar wind speed, density, temperature (last ~7 days)
+# Fields: time_tag, speed, density, temperature, status
+
+## GOES Proton Flux (Solar Particle Events — SEP/SPE detection)
+curl "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-7-day.json" -o goes_protons.json
+# Returns: 5-minute proton flux at >1, >5, >10, >30, >50, >100 MeV channels
+# Use >10 MeV channel threshold of 10 pfu for S1 SPE alert level (NOAA standard)
+# Fields: time_tag, flux, energy
+
+## GOES X-Ray Flux (Solar Flare classification)
+curl "https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json" -o goes_xray.json
+# Returns: X-ray flux (0.05–0.4nm and 0.1–0.8nm bands)
+# Use for C/M/X solar flare classification
+# Fields: time_tag, flux, observed_flux, satellite
+
+## GOES Magnetometer (Geomagnetic disturbance)
+curl "https://services.swpc.noaa.gov/json/goes/primary/magnetometers-7-day.json" -o goes_mag.json
+# Returns: magnetic field components Hp, He, Hn, total field
+# Fields: time_tag, Hp, He, Hn, total, satellite
+
+## Planetary K-Index (Geomagnetic storm level — Kp index)
+curl "https://services.swpc.noaa.gov/json/planetary_k_index_1m.json" -o kp_index.json
+# Returns: Kp index at 1-minute cadence
+# Kp >= 5 = geomagnetic storm; Kp >= 7 = severe; Kp >= 9 = extreme
+
+## Current NOAA Space Weather Scales (R/S/G levels)
+curl "https://services.swpc.noaa.gov/products/noaa-scales.json" -o noaa_scales.json
+# Returns: Current R (radio), S (solar radiation), G (geomagnetic) storm levels
+# R0-R5, S0-S5, G0-G5 — key for crew radiation risk assessment
+
+## 3-Day Space Weather Forecast (human-readable)
+curl "https://services.swpc.noaa.gov/text/3-day-forecast.txt" -o 3day_forecast.txt
+# Returns: NOAA forecaster narrative for next 72 hours
+
+## 27-Day Outlook (longer range solar activity)
+curl "https://services.swpc.noaa.gov/text/27-day-outlook.txt" -o 27day_outlook.txt
+
+## Active Space Weather Alerts & Watches
+curl "https://services.swpc.noaa.gov/products/alerts.json" -o active_alerts.json
+# Note: endpoint was 404 at time of writing — check swpc.noaa.gov for current path
+
+## PowerShell equivalents (Windows without curl):
+# Invoke-WebRequest -Uri "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-7-day.json" -OutFile "goes_protons.json"
+# Invoke-WebRequest -Uri "https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json" -OutFile "solar_wind.json"
+# Invoke-WebRequest -Uri "https://services.swpc.noaa.gov/json/planetary_k_index_1m.json" -OutFile "kp_index.json"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 2. NASA OPEN SCIENCE DATA REPOSITORY (OSDR)
+    Used by: GENE agent (RAG knowledge base + omics data)
+    Docs: https://www.nasa.gov/osdr-api/
+    Base URL: https://osdr.nasa.gov/osdr/data
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NOTE: OSDR requires a free account for file downloads.
+      Register at: https://osdr.nasa.gov
+      Metadata queries below are fully public (no auth needed).
+
+## Search all studies (metadata only — no auth required)
+curl "https://osdr.nasa.gov/osdr/data/osd/query?term=Inspiration4&from=0&size=20&sort_by=score&sort_order=DESC" -o osdr_i4_search.json
+# Returns: Study IDs, titles, descriptions, data types for Inspiration4 studies
+
+## Search for astronaut health / radiation studies
+curl "https://osdr.nasa.gov/osdr/data/osd/query?term=spaceflight+radiation+human&from=0&size=20" -o osdr_radiation_studies.json
+
+## Search for immune dysregulation studies
+curl "https://osdr.nasa.gov/osdr/data/osd/query?term=spaceflight+immune+astronaut&from=0&size=20" -o osdr_immune_studies.json
+
+## Get metadata for a specific OSD study (example: OSD-665 is an I4 study)
+curl "https://osdr.nasa.gov/osdr/data/osd/files/665" -o osdr_study_665_files.json
+
+## Known Inspiration4 OSDR Study IDs (from published paper):
+# OSD-530: Metagenomics
+# OSD-531: Comprehensive Metabolic Panel
+# OSD-532: Clonal Hematopoiesis
+# OSD-665: Spatial Transcriptomics
+# OSD-666: Proteomics
+# OSD-667: Cytokine Panel
+# Browse all: https://osdr.nasa.gov/bio/repo/search?q=inspiration4
+
+## AWS S3 Access (no account needed for public studies):
+# aws s3 ls --no-sign-request s3://osdr-data/
+# aws s3 ls --no-sign-request s3://osdr-data/OSD-530/
+# aws s3 cp --no-sign-request s3://osdr-data/OSD-530/ ./osdr_530/ --recursive
+# Note: files are large (GB range) — download selectively
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 3. NASA GeneLab
+    Used by: GENE agent (omics studies, gene expression data)
+    Base URL: https://genelab.nasa.gov
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Search GeneLab studies (public, no auth)
+curl "https://genelab.nasa.gov/genelab/data/search?term=radiation+human&type=cgene&from=0&size=25&sort_by=score&sort_order=DESC" -o genelab_radiation_human.json
+
+## Get study metadata
+curl "https://genelab.nasa.gov/genelab/data/study/data/?study_id=GLDS-530" -o genelab_glds530_metadata.json
+
+## GeneLab visualization apps (browser-based, no API):
+# RadLab:     https://visualization.osdr.nasa.gov/radlab/gui/data-overview/
+# PCA/UMAP:   https://visualization.osdr.nasa.gov/oss/
+# Gene expr:  https://visualization.osdr.nasa.gov/ge/
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 4. NASA TECHNICAL REPORTS SERVER (NTRS)
+    Used by: GENE agent RAG knowledge base (research papers → vector store)
+    Base URL: https://ntrs.nasa.gov
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Search NTRS (no auth required)
+curl "https://ntrs.nasa.gov/api/citations/search?q=astronaut+health+monitoring+autonomous&from=0&size=10" -o ntrs_health_monitoring.json
+
+## Download specific papers (for RAG knowledge base):
+# EIMO ConOps (2025):
+curl "https://ntrs.nasa.gov/api/citations/20250000009/downloads/EIMO_ConOps.pdf" -o hrp_docs/EIMO_ConOps_2025.pdf
+
+# Clinical Decision Support ConOps (2022):
+curl "https://ntrs.nasa.gov/api/citations/20220017856/downloads/ExMC_CDSS_ConOps.pdf" -o hrp_docs/ExMC_CDSS_ConOps_2022.pdf
+
+# Mars Communication Delays paper (2022):
+curl "https://ntrs.nasa.gov/api/citations/20220013418/downloads/ASCEND-Communication%20Delays%2C%20Disruptions%2C%20and%20Blackouts%20for%20Crewed%20Mars%20Missions.pdf" -o hrp_docs/Mars_Comm_Delays_2022.pdf
+
+# HPSC for Autonomous Lunar Habitats (2026):
+curl "https://ntrs.nasa.gov/api/citations/20260000719/downloads/IEEE%20AeroConf%202026%20%20HPSC%20FINAL.pdf" -o hrp_docs/HPSC_Autonomous_Habitats_2026.pdf
+
+# RadLab Paper (2024):
+curl "https://ntrs.nasa.gov/api/citations/20240001998" -o hrp_docs/radlab_metadata.json
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 5. PYTHON INTEGRATION SNIPPETS
+    For FastAPI agent services (SOLARIS, GENE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## SOLARIS — fetch live solar wind + proton flux:
+# import httpx
+# async def get_solar_wind():
+#     r = await httpx.AsyncClient().get(
+#         "https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json")
+#     return r.json()[-1]  # most recent reading
+#
+# async def get_proton_flux():
+#     r = await httpx.AsyncClient().get(
+#         "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-7-day.json")
+#     return r.json()  # last 7 days of SPE data
+#
+# async def get_space_weather_scales():
+#     r = await httpx.AsyncClient().get(
+#         "https://services.swpc.noaa.gov/products/noaa-scales.json")
+#     return r.json()
+
+## GENE — query OSDR metadata:
+# import httpx
+# async def search_osdr(term: str, size: int = 10):
+#     r = await httpx.AsyncClient().get(
+#         f"https://osdr.nasa.gov/osdr/data/osd/query",
+#         params={"term": term, "from": 0, "size": size, "sort_by": "score"})
+#     return r.json()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ FILES ALREADY DOWNLOADED (in ./live_feeds/)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+goes_proton_flux_7day.json      — GOES proton flux, last 7 days  (~1.6 MB)
+goes_magnetometer_7day.json     — GOES magnetometer, last 7 days (~1.8 MB)
+goes_xray_7day.json             — GOES X-ray flux, last 7 days   (~4.4 MB)
+kp_index_1m.json                — Kp index, 1-minute cadence     (~27 KB)
+noaa_3day_forecast.txt          — NOAA 3-day text forecast        (~2 KB)
+noaa_space_weather_scales.json  — Current R/S/G storm levels      (~1 KB)
+solar_wind_realtime_1m.json     — Solar wind speed/density/temp   (~2.3 MB)
+
+osdr_metadata/osdr_i4_search.json  — OSDR Inspiration4 study metadata (~127 KB)
+
+================================================================================

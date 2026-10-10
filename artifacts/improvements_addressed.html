@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>AEGIS — Improvements Addressed</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:900px;margin:2rem auto;padding:1rem;line-height:1.6;color:#1e293b;}
+h1{color:#0066cc;border-bottom:2px solid #0066cc;padding-bottom:.5rem;}
+h2{color:#059669;margin-top:2rem;}
+h3{color:#0066cc;margin-top:1.5rem;}
+.file{font-family:monospace;background:#f1f5f9;padding:.2rem .4rem;border-radius:4px;}
+table{width:100%;border-collapse:collapse;margin:1rem 0;}
+th,td{padding:.5rem;text-align:left;border:1px solid #e2e8f0;}
+th{background:#f1f5f9;}
+.done{color:#059669;font-weight:bold;}
+.timestamp{color:#64748b;font-size:.85rem;}
+.fix{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:1rem;margin:1rem 0;}
+</style>
+</head>
+<body>
+
+<h1>✅ AEGIS Improvements Addressed</h1>
+<p class="timestamp">Last updated: 2026-09-28 22:42 EDT by Kiro</p>
+
+<h2>🔴 HIGH Priority Fixes</h2>
+
+<div class="fix">
+<h3>H1: Vitals Labels Dynamic + Per-Crew Radiation (<span class="file">aegis-mission-control.html</span>)</h3>
+<table>
+<tr><th>Change</th><th>Status</th></tr>
+<tr><td>Added <code>id="hrv-status"</code> to HRV status label for dynamic update</td><td class="done">✅</td></tr>
+<tr><td>Added <code>id="rad-value"</code> and <code>id="rad-fill"</code> to radiation elements</td><td class="done">✅</td></tr>
+<tr><td>HRV status now computed from value: &lt;40 "Very Low", &lt;60 "Low", else "Normal"</td><td class="done">✅</td></tr>
+<tr><td>Radiation bar now reads per-crew <code>cumulative_radiation</code> from API</td><td class="done">✅</td></tr>
+<tr><td>Radiation color scales: >400 red, >250 yellow, else green</td><td class="done">✅</td></tr>
+</table>
+</div>
+
+<div class="fix">
+<h3>H2: SPE Dose Bump Fix (<span class="file">main.py</span>)</h3>
+<table>
+<tr><th>Change</th><th>Status</th></tr>
+<tr><td>Changed <code>config = simulator.config</code> to <code>config = simulator.config.model_copy()</code></td><td class="done">✅</td></tr>
+<tr><td>This preserves old scenario value so set_config() sees the change and triggers dose bump</td><td class="done">✅</td></tr>
+</table>
+</div>
+
+<div class="fix">
+<h3>H3: Crew Status Reflects Active Alerts (<span class="file">main.py</span>)</h3>
+<table>
+<tr><th>Change</th><th>Status</th></tr>
+<tr><td>GET /api/crew/{crew_id} now checks for unacknowledged alerts</td><td class="done">✅</td></tr>
+<tr><td>CRITICAL or SHELTER alerts → status elevated to CRITICAL</td><td class="done">✅</td></tr>
+<tr><td>HIGH alerts → status elevated to WARNING (if was NOMINAL)</td><td class="done">✅</td></tr>
+</table>
+</div>
+
+<h2>🟠 MEDIUM Priority Fixes</h2>
+
+<div class="fix">
+<h3>M2: Phone Layout Overflow (<span class="file">aegis-mission-control.html</span>)</h3>
+<table>
+<tr><th>Change</th><th>Status</th></tr>
+<tr><td>Header now has <code>flex-wrap:wrap</code> for small screens</td><td class="done">✅</td></tr>
+<tr><td>Nav tabs scrollable with <code>overflow-x:auto</code></td><td class="done">✅</td></tr>
+<tr><td>Reduced font sizes for logo, tabs, badges, buttons on mobile</td><td class="done">✅</td></tr>
+<tr><td>Agent network panel has <code>max-width:100%</code> with overflow scroll</td><td class="done">✅</td></tr>
+<tr><td>Vital rows wrap on narrow screens</td><td class="done">✅</td></tr>
+</table>
+</div>
+
+<div class="fix">
+<h3>M3: AudioContext Warnings (<span class="file">aegis-mission-control.html</span>)</h3>
+<table>
+<tr><th>Change</th><th>Status</th></tr>
+<tr><td>Added <code>userHasInteracted</code> gate variable</td><td class="done">✅</td></tr>
+<tr><td>Click and keydown listeners set gate on first interaction</td><td class="done">✅</td></tr>
+<tr><td><code>playTone()</code> returns early if no user interaction yet</td><td class="done">✅</td></tr>
+</table>
+</div>
+
+<div class="fix">
+<h3>M5: Cascade Shows 4 Domains (<span class="file">simulator.py</span>)</h3>
+<table>
+<tr><th>Change</th><th>Status</th></tr>
+<tr><td>Increased cascade_demo stress modifier from +25 to +45</td><td class="done">✅</td></tr>
+<tr><td>With baseline ~30 + 45 = ~75, now exceeds MIRROR threshold of 70</td><td class="done">✅</td></tr>
+<tr><td>Increased sleep penalty from -20 to -25 for additional MIRROR signal</td><td class="done">✅</td></tr>
+</table>
+</div>
+
+<h2>🟣 Awaiting Retest Fixes</h2>
+
+<div class="fix">
+<h3>A1: Cache Busting for API Client (<span class="file">aegis-mission-control.html</span>)</h3>
+<table>
+<tr><th>Change</th><th>Status</th></tr>
+<tr><td>Changed script tag to <code>aegis-api-client.js?v=2</code></td><td class="done">✅</td></tr>
+<tr><td>Forces browser to load fresh version with crewNames mapping</td><td class="done">✅</td></tr>
+</table>
+</div>
+
+<h2>📋 Not Yet Addressed</h2>
+<table>
+<tr><th>ID</th><th>Issue</th><th>Notes</th></tr>
+<tr><td>M1</td><td>--reload hangs on Windows</td><td>Workaround: manual restart</td></tr>
+<tr><td>M4</td><td>Okonkwo role in DB</td><td>Requires DB reset before demo</td></tr>
+<tr><td>M6</td><td>Old leftover alerts</td><td>Clear DB before demo</td></tr>
+<tr><td>M7-M9</td><td>Documentation updates</td><td>Technical Architecture, Interaction Flows, bone loss</td></tr>
+<tr><td>L1-L8</td><td>Low priority items</td><td>What-If improvements, Agent Insights, Sim polish, RAG, etc.</td></tr>
+</table>
+
+<p style="margin-top:2rem;color:#64748b;font-size:.9rem;"><strong>Action Required:</strong> Backend must be restarted. Reset aegis.db before demo to get correct Okonkwo role and clear old alerts.</p>
+
+</body>
+</html>

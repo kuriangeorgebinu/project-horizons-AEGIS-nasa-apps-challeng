@@ -1,0 +1,19 @@
+﻿# Secrets and local configuration (never commit)
+.env
+extension_token.txt
+claude_desktop_config.json
+
+# Python / virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Runtime data (recreated automatically on first run)
+aegis.db
+aegis.db.bak
+*.db-journal
+
+# Logs and local backups
+*.log
+*.bak
+*.bak-*

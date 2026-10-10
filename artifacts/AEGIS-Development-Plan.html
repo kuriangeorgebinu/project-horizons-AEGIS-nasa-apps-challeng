@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AEGIS — Development Plan</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--blue:#3b82f6;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--purple:#a855f7;--cyan:#06b6d4;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;padding:2rem;max-width:1100px;margin:0 auto;}
+h1{font-size:2rem;color:var(--cyan);margin-bottom:.5rem;border-bottom:3px solid var(--cyan);padding-bottom:.5rem;}
+h2{font-size:1.4rem;color:var(--text);margin:2.5rem 0 1rem;padding-bottom:.5rem;border-bottom:2px solid var(--border);}
+h3{font-size:1.1rem;color:var(--blue);margin:1.5rem 0 .75rem;}
+h4{font-size:1rem;color:var(--purple);margin:1rem 0 .5rem;}
+p{margin-bottom:1rem;}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:2rem;}
+
+/* Status badges */
+.status{display:inline-block;padding:.25rem .75rem;border-radius:20px;font-size:.75rem;font-weight:600;margin-left:.5rem;}
+.status-done{background:#166534;color:#bbf7d0;}
+.status-today{background:#1d4ed8;color:#bfdbfe;}
+.status-next{background:#7c2d12;color:#fed7aa;}
+.status-later{background:#374151;color:#9ca3af;}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin:1rem 0;}
+.card-blue{border-left:4px solid var(--blue);}
+.card-green{border-left:4px solid var(--green);}
+.card-yellow{border-left:4px solid var(--yellow);}
+.card-red{border-left:4px solid var(--red);}
+.card-purple{border-left:4px solid var(--purple);}
+.card-cyan{border-left:4px solid var(--cyan);}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem;}
+th,td{padding:.75rem;text-align:left;border:1px solid var(--border);}
+th{background:#0f172a;font-weight:600;color:var(--cyan);}
+tr:hover{background:#1e293b;}
+.task-id{color:var(--muted);font-family:monospace;font-size:.8rem;}
+.effort{color:var(--yellow);font-weight:600;}
+.depends{color:var(--purple);font-size:.8rem;}
+
+/* Day blocks */
+.day-block{background:linear-gradient(135deg,#1e293b,#0f172a);border:2px solid var(--cyan);border-radius:16px;padding:2rem;margin:2rem 0;}
+.day-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.day-title{font-size:1.5rem;font-weight:700;color:var(--cyan);}
+.day-date{color:var(--muted);font-size:.9rem;}
+.milestone{background:var(--green);color:#052e16;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;text-align:center;margin-top:1.5rem;}
+
+/* Architecture diagram */
+.arch{background:#0a0f1a;border:1px solid var(--border);border-radius:8px;padding:1.5rem;font-family:monospace;font-size:.8rem;line-height:1.4;overflow-x:auto;white-space:pre;}
+
+/* Checklist */
+.checklist{list-style:none;margin:0;padding:0;}
+.checklist li{padding:.5rem 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:.75rem;}
+.checklist li:last-child{border-bottom:none;}
+.check{color:var(--green);font-weight:bold;}
+.uncheck{color:var(--muted);}
+
+/* Progress bar */
+.progress-bar{background:var(--border);border-radius:8px;height:12px;overflow:hidden;margin:1rem 0;}
+.progress-fill{background:linear-gradient(90deg,var(--green),var(--cyan));height:100%;transition:width .3s;}
+
+/* Risk table */
+.risk-table td:first-child{color:var(--red);font-weight:600;}
+.risk-table td:last-child{color:var(--green);}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem 1.5rem;margin:1.5rem 0;}
+.toc-title{font-weight:600;margin-bottom:.75rem;color:var(--cyan);}
+.toc a{color:var(--muted);text-decoration:none;display:block;padding:.25rem 0;}
+.toc a:hover{color:var(--cyan);}
+
+ul{margin:1rem 0 1rem 1.5rem;}
+li{margin:.4rem 0;}
+code{background:#0f172a;padding:.2rem .5rem;border-radius:4px;font-size:.85rem;color:var(--cyan);}
+pre{background:#0a0f1a;padding:1rem;border-radius:8px;overflow-x:auto;font-size:.85rem;}
+</style>
+</head>
+<body>
+
+<h1>◈ AEGIS — Development Plan</h1>
+<p class="subtitle">Dependency-ordered roadmap with daily milestones • NASA Space Apps 2026</p>
+
+<div class="toc">
+  <div class="toc-title">📑 Contents</div>
+  <a href="#overview">Project Overview & Current State</a>
+  <a href="#architecture">Technical Architecture</a>
+  <a href="#day1">Day 1: Foundation & Static Demo</a>
+  <a href="#day2">Day 2: Backend & RAG Integration</a>
+  <a href="#day3">Day 3: Real-Time & Polish</a>
+  <a href="#day4">Day 4: Demo Prep & Submission</a>
+  <a href="#risks">Risk Mitigation</a>
+  <a href="#files">File Structure</a>
+</div>
+
+<!-- OVERVIEW -->
+<h2 id="overview">Project Overview</h2>
+
+<div class="card card-cyan">
+  <h3>Current State <span class="status status-done">✅ COMPLETE</span></h3>
+  <ul class="checklist">
+    <li><span class="check">✓</span> Dashboard layout with 3 tabs (Mission Control, Crew Roster, Agent Insights)</li>
+    <li><span class="check">✓</span> Agent Network visualization with animated connections</li>
+    <li><span class="check">✓</span> Vitals panel (HR, HRV, SpO2, Sleep, Radiation)</li>
+    <li><span class="check">✓</span> Voice terminal UI with placeholder responses</li>
+    <li><span class="check">✓</span> Alert panel (Tier 3 PROTECT)</li>
+    <li><span class="check">✓</span> What-If simulator modal</li>
+    <li><span class="check">✓</span> Recommendations panel (Tier 2 PREVENT) with 3 cards</li>
+    <li><span class="check">✓</span> Knowledge base JSON (19.5KB countermeasures)</li>
+    <li><span class="check">✓</span> 200+ NASA source references</li>
+    <li><span class="check">✓</span> <strong>ChromaDB vector database setup</strong> (237 documents indexed)</li>
+    <li><span class="check">✓</span> <strong>RAG query module</strong> (aegis_rag.py ready for integration)</li>
+    <li><span class="check">✓</span> <strong>NASA HRR 22 official risks</strong> indexed</li>
+    <li><span class="check">✓</span> <strong>uv/Python environment</strong> configured</li>
+  </ul>
+  <div class="progress-bar"><div class="progress-fill" style="width:50%;"></div></div>
+  <p style="text-align:center;color:var(--muted);font-size:.85rem;">~50% complete • RAG backend ready</p>
+</div>
+
+<div class="card card-blue">
+  <h3>What's Needed</h3>
+  <ol>
+    <li><strong>Infrastructure</strong> — FastAPI server, project structure</li>
+    <li><strong>RAG Backend</strong> — ChromaDB + embeddings for NASA docs</li>
+    <li><strong>Real-Time Data</strong> — WebSocket vitals, live updates</li>
+    <li><strong>Voice</strong> — Web Speech API integration</li>
+    <li><strong>Polish</strong> — Realistic data, smooth demo flow</li>
+    <li><strong>Submission</strong> — Video, final testing</li>
+  </ol>
+</div>
+
+<!-- ARCHITECTURE -->
+<h2 id="architecture">Technical Architecture</h2>
+
+<div class="arch">┌─────────────────────────────────────────────────────────────────────────────┐
+│                            CLIENT LAYER                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  AEGIS Dashboard (HTML/CSS/JS)                                       │    │
+│  │  • Mission Control  • Crew Roster  • Agent Insights  • What-If      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼ REST / WebSocket
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           API GATEWAY                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  FastAPI Server (Python 3.11+)                                       │    │
+│  │  /api/vitals  /api/agents  /api/recommend  /api/voice  /ws/stream   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SERVICES                                           │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   RAG        │  │  Simulator   │  │   Agents     │  │   Voice      │    │
+│  │  ChromaDB    │  │  Vitals Gen  │  │  Orchestrate │  │  Web Speech  │    │
+│  │  Embeddings  │  │  Events      │  │  Rule-based  │  │  TTS         │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DATA                                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                      │
+│  │   ChromaDB   │  │    SQLite    │  │  JSON Files  │                      │
+│  │  HRP vectors │  │  Crew state  │  │  Knowledge   │                      │
+│  │  Protocols   │  │  Rec history │  │  Config      │                      │
+│  └──────────────┘  └──────────────┘  └──────────────┘                      │
+└─────────────────────────────────────────────────────────────────────────────┘</div>
+
+<h3>Tech Stack</h3>
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>Why</th></tr>
+  <tr><td>Frontend</td><td>Vanilla HTML/CSS/JS</td><td>Already built, no build step</td></tr>
+  <tr><td>API</td><td>FastAPI + uvicorn</td><td>Fast, async, Python ecosystem</td></tr>
+  <tr><td>RAG</td><td>ChromaDB + all-MiniLM-L6-v2</td><td>Local, no API costs</td></tr>
+  <tr><td>Database</td><td>SQLite</td><td>Zero config, single file</td></tr>
+  <tr><td>Voice</td><td>Web Speech API</td><td>Browser-native, no setup</td></tr>
+</table>
+
+<!-- DAY 1 -->
+<h2 id="day1">Day 1: Database, RAG & Foundation</h2>
+
+<div class="day-block">
+  <div class="day-header">
+    <div class="day-title">🔧 DAY 1</div>
+    <div class="day-date">~8 hours</div>
+  </div>
+
+  <h4>Phase 1.1: Database & RAG Setup <span class="status status-done">✅ COMPLETE</span></h4>
+  <p>ChromaDB setup and NASA document indexing complete!</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Status</th></tr>
+    <tr><td class="task-id">1.1.1</td><td>Create project structure with <code>pyproject.toml</code></td><td class="effort">15 min</td><td style="color:var(--green)">✓ Done</td></tr>
+    <tr><td class="task-id">1.1.2</td><td>Configure uv dependencies (chromadb, sentence-transformers, fastapi)</td><td class="effort">10 min</td><td style="color:var(--green)">✓ Done</td></tr>
+    <tr><td class="task-id">1.1.3</td><td>Run <code>uv sync</code> to install packages</td><td class="effort">15 min</td><td style="color:var(--green)">✓ Done</td></tr>
+    <tr><td class="task-id">1.1.4</td><td>Create <code>setup_chromadb.py</code> with ChromaDB init</td><td class="effort">30 min</td><td style="color:var(--green)">✓ Done</td></tr>
+    <tr><td class="task-id">1.1.5</td><td>Create <code>aegis_rag.py</code> query module</td><td class="effort">30 min</td><td style="color:var(--green)">✓ Done</td></tr>
+    <tr><td class="task-id">1.1.6</td><td>Index <code>aegis_knowledge_base.json</code> (15 countermeasures)</td><td class="effort">30 min</td><td style="color:var(--green)">✓ Done</td></tr>
+    <tr><td class="task-id">1.1.7</td><td>Index NASA HRR 22 risks + 200 citations</td><td class="effort">30 min</td><td style="color:var(--green)">✓ Done</td></tr>
+    <tr><td class="task-id">1.1.8</td><td>Test: Query returns relevant countermeasures</td><td class="effort">15 min</td><td style="color:var(--green)">✓ Done</td></tr>
+  </table>
+  <div class="card card-green" style="margin-top:1rem;">
+    <h4 style="color:var(--green);margin:0 0 .5rem 0;">📊 ChromaDB Stats (Indexed)</h4>
+    <ul style="margin:0;padding-left:1.5rem;">
+      <li><strong>countermeasures:</strong> 15 documents</li>
+      <li><strong>risks:</strong> 22 documents (NASA HRR official)</li>
+      <li><strong>citations:</strong> 200 documents</li>
+      <li><strong>Total:</strong> 237 documents</li>
+    </ul>
+    <p style="margin:.5rem 0 0 0;color:var(--muted);font-size:.85rem;">Embedding model: all-MiniLM-L6-v2 • Storage: chroma_db/ (~1MB)</p>
+  </div>
+
+  <h4>Phase 1.2: API Server Setup <span class="status status-today">HIGH</span></h4>
+  <p>FastAPI skeleton to expose RAG queries.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">1.2.1</td><td>Create <code>main.py</code> with FastAPI app</td><td class="effort">20 min</td><td class="depends">1.1.3</td></tr>
+    <tr><td class="task-id">1.2.2</td><td>Add CORS middleware for dashboard connection</td><td class="effort">10 min</td><td class="depends">1.2.1</td></tr>
+    <tr><td class="task-id">1.2.3</td><td>Create <code>routers/voice.py</code> with <code>POST /api/voice/query</code></td><td class="effort">30 min</td><td class="depends">1.1.7, 1.2.2</td></tr>
+    <tr><td class="task-id">1.2.4</td><td>Connect endpoint to RAG <code>query_protocols()</code></td><td class="effort">20 min</td><td class="depends">1.2.3</td></tr>
+    <tr><td class="task-id">1.2.5</td><td>Create <code>run_dev.py</code> script to start server</td><td class="effort">10 min</td><td class="depends">1.2.1</td></tr>
+    <tr><td class="task-id">1.2.6</td><td>Test: API returns RAG results with citations</td><td class="effort">15 min</td><td class="depends">1.2.4</td></tr>
+  </table>
+
+  <h4>Phase 1.3: Fix Dashboard Issues <span class="status status-today">HIGH</span></h4>
+  <p>Ensure the static demo works flawlessly.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">1.3.1</td><td>Verify recommendations panel is visible</td><td class="effort">15 min</td><td class="depends">—</td></tr>
+    <tr><td class="task-id">1.3.2</td><td>Test all Accept/Defer/Dismiss buttons work</td><td class="effort">15 min</td><td class="depends">1.3.1</td></tr>
+    <tr><td class="task-id">1.3.3</td><td>Verify scrolling works on all screen sizes</td><td class="effort">15 min</td><td class="depends">1.3.1</td></tr>
+    <tr><td class="task-id">1.3.4</td><td>Test What-If modal opens/closes properly</td><td class="effort">10 min</td><td class="depends">—</td></tr>
+    <tr><td class="task-id">1.3.5</td><td>Test alert panel Confirm Protocol button</td><td class="effort">10 min</td><td class="depends">—</td></tr>
+  </table>
+
+  <h4>Phase 1.4: Populate Realistic Data <span class="status status-today">MEDIUM</span></h4>
+  <p>Replace placeholders with real NASA-grounded content from RAG.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">1.4.1</td><td>Query RAG for 3 real interventions for recommendations</td><td class="effort">30 min</td><td class="depends">1.1.8</td></tr>
+    <tr><td class="task-id">1.4.2</td><td>Populate recommendation cards with RAG results + citations</td><td class="effort">45 min</td><td class="depends">1.4.1</td></tr>
+    <tr><td class="task-id">1.4.3</td><td>Script 5 voice responses using RAG queries</td><td class="effort">30 min</td><td class="depends">1.1.8</td></tr>
+    <tr><td class="task-id">1.4.4</td><td>Add realistic vitals values for each crew member</td><td class="effort">30 min</td><td class="depends">—</td></tr>
+  </table>
+
+  <div class="milestone">✓ MILESTONE: RAG working + static demo with NASA-grounded data</div>
+</div>
+
+<!-- DAY 2 -->
+<h2 id="day2">Day 2: State Persistence & Dashboard Integration</h2>
+
+<div class="day-block">
+  <div class="day-header">
+    <div class="day-title">🧠 DAY 2</div>
+    <div class="day-date">~8 hours</div>
+  </div>
+
+  <h4>Phase 2.1: SQLite State Persistence <span class="status status-next">FIRST</span></h4>
+  <p>Set up database for crew state, recommendations, and event logging.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">2.1.1</td><td>Create <code>services/database.py</code> with SQLite init</td><td class="effort">30 min</td><td class="depends">Day 1 complete</td></tr>
+    <tr><td class="task-id">2.1.2</td><td>Create table: <code>crew_state</code> (id, name, hr, hrv, spo2, stress, status, updated_at)</td><td class="effort">20 min</td><td class="depends">2.1.1</td></tr>
+    <tr><td class="task-id">2.1.3</td><td>Create table: <code>recommendations</code> (id, agent, target, intervention, status, created_at, responded_at)</td><td class="effort">20 min</td><td class="depends">2.1.1</td></tr>
+    <tr><td class="task-id">2.1.4</td><td>Create table: <code>event_log</code> (id, agent, event_type, message, timestamp)</td><td class="effort">20 min</td><td class="depends">2.1.1</td></tr>
+    <tr><td class="task-id">2.1.5</td><td>Implement <code>get_crew_state()</code> / <code>update_crew_state()</code></td><td class="effort">30 min</td><td class="depends">2.1.2</td></tr>
+    <tr><td class="task-id">2.1.6</td><td>Implement <code>save_recommendation()</code> / <code>update_recommendation_status()</code></td><td class="effort">30 min</td><td class="depends">2.1.3</td></tr>
+    <tr><td class="task-id">2.1.7</td><td>Implement <code>log_event()</code> / <code>get_recent_events()</code></td><td class="effort">20 min</td><td class="depends">2.1.4</td></tr>
+    <tr><td class="task-id">2.1.8</td><td>Seed initial crew data (4 crew members)</td><td class="effort">15 min</td><td class="depends">2.1.5</td></tr>
+  </table>
+
+  <h4>Phase 2.2: API Endpoints <span class="status status-next">PRIORITY</span></h4>
+  <p>Expose RAG + SQLite via REST endpoints.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">2.2.1</td><td>Create <code>routers/crew.py</code> with <code>GET /api/crew</code></td><td class="effort">20 min</td><td class="depends">2.1.5</td></tr>
+    <tr><td class="task-id">2.2.2</td><td>Create <code>routers/recommend.py</code></td><td class="effort">20 min</td><td class="depends">2.1.6</td></tr>
+    <tr><td class="task-id">2.2.3</td><td>Implement <code>GET /api/recommend</code> (fetch active recommendations)</td><td class="effort">30 min</td><td class="depends">2.2.2</td></tr>
+    <tr><td class="task-id">2.2.4</td><td>Implement <code>POST /api/recommend/{id}/respond</code> (accept/defer/dismiss)</td><td class="effort">30 min</td><td class="depends">2.2.2</td></tr>
+    <tr><td class="task-id">2.2.5</td><td>Create <code>routers/events.py</code> with <code>GET /api/events</code></td><td class="effort">20 min</td><td class="depends">2.1.7</td></tr>
+    <tr><td class="task-id">2.2.6</td><td>Connect <code>/api/voice/query</code> to log events on each query</td><td class="effort">15 min</td><td class="depends">2.1.7</td></tr>
+  </table>
+
+  <h4>Phase 2.3: Dashboard ↔ Backend Connection <span class="status status-next">HIGH</span></h4>
+  <p>Wire up the frontend to call real endpoints.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">2.3.1</td><td>Add <code>fetch()</code> calls to voice panel</td><td class="effort">30 min</td><td class="depends">Day 1 API</td></tr>
+    <tr><td class="task-id">2.3.2</td><td>Show "Querying AEGIS..." loading state</td><td class="effort">20 min</td><td class="depends">2.3.1</td></tr>
+    <tr><td class="task-id">2.3.3</td><td>Display RAG response with typewriter effect</td><td class="effort">30 min</td><td class="depends">2.3.2</td></tr>
+    <tr><td class="task-id">2.3.4</td><td>Add citation tooltips to evidence</td><td class="effort">30 min</td><td class="depends">2.3.3</td></tr>
+    <tr><td class="task-id">2.3.5</td><td>Connect recommendations panel to <code>/api/recommend</code></td><td class="effort">30 min</td><td class="depends">2.2.3</td></tr>
+    <tr><td class="task-id">2.3.6</td><td>Send Accept/Defer/Dismiss to <code>/api/recommend/{id}/respond</code></td><td class="effort">30 min</td><td class="depends">2.2.4</td></tr>
+    <tr><td class="task-id">2.3.7</td><td>Connect Agent Insights to <code>/api/events</code></td><td class="effort">20 min</td><td class="depends">2.2.5</td></tr>
+  </table>
+
+  <h4>Phase 2.4: Data Simulator Service <span class="status status-next">MEDIUM</span></h4>
+  <p>Generate realistic vitals that update SQLite.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">2.4.1</td><td>Create <code>services/simulator.py</code></td><td class="effort">30 min</td><td class="depends">2.1.5</td></tr>
+    <tr><td class="task-id">2.4.2</td><td>Implement <code>generate_vitals(crew_member)</code> with realistic ranges</td><td class="effort">45 min</td><td class="depends">2.4.1</td></tr>
+    <tr><td class="task-id">2.4.3</td><td>Add anomaly injection (for demo triggers)</td><td class="effort">30 min</td><td class="depends">2.4.2</td></tr>
+    <tr><td class="task-id">2.4.4</td><td>Implement <code>/api/vitals</code> endpoint</td><td class="effort">20 min</td><td class="depends">2.4.2</td></tr>
+  </table>
+
+  <div class="milestone">✓ MILESTONE: Full backend with RAG + SQLite + API endpoints connected to dashboard</div>
+</div>
+
+<!-- DAY 3 -->
+<h2 id="day3">Day 3: Real-Time & Polish</h2>
+
+<div class="day-block">
+  <div class="day-header">
+    <div class="day-title">⚡ DAY 3</div>
+    <div class="day-date">~8 hours</div>
+  </div>
+
+  <h4>Phase 3.1: WebSocket Real-Time Updates <span class="status status-later">MEDIUM</span></h4>
+  <p>Live vitals updates for immersive demo.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">3.1.1</td><td>Add WebSocket endpoint <code>/ws/stream</code></td><td class="effort">30 min</td><td class="depends">Day 2 complete</td></tr>
+    <tr><td class="task-id">3.1.2</td><td>Broadcast vitals every 2 seconds</td><td class="effort">30 min</td><td class="depends">3.1.1</td></tr>
+    <tr><td class="task-id">3.1.3</td><td>Connect dashboard to WebSocket</td><td class="effort">30 min</td><td class="depends">3.1.2</td></tr>
+    <tr><td class="task-id">3.1.4</td><td>Update vitals panel in real-time</td><td class="effort">30 min</td><td class="depends">3.1.3</td></tr>
+    <tr><td class="task-id">3.1.5</td><td>Add pulse animation to changing values</td><td class="effort">20 min</td><td class="depends">3.1.4</td></tr>
+  </table>
+
+  <h4>Phase 3.2: Voice Integration <span class="status status-later">HIGH</span></h4>
+  <p>Hands-free interaction with Web Speech API.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">3.2.1</td><td>Implement Web Speech API recognition</td><td class="effort">45 min</td><td class="depends">—</td></tr>
+    <tr><td class="task-id">3.2.2</td><td>Connect mic button to speech recognition</td><td class="effort">30 min</td><td class="depends">3.2.1</td></tr>
+    <tr><td class="task-id">3.2.3</td><td>Send transcript to <code>/api/voice/query</code></td><td class="effort">20 min</td><td class="depends">3.2.2, 2.2.4</td></tr>
+    <tr><td class="task-id">3.2.4</td><td>Implement Text-to-Speech for responses</td><td class="effort">30 min</td><td class="depends">3.2.3</td></tr>
+    <tr><td class="task-id">3.2.5</td><td>Add "listening" visual feedback</td><td class="effort">20 min</td><td class="depends">3.2.2</td></tr>
+  </table>
+
+  <h4>Phase 3.3: Agent Simulation <span class="status status-later">MEDIUM</span></h4>
+  <p>Show visible multi-agent collaboration.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">3.3.1</td><td>Create <code>services/agent_service.py</code></td><td class="effort">30 min</td><td class="depends">Day 2 complete</td></tr>
+    <tr><td class="task-id">3.3.2</td><td>Implement rule-based detection logic</td><td class="effort">45 min</td><td class="depends">3.3.1</td></tr>
+    <tr><td class="task-id">3.3.3</td><td>Generate agent messages on vitals thresholds</td><td class="effort">30 min</td><td class="depends">3.3.2</td></tr>
+    <tr><td class="task-id">3.3.4</td><td>Push agent updates via WebSocket</td><td class="effort">30 min</td><td class="depends">3.3.3, 3.1.1</td></tr>
+    <tr><td class="task-id">3.3.5</td><td>Update Agent Insights panel in real-time</td><td class="effort">30 min</td><td class="depends">3.3.4</td></tr>
+  </table>
+
+  <h4>Phase 3.4: Dashboard ↔ Spacecraft Sim Integration <span class="status status-later">HIGH</span></h4>
+  <p>Connect PROTECT alerts to the 2D spacecraft visualization.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">3.4.1</td><td>Add URL parameter parsing to spacecraft sim</td><td class="effort">30 min</td><td class="depends">—</td></tr>
+    <tr><td class="task-id">3.4.2</td><td>Implement <code>triggerShelterSequence(protocol)</code> in sim</td><td class="effort">45 min</td><td class="depends">3.4.1</td></tr>
+    <tr><td class="task-id">3.4.3</td><td>Add astronaut walk-to-shelter animation</td><td class="effort">45 min</td><td class="depends">3.4.2</td></tr>
+    <tr><td class="task-id">3.4.4</td><td>Add radiation direction indicator (arrow/gradient)</td><td class="effort">30 min</td><td class="depends">3.4.2</td></tr>
+    <tr><td class="task-id">3.4.5</td><td>Dashboard: Open sim on "Confirm Protocol" click</td><td class="effort">20 min</td><td class="depends">3.4.2</td></tr>
+    <tr><td class="task-id">3.4.6</td><td>Add "All crew secured" confirmation state in sim</td><td class="effort">30 min</td><td class="depends">3.4.3</td></tr>
+    <tr><td class="task-id">3.4.7</td><td>Optional: localStorage sync for two-way state</td><td class="effort">30 min</td><td class="depends">3.4.6</td></tr>
+  </table>
+
+  <h4>Phase 3.5: Demo Polish <span class="status status-later">HIGH</span></h4>
+  <p>Smooth out all interactions.</p>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">3.5.1</td><td>Add demo trigger button (inject anomaly)</td><td class="effort">30 min</td><td class="depends">3.1.4</td></tr>
+    <tr><td class="task-id">3.5.2</td><td>Add alert sounds (distinct per severity)</td><td class="effort">30 min</td><td class="depends">—</td></tr>
+    <tr><td class="task-id">3.5.3</td><td>Polish animations and transitions</td><td class="effort">45 min</td><td class="depends">—</td></tr>
+    <tr><td class="task-id">3.5.4</td><td>Test full demo flow 3x (dashboard + sim)</td><td class="effort">30 min</td><td class="depends">3.4.6, 3.5.3</td></tr>
+  </table>
+
+  <div class="milestone">✓ MILESTONE: Full interactive demo with real-time updates, voice, and spacecraft visualization</div>
+</div>
+
+<!-- DAY 4 -->
+<h2 id="day4">Day 4: Demo Prep & Submission</h2>
+
+<div class="day-block">
+  <div class="day-header">
+    <div class="day-title">🎬 DAY 4</div>
+    <div class="day-date">~6 hours + buffer</div>
+  </div>
+
+  <h4>Phase 4.1: Video Recording <span class="status status-later">CRITICAL</span></h4>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">4.1.1</td><td>Write final demo script</td><td class="effort">30 min</td><td class="depends">Day 3 complete</td></tr>
+    <tr><td class="task-id">4.1.2</td><td>Practice run-through 2x</td><td class="effort">30 min</td><td class="depends">4.1.1</td></tr>
+    <tr><td class="task-id">4.1.3</td><td>Record demo video (5 min)</td><td class="effort">1 hr</td><td class="depends">4.1.2</td></tr>
+    <tr><td class="task-id">4.1.4</td><td>Edit video (add title cards, trim)</td><td class="effort">45 min</td><td class="depends">4.1.3</td></tr>
+  </table>
+
+  <h4>Phase 4.2: Final Testing <span class="status status-later">CRITICAL</span></h4>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">4.2.1</td><td>Test on fresh browser (incognito)</td><td class="effort">20 min</td><td class="depends">Day 3 complete</td></tr>
+    <tr><td class="task-id">4.2.2</td><td>Test on different screen size</td><td class="effort">15 min</td><td class="depends">4.2.1</td></tr>
+    <tr><td class="task-id">4.2.3</td><td>Create failure recovery scripts</td><td class="effort">30 min</td><td class="depends">—</td></tr>
+    <tr><td class="task-id">4.2.4</td><td>Verify all artifacts are complete</td><td class="effort">15 min</td><td class="depends">—</td></tr>
+  </table>
+
+  <h4>Phase 4.3: Submission <span class="status status-later">CRITICAL</span></h4>
+  <table>
+    <tr><th>ID</th><th>Task</th><th>Effort</th><th>Depends On</th></tr>
+    <tr><td class="task-id">4.3.1</td><td>Update solution brief with final screenshots</td><td class="effort">30 min</td><td class="depends">4.2.4</td></tr>
+    <tr><td class="task-id">4.3.2</td><td>Package all files</td><td class="effort">15 min</td><td class="depends">4.3.1</td></tr>
+    <tr><td class="task-id">4.3.3</td><td>Submit to Space Apps portal</td><td class="effort">15 min</td><td class="depends">4.3.2</td></tr>
+    <tr><td class="task-id">4.3.4</td><td>Celebrate 🎉</td><td class="effort">∞</td><td class="depends">4.3.3</td></tr>
+  </table>
+
+  <div class="milestone">✓ MILESTONE: Submission complete!</div>
+</div>
+
+<!-- RISKS -->
+<h2 id="risks">Risk Mitigation</h2>
+
+<table class="risk-table">
+  <tr><th>Risk</th><th>Mitigation</th></tr>
+  <tr><td>RAG not working in time</td><td>Fall back to scripted responses from knowledge base JSON</td></tr>
+  <tr><td>WebSocket issues</td><td>Use HTTP polling (setInterval fetch) as backup</td></tr>
+  <tr><td>Voice recognition fails</td><td>Text input field always available as fallback</td></tr>
+  <tr><td>Backend deployment fails</td><td>Run locally during live demo</td></tr>
+  <tr><td>Judge can't run Python</td><td>Provide pre-recorded video as primary deliverable</td></tr>
+  <tr><td>Memory constraints on dev machine</td><td>Work in small increments, restart services between phases</td></tr>
+</table>
+
+<div class="card card-yellow">
+  <h3>Minimum Viable Demo (8-hour fallback)</h3>
+  <p>If time runs out, these alone make a complete submission:</p>
+  <ul class="checklist">
+    <li><span class="check">✓</span> Static dashboard with realistic data (Day 1)</li>
+    <li><span class="uncheck">□</span> Pre-scripted voice responses (Day 1)</li>
+    <li><span class="uncheck">□</span> Recorded demo video (Day 4)</li>
+    <li><span class="uncheck">□</span> Solution brief with screenshots (Day 4)</li>
+  </ul>
+</div>
+
+<!-- FILES -->
+<h2 id="files">File Structure</h2>
+
+<pre>
+NASA_Hackathon_Challenge/
+├── aegis-mission-control.html          # Main dashboard
+├── aegis-spacecraft-sim-2d.html        # 2D visualization
+│
+├── pyproject.toml                      # uv project config
+├── uv.lock                             # Locked dependencies
+├── setup_chromadb.py                   # Index builder script
+├── aegis_rag.py                        # RAG query module ✅ NEW
+│
+├── chroma_db/                          # Vector database ✅ NEW
+│   └── chroma.sqlite3                  # 237 indexed documents
+│
+├── .venv/                              # Python environment (uv managed)
+│
+├── artifacts/                          # Documentation
+│   ├── aegis-solution-brief.html
+│   ├── AEGIS-Technical-Architecture.html
+│   ├── AEGIS-User-Interaction-Flows.html
+│   ├── AEGIS-Development-Plan.html     # THIS FILE
+│   └── research_report.html
+│
+├── data/
+│   ├── hrp_docs/                       # NASA HRP PDFs
+│   ├── aegis_knowledge_base.json       # Countermeasures (indexed)
+│   ├── nasa_hrr_risks.json             # 22 HRR risks ✅ NEW
+│   ├── AEGIS_SOURCES.md                # 200+ references (indexed)
+│   ├── osdr_metadata/                  # OSDR search results
+│   └── live_feeds/                     # NOAA real-time data
+│
+├── backend/                            # FastAPI backend (TODO)
+│   ├── main.py                         # FastAPI entry
+│   ├── routers/
+│   │   ├── vitals.py
+│   │   ├── agents.py
+│   │   ├── recommend.py
+│   │   └── voice.py
+│   └── services/
+│       ├── agent_service.py
+│       └── simulator.py
+│
+└── demo/
+    ├── demo_script.md
+    ├── demo_video.mp4
+    └── screenshots/
+</pre>
+
+<hr style="margin:2rem 0;border-color:var(--border);"/>
+<p style="text-align:center;color:var(--muted);font-size:.85rem;"><em>Last updated: 2026-09-27 17:00 EDT • Phase 1.1 Complete</em></p>
+
+</body>
+</html>

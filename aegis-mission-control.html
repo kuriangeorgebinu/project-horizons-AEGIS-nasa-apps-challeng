@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AEGIS Mission Control</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%235a9fd7'/><text x='16' y='21' font-size='14' text-anchor='middle' fill='white'>◈</text></svg>">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0c10;--card:#12171e;--border:#1a2230;
+  --text:#d0daea;--muted:#6a7a8a;
+  --aegis:#5a9fd7;--gene:#a098c8;--pulse:#c88888;--solaris:#c8b070;--mirror:#7aad9a;
+  --green:#5aad8c;--yellow:#c8b45a;--orange:#d48a5a;--red:#c86a6a;
+  --space-bg-opacity:1;
+}
+[data-theme="light"]{
+  --bg:#f0f4f8;--card:#ffffff;--border:#d0d8e0;
+  --text:#1a2431;--muted:#5a6a7a;
+  --aegis:#3a7ab0;--gene:#6a5a9a;--pulse:#a06060;--solaris:#9a8040;--mirror:#4a8a6a;
+  --green:#3a8a6a;--yellow:#8a7a30;--orange:#a06030;--red:#a04040;
+  --space-bg-opacity:0;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;transition:background .3s,color .3s;}
+
+/* Accessibility */
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+.skip-link{position:absolute;top:-40px;left:0;background:var(--aegis);color:#fff;padding:.5rem 1rem;z-index:1000;border-radius:0 0 8px 0;transition:top .2s;}
+.skip-link:focus{top:0;}
+*:focus-visible{outline:2px solid var(--aegis);outline-offset:2px;}
+
+/* WOW Animations */
+@keyframes vital-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+@keyframes flow-line{0%{stroke-dashoffset:20;}100%{stroke-dashoffset:0;}}
+@keyframes hover-glow{0%,100%{box-shadow:0 0 15px var(--node-color);}50%{box-shadow:0 0 25px var(--node-color),0 0 40px var(--node-color);}}
+@keyframes breathing{0%,100%{box-shadow:0 0 20px var(--aegis),0 0 40px rgba(90,159,215,.3);}50%{box-shadow:0 0 35px var(--aegis),0 0 60px rgba(90,159,215,.5);}}
+@keyframes boot-fade{from{opacity:0;transform:scale(.8);}to{opacity:1;transform:scale(1);}}
+@keyframes particle-burst{0%{transform:scale(0);opacity:1;}100%{transform:scale(2);opacity:0;}}
+.vital-pulse{animation:vital-pulse 1s ease-in-out infinite;}
+.conn-line.flowing{stroke-dasharray:10 5;animation:flow-line .5s linear infinite;}
+.node-aegis.active{animation:breathing 3s ease-in-out infinite;}
+.agent-node.boot{opacity:0;}
+.agent-node:not(.node-aegis):hover{animation:hover-glow 1s ease-in-out infinite;}
+.particle-ring{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid var(--node-color);pointer-events:none;animation:particle-burst .6s ease-out forwards;}
+
+/* Background */
+.space-bg{position:fixed;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(30,58,95,.3) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(90,159,215,.1) 0%,transparent 50%);pointer-events:none;opacity:var(--space-bg-opacity);transition:opacity .3s;}
+
+/* Grid Layout */
+.shell{position:relative;z-index:1;display:grid;min-height:100vh;padding:1rem;gap:1rem;
+  grid-template-rows:auto 1fr auto auto;
+  grid-template-columns:1fr 1fr;
+  grid-template-areas:"header header" "graph vitals" "voice alert" "recs recs";
+}
+
+/* Recommendations Panel */
+.recs-panel{grid-area:recs;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.25rem;transition:background .3s;}
+.recs-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.recs-title .icon{font-size:1rem;}
+.recs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:1rem;padding-bottom:.5rem;}
+.recs-count{margin-left:auto;font-size:.7rem;letter-spacing:1px;color:var(--muted);text-transform:none;}
+.recs-empty{grid-column:1/-1;color:var(--muted);font-size:.85rem;padding:.5rem 0;}
+
+/* Voice Terminal: typed questions + live-answer label */
+.ask-form{display:flex;gap:.5rem;margin:.25rem 0 .75rem;}
+.ask-input{flex:1;min-width:0;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:.5rem .75rem;font:inherit;font-size:.85rem;}
+.ask-input:focus{outline:none;border-color:var(--aegis);}
+.ask-btn{background:rgba(90,159,215,.15);color:var(--aegis);border:1px solid var(--aegis);border-radius:10px;padding:.5rem .9rem;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;}
+.ask-btn:disabled{opacity:.5;cursor:wait;}
+.response-source{margin-left:.5rem;font-size:.65rem;letter-spacing:1px;padding:.1rem .45rem;border-radius:8px;background:rgba(160,152,200,.15);color:var(--gene);}
+.response-source.rules{background:rgba(90,159,215,.12);color:var(--aegis);}
+
+/* DeepSeek assessment (alert panel + recommendation cards) */
+.alert-ai,.rec-ai{margin:.6rem 0;padding:.55rem .7rem;border-left:3px solid var(--gene);background:rgba(160,152,200,.08);border-radius:0 8px 8px 0;font-size:.82rem;line-height:1.45;color:var(--text);}
+.alert-ai-tag,.rec-ai-tag{display:block;font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gene);margin-bottom:.2rem;}
+.rec-ai{font-size:.78rem;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
+/* RAG recommendations: tailored actions + cited sources */
+.rec-steps{margin:.4rem 0 .5rem 1.1rem;padding:0;font-size:.78rem;line-height:1.4;color:var(--text);}
+.rec-steps li{margin:.15rem 0;}
+.rec-sources{display:flex;flex-direction:column;gap:.2rem;margin:.4rem 0 .2rem;font-size:.72rem;}
+.rec-sources-tag{font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.rec-sources a,.rec-sources span[title]{color:var(--aegis);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-sources a:hover{text-decoration:underline;}
+
+/* Spacecraft sim pop-up (opens when a protocol is confirmed) */
+.sim-modal{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:rgba(4,8,14,.72);backdrop-filter:blur(3px);padding:16px;}
+.sim-modal.open{display:flex;}
+.sim-modal-box{width:min(1180px,100%);height:min(720px,100%);display:flex;flex-direction:column;background:var(--card);border:1px solid var(--aegis);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+.sim-modal-head{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;border-bottom:1px solid var(--border);font-size:.8rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.sim-modal-head strong{color:var(--text);letter-spacing:.5px;}
+.sim-modal-status{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--aegis);}
+.sim-modal-status.done{color:var(--green);}
+.sim-modal-head a,.sim-modal-head button{background:none;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.3rem .6rem;font-size:.75rem;cursor:pointer;text-decoration:none;text-transform:none;letter-spacing:0;}
+.sim-modal-head button:hover,.sim-modal-head a:hover{border-color:var(--aegis);}
+.sim-modal iframe{flex:1;width:100%;border:0;background:#0c1018;}
+@media (max-width:640px){.sim-modal{padding:0;}.sim-modal-box{border-radius:0;height:100%;}.sim-modal-head a{display:none;}}
+.rec-card{min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1rem;transition:all .3s;}
+.rec-card:hover{border-color:var(--aegis);transform:translateY(-2px);}
+.rec-card.urgent{border-color:var(--yellow);box-shadow:0 0 15px rgba(200,180,90,.2);}
+.rec-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+.rec-agents{display:flex;align-items:center;gap:.25rem;font-size:.8rem;}
+.rec-agent{padding:.2rem .5rem;border-radius:12px;font-size:.7rem;font-weight:600;}
+.rec-arrow{color:var(--muted);font-size:.8rem;}
+.rec-target{margin-left:auto;font-size:.75rem;color:var(--muted);}
+.rec-body{margin-bottom:.75rem;}
+.rec-detection{font-size:.85rem;color:var(--text);margin-bottom:.5rem;line-height:1.4;}
+.rec-intervention{font-size:.9rem;font-weight:600;color:var(--aegis);margin-bottom:.5rem;}
+.rec-evidence{font-size:.7rem;color:var(--muted);font-style:italic;}
+.rec-actions{display:flex;gap:.5rem;}
+.rec-btn{flex:1;padding:.5rem;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--border);}
+.rec-btn.accept{background:rgba(90,173,140,.15);color:var(--green);border-color:var(--green);}
+.rec-btn.accept:hover{background:rgba(90,173,140,.25);}
+.rec-btn.defer{background:rgba(200,180,90,.1);color:var(--yellow);border-color:var(--yellow);}
+.rec-btn.defer:hover{background:rgba(200,180,90,.2);}
+.rec-btn.dismiss{background:transparent;color:var(--muted);}
+.rec-btn.dismiss:hover{background:rgba(255,255,255,.05);}
+
+/* Header */
+.header{grid-area:header;display:flex;justify-content:space-between;align-items:center;padding:.5rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:background .3s;}
+.logo{font-size:1.5rem;font-weight:700;color:var(--aegis);letter-spacing:2px;}
+.mission-day{color:var(--muted);font-size:.9rem;}
+.mission-day span{color:var(--yellow);font-weight:600;}
+.theme-toggle{background:rgba(128,128,128,.15);border:1px solid var(--border);border-radius:20px;padding:.4rem .8rem;font-size:1rem;cursor:pointer;transition:all .3s;}
+.theme-toggle:hover{background:rgba(128,128,128,.25);}
+
+/* Agent Network Graph */
+.graph-panel{grid-area:graph;background:var(--card);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;transition:background .3s;}
+.graph-title{position:absolute;top:1rem;left:1.5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
+
+.network{position:relative;width:320px;height:320px;}
+.agent-node{position:absolute;width:70px;height:70px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;border:2px solid var(--border);background:var(--bg);}
+.agent-node.active{border-width:3px;box-shadow:0 0 30px var(--node-color);}
+.agent-node .icon{font-size:1.2rem;margin-bottom:2px;}
+.agent-node .name{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+
+/* Node positions (star pattern) */
+.node-aegis{left:50%;top:50%;transform:translate(-50%,-50%);width:90px;height:90px;--node-color:var(--aegis);border-color:var(--aegis);}
+.node-solaris{left:50%;top:5%;transform:translate(-50%,0);--node-color:var(--solaris);}
+.node-gene{left:90%;top:35%;transform:translate(-100%,0);--node-color:var(--gene);}
+.node-pulse{left:75%;top:85%;transform:translate(-50%,-100%);--node-color:var(--pulse);}
+.node-mirror{left:25%;top:85%;transform:translate(-50%,-100%);--node-color:var(--mirror);}
+
+/* Connection lines (SVG) */
+.connections{position:absolute;inset:0;pointer-events:none;}
+.conn-line{stroke:var(--border);stroke-width:2;fill:none;transition:all .5s;}
+.conn-line.active{stroke:var(--aegis);stroke-width:3;filter:drop-shadow(0 0 8px var(--aegis));}
+
+/* Vitals Panel */
+.vitals-panel{grid-area:vitals;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;transition:background .3s;}
+.vitals-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;}
+.vital-row{display:flex;align-items:center;gap:1rem;}
+.vital-label{width:74px;flex-shrink:0;font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:2px;line-height:1.1;}
+/* Which agent monitors each metric */
+.agent-tag{display:inline-flex;align-items:center;gap:4px;font-size:.58rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.agent-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+.agent-tag.pulse{color:var(--pulse);} .agent-tag.gene{color:var(--gene);} .agent-tag.mirror{color:var(--mirror);} .agent-tag.solaris{color:var(--solaris);}
+.vitals-legend{font-size:.65rem;color:var(--muted);margin-top:-.5rem;}
+.rad-sub{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--muted);margin-top:.5rem;}
+.vital-value{width:50px;font-size:1.4rem;font-weight:700;}
+.vital-bar{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
+.vital-fill{height:100%;border-radius:4px;transition:width .5s;}
+.vital-status{width:60px;font-size:.7rem;text-align:right;}
+
+.radiation-section{margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);}
+.rad-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;}
+.rad-icon{font-size:1.2rem;}
+.rad-bar{height:12px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden;}
+.rad-fill{height:100%;width:23%;background:linear-gradient(90deg,var(--green),var(--yellow));border-radius:6px;}
+
+/* Voice Terminal */
+.voice-panel{grid-area:voice;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;transition:background .3s;}
+.voice-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;}
+.voice-input{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;}
+.mic-btn{width:60px;height:60px;border-radius:50%;border:2px solid var(--aegis);background:transparent;color:var(--aegis);font-size:1.5rem;cursor:pointer;transition:all .3s;}
+.mic-btn:hover{background:rgba(90,159,215,.1);}
+.mic-btn.listening{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+.voice-status{flex:1;font-size:.9rem;color:var(--muted);}
+.voice-status.listening{color:var(--red);}
+.response-area{flex:1;padding:1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.95rem;line-height:1.6;overflow-y:auto;transition:background .3s;}
+.response-label{font-size:.7rem;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase;}
+.response-text{min-height:60px;}
+.typing-cursor{display:inline-block;width:2px;height:1em;background:var(--aegis);animation:blink 1s infinite;}
+@keyframes blink{0%,50%{opacity:1;}51%,100%{opacity:0;}}
+
+/* Alert Panel */
+.alert-panel{grid-area:alert;background:var(--card);border:2px solid var(--red);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;transition:background .3s;}
+.alert-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;}
+.alert-icon{font-size:1.5rem;animation:flash 2s infinite;}
+@keyframes flash{0%,50%,100%{opacity:1;}25%,75%{opacity:.5;}}
+.alert-title{font-size:1rem;font-weight:600;color:var(--red);}
+.alert-body{flex:1;font-size:.9rem;color:var(--muted);line-height:1.5;margin-bottom:1rem;}
+.alert-agents{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.alert-badge{padding:.25rem .75rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;}
+.confirm-btn{padding:.75rem 1.5rem;border:1px solid var(--green);background:rgba(90,173,140,.1);color:var(--green);border-radius:8px;font-size:.9rem;cursor:pointer;transition:all .3s;}
+.confirm-btn:hover{background:rgba(90,173,140,.2);}
+
+/* Protocol Celebration */
+@keyframes celebration-pulse{0%{opacity:0;}50%{opacity:.3;}100%{opacity:0;}}
+@keyframes checkmark-pop{0%{transform:scale(0);opacity:0;}50%{transform:scale(1.3);}100%{transform:scale(1);opacity:1;}}
+.celebration-overlay{position:fixed;inset:0;background:var(--green);pointer-events:none;animation:celebration-pulse 1s ease-out forwards;z-index:100;}
+.agent-node .checkmark{position:absolute;font-size:1.5rem;opacity:0;}
+.agent-node .checkmark.show{animation:checkmark-pop .4s ease-out forwards;}
+
+/* Expanded Graph Modal */
+.graph-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(5px);}
+.graph-modal.open{display:flex;}
+.graph-modal-content{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:90%;max-width:600px;position:relative;}
+.graph-modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;}
+.graph-modal-close:hover{color:var(--text);}
+.graph-modal h2{margin:0 0 1rem;color:var(--aegis);font-size:1.2rem;}
+.expanded-chart{width:100%;height:200px;background:var(--bg);border-radius:8px;padding:1rem;position:relative;}
+.chart-svg{width:100%;height:100%;}
+.chart-label{font-size:.7rem;fill:var(--muted);}
+.chart-value{font-size:.65rem;fill:var(--yellow);}
+.chart-grid{stroke:var(--border);stroke-width:1;}
+.chart-line{fill:none;stroke:var(--yellow);stroke-width:2;}
+.chart-dot{fill:var(--yellow);}
+.chart-stats{display:flex;justify-content:space-around;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);}
+.stat-item{text-align:center;}
+.stat-value{font-size:1.5rem;font-weight:700;color:var(--yellow);}
+.stat-label{font-size:.75rem;color:var(--muted);}
+
+/* Navigation Tabs */
+.nav-tabs{display:flex;gap:.25rem;background:var(--bg);padding:.25rem;border-radius:10px;border:1px solid var(--border);}
+.nav-tab{padding:.5rem 1rem;border:none;background:transparent;color:var(--muted);font-size:.85rem;cursor:pointer;border-radius:8px;transition:all .2s;display:flex;align-items:center;gap:.5rem;}
+.nav-tab:hover{color:var(--text);background:rgba(255,255,255,.05);}
+.nav-tab.active{background:var(--aegis);color:#fff;}
+.nav-tab .icon{font-size:.9rem;}
+
+/* Page containers */
+.page{display:none;}
+.page.active{display:contents;}
+
+/* What-If Simulator */
+.whatif-btn{background:linear-gradient(135deg,rgba(90,159,215,.2),rgba(160,152,200,.2));border:1px solid var(--aegis);border-radius:8px;padding:.5rem 1rem;color:var(--aegis);font-size:.85rem;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:.5rem;}
+.whatif-btn:hover{background:linear-gradient(135deg,rgba(90,159,215,.3),rgba(160,152,200,.3));transform:translateY(-1px);}
+.whatif-btn .icon{font-size:1rem;}
+
+/* Crew Roster Page */
+.roster-page{grid-area:graph / graph / alert / vitals;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow-y:auto;}
+.crew-card{background:var(--bg);border:2px solid var(--border);border-radius:16px;padding:1.5rem;cursor:pointer;transition:all .3s;position:relative;}
+.crew-card:hover{border-color:var(--aegis);transform:translateY(-4px);box-shadow:0 8px 30px rgba(90,159,215,.2);}
+.crew-card.selected{border-color:var(--green);box-shadow:0 0 20px rgba(90,173,140,.3);}
+.crew-card .status-badge{position:absolute;top:1rem;right:1rem;padding:.25rem .75rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;}
+.crew-card .status-badge.nominal{background:rgba(90,173,140,.2);color:var(--green);}
+.crew-card .status-badge.elevated{background:rgba(200,180,90,.2);color:var(--yellow);}
+.crew-card .status-badge.alert{background:rgba(200,106,106,.2);color:var(--red);}
+.crew-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--aegis),var(--gene));display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 1rem;}
+.crew-name{text-align:center;font-size:1.1rem;font-weight:600;margin-bottom:.25rem;}
+.crew-role{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:1rem;}
+.crew-vitals{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.crew-vital{background:rgba(255,255,255,.03);padding:.5rem;border-radius:8px;text-align:center;}
+.crew-vital-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;margin-bottom:.25rem;}
+.crew-vital-value{font-size:1rem;font-weight:600;}
+
+/* Agent Insights Page */
+.insights-page{grid-area:graph / graph / alert / vitals;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow-y:auto;}
+.insight-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;transition:all .3s;}
+.insight-card:hover{border-color:var(--node-color,var(--aegis));}
+.insight-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+.insight-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border:2px solid var(--node-color,var(--aegis));}
+.insight-agent-name{font-weight:600;font-size:1rem;}
+.insight-agent-role{font-size:.75rem;color:var(--muted);}
+.insight-status{margin-left:auto;padding:.25rem .75rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;background:rgba(90,173,140,.15);color:var(--green);}
+.insight-log{max-height:180px;overflow-y:auto;}
+.insight-entry{padding:.75rem 0;border-bottom:1px solid var(--border);font-size:.85rem;line-height:1.5;}
+.insight-entry:last-child{border-bottom:none;}
+.insight-time{font-size:.7rem;color:var(--muted);margin-bottom:.25rem;}
+.insight-action{color:var(--text);}
+.insight-reasoning{color:var(--muted);font-style:italic;margin-top:.25rem;padding-left:.75rem;border-left:2px solid var(--border);}
+
+.whatif-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(8px);}
+.whatif-modal.open{display:flex;}
+.whatif-content{background:var(--card);border:2px solid var(--aegis);border-radius:20px;padding:2rem;width:95%;max-width:800px;position:relative;box-shadow:0 0 60px rgba(90,159,215,.3);}
+.whatif-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;}
+.whatif-close:hover{color:var(--text);}
+.whatif-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
+.whatif-header h2{color:var(--aegis);font-size:1.3rem;margin:0;}
+.whatif-header .icon{font-size:1.5rem;}
+
+.scenario-select{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.scenario-btn{padding:.6rem 1rem;border:1px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text);cursor:pointer;transition:all .3s;font-size:.85rem;}
+.scenario-btn:hover{border-color:var(--aegis);background:rgba(90,159,215,.1);}
+.scenario-btn.active{border-color:var(--aegis);background:rgba(90,159,215,.2);color:var(--aegis);}
+
+.simulation-area{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+.sim-column{background:var(--bg);border-radius:12px;padding:1.25rem;}
+.sim-column h3{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.sim-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);}
+.sim-row:last-child{border-bottom:none;}
+.sim-label{color:var(--muted);font-size:.9rem;}
+.sim-value{font-size:1.1rem;font-weight:600;transition:all .5s;}
+.sim-value.warning{color:var(--yellow);}
+.sim-value.critical{color:var(--red);}
+.sim-value.normal{color:var(--green);}
+.sim-arrow{color:var(--muted);font-size:1.2rem;margin:0 auto;}
+
+.agent-cascade{background:var(--bg);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;}
+.agent-cascade h3{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;}
+.cascade-timeline{display:flex;flex-direction:column;gap:.75rem;}
+.cascade-step{display:flex;align-items:center;gap:1rem;opacity:.3;transition:all .4s;}
+.cascade-step.active{opacity:1;}
+.cascade-step .agent-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;border:2px solid currentColor;}
+.cascade-step .step-text{flex:1;font-size:.9rem;}
+.cascade-step .step-status{font-size:.7rem;padding:.25rem .5rem;border-radius:10px;text-transform:uppercase;}
+.cascade-step .step-status.detecting{background:rgba(200,136,136,.2);color:var(--pulse);}
+.cascade-step .step-status.analyzing{background:rgba(90,159,215,.2);color:var(--aegis);}
+.cascade-step .step-status.consulting{background:rgba(122,173,154,.2);color:var(--mirror);}
+.cascade-step .step-status.complete{background:rgba(90,173,140,.2);color:var(--green);}
+
+.aegis-recommendation{background:linear-gradient(135deg,rgba(90,159,215,.1),rgba(90,173,140,.1));border:1px solid var(--aegis);border-radius:12px;padding:1rem;display:flex;align-items:flex-start;gap:1rem;}
+.rec-icon{font-size:1.5rem;}
+.rec-text h4{color:var(--aegis);margin:0 0 .25rem;font-size:.9rem;}
+.rec-text p{color:var(--text);margin:0;font-size:.9rem;line-height:1.5;}
+
+.run-sim-btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--aegis),var(--gene));border:none;border-radius:10px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s;}
+.run-sim-btn:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(90,159,215,.4);}
+.run-sim-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* What-If: agent evaluation chips + intro */
+.whatif-intro{font-size:.8rem;color:var(--muted);margin:-.5rem 0 1rem;line-height:1.5;}
+.slider-hint{font-size:.65rem;color:var(--muted);opacity:.85;}
+.step-status.ok{color:var(--green);border-color:var(--green);}
+.step-status.watch{color:var(--yellow);border-color:var(--yellow);}
+.step-status.alert{color:var(--red);border-color:var(--red);}
+/* What-If Sliders */
+.slider-controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.slider-group{background:var(--bg);border-radius:12px;padding:1rem;}
+.slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
+.slider-label{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:.5rem;}
+.slider-label .icon{font-size:1rem;}
+.slider-value{font-size:1.3rem;font-weight:700;min-width:80px;text-align:right;transition:color .3s;}
+.slider-value.normal{color:var(--green);}
+.slider-value.warning{color:var(--yellow);}
+.slider-value.critical{color:var(--red);}
+.slider-track{position:relative;height:8px;background:rgba(255,255,255,.1);border-radius:4px;margin-bottom:.5rem;}
+.slider-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;transition:width .1s,background .3s;}
+.slider-input{width:100%;height:8px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;position:relative;z-index:2;margin:-8px 0 0 0;}
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--aegis);border:3px solid var(--card);cursor:grab;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .2s;}
+.slider-input::-webkit-slider-thumb:hover{transform:scale(1.2);}
+.slider-input::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.1);}
+.slider-input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--aegis);border:3px solid var(--card);cursor:grab;}
+.slider-range{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);}
+.slider-zones{display:flex;gap:2px;margin-top:.5rem;}
+.zone{flex:1;height:4px;border-radius:2px;opacity:.5;}
+.zone.green{background:var(--green);}
+.zone.yellow{background:var(--yellow);}
+.zone.red{background:var(--red);}
+
+/* Live status indicator */
+.live-status{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--bg);border-radius:8px;margin-bottom:1rem;}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite;}
+.status-dot.warning{background:var(--yellow);}
+.status-dot.critical{background:var(--red);animation:pulse-dot .5s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(1.2);}}
+.status-text{font-size:.85rem;color:var(--muted);}
+.status-text strong{color:var(--text);}
+
+/* M6: Mobile responsive layout */
+@media (max-width: 700px) {
+  .dashboard { flex-direction: column; }
+  .left-column, .right-column { width: 100%; max-width: 100%; }
+  .crew-grid { grid-template-columns: 1fr; }
+  .vitals-grid { grid-template-columns: 1fr; }
+  .recs-grid { grid-template-columns: 1fr; }
+  .aegis-terminal { height: auto; min-height: 200px; }
+  .nav-bar { flex-wrap: wrap; gap: .5rem; }
+  .nav-btn { flex: 1 1 45%; min-width: 0; }
+  .scenario-grid { grid-template-columns: repeat(2, 1fr); }
+  body { padding: .5rem; }
+  /* M2: Fix header and tabs overflow */
+  .header { flex-wrap: wrap; gap: .5rem; padding: .75rem; }
+  .logo { font-size: 1.1rem; }
+  .nav-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .nav-tab { font-size: .75rem; padding: .4rem .6rem; white-space: nowrap; }
+  .mission-badge { font-size: .7rem; padding: .3rem .5rem; }
+  .scenario-btn { font-size: .7rem; padding: .4rem .6rem; }
+  .agent-network { max-width: 100%; overflow-x: auto; }
+  .panel { padding: .75rem; }
+  .vital-row { flex-wrap: wrap; }
+  .vital-label { min-width: 50px; }
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<h1 class="visually-hidden">AEGIS Mission Control - Astronaut Health Monitoring System</h1>
+<div id="a11y-live" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
+<div class="space-bg" aria-hidden="true"></div>
+
+<main id="main-content" class="shell">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo" title="Autonomous Expert Group for Integrated Space Health">◈ AEGIS</div>
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-tab active" onclick="switchPage('mission')" role="tab" aria-selected="true" id="tab-mission">
+        <span class="icon">🎯</span> Mission Control
+      </button>
+      <button class="nav-tab" onclick="switchPage('roster')" role="tab" aria-selected="false" id="tab-roster">
+        <span class="icon">👥</span> Crew Roster
+      </button>
+      <button class="nav-tab" onclick="switchPage('insights')" role="tab" aria-selected="false" id="tab-insights">
+        <span class="icon">🧠</span> Agent Insights
+      </button>
+    </nav>
+    <div class="mission-day">Day <span id="mission-day-num">54</span></div>
+    <span id="api-status" style="font-size:.7rem;padding:.25rem .5rem;border-radius:12px;background:rgba(128,128,128,.2);cursor:help;" title="Backend connection status">🔴 Offline</span>
+    <button class="whatif-btn" onclick="openWhatIf()" aria-label="Open What-If Scenario Simulator">
+      <span class="icon">🔮</span> What-If
+    </button>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode">🌙</button>
+  </header>
+
+  <!-- Mission Control Page -->
+  <div class="page active" id="page-mission">
+  <!-- Agent Network Graph -->
+  <div class="graph-panel">
+    <div class="graph-title">Agent Network</div>
+    <div class="network">
+      <svg class="connections" viewBox="0 0 320 320">
+        <line class="conn-line" id="line-solaris" x1="160" y1="160" x2="160" y2="55"/>
+        <line class="conn-line" id="line-gene" x1="160" y1="160" x2="253" y2="112"/>
+        <line class="conn-line" id="line-pulse" x1="160" y1="160" x2="220" y2="240"/>
+        <line class="conn-line" id="line-mirror" x1="160" y1="160" x2="100" y2="240"/>
+      </svg>
+      <div class="agent-node node-aegis active" onclick="selectAgent('aegis')" tabindex="0" role="button" aria-label="AEGIS - Chief Medical Officer, currently selected" aria-pressed="true" onkeydown="if(event.key==='Enter')selectAgent('aegis')" style="border-color:var(--aegis);">
+        <div class="icon" aria-hidden="true">◈</div>
+        <div class="name" style="color:var(--aegis)">AEGIS</div>
+      </div>
+      <div class="agent-node node-solaris" onclick="selectAgent('solaris')" id="node-solaris" tabindex="0" role="button" aria-label="SOLARIS - Space Weather Analyst" aria-pressed="false" onkeydown="if(event.key==='Enter')selectAgent('solaris')">
+        <div class="icon" aria-hidden="true">☀</div>
+        <div class="name" style="color:var(--solaris)">SOLARIS</div>
+      </div>
+      <div class="agent-node node-gene" onclick="selectAgent('gene')" id="node-gene" tabindex="0" role="button" aria-label="GENE - Genomic Analyst" aria-pressed="false" onkeydown="if(event.key==='Enter')selectAgent('gene')">
+        <div class="icon" aria-hidden="true">🧬</div>
+        <div class="name" style="color:var(--gene)">GENE</div>
+      </div>
+      <div class="agent-node node-pulse" onclick="selectAgent('pulse')" id="node-pulse" tabindex="0" role="button" aria-label="PULSE - Physiological Monitor" aria-pressed="false" onkeydown="if(event.key==='Enter')selectAgent('pulse')">
+        <div class="icon" aria-hidden="true">💓</div>
+        <div class="name" style="color:var(--pulse)">PULSE</div>
+      </div>
+      <div class="agent-node node-mirror" onclick="selectAgent('mirror')" id="node-mirror" tabindex="0" role="button" aria-label="MIRROR - Behavioral Health" aria-pressed="false" onkeydown="if(event.key==='Enter')selectAgent('mirror')">
+        <div class="icon" aria-hidden="true">🪞</div>
+        <div class="name" style="color:var(--mirror)">MIRROR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vitals Panel -->
+  <div class="vitals-panel">
+    <div class="vitals-title">Live Vitals · Commander Chen</div>
+    
+    <div class="vitals-legend">Each metric is monitored by one specialist agent · AEGIS combines them per crew member</div>
+
+    <div class="vital-row">
+      <div class="vital-label">Heart<span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span></div>
+      <div class="vital-value" style="color:var(--yellow)" id="hr-value">68</div>
+      <svg id="hr-sparkline" width="50" height="24" style="margin:0 8px;cursor:pointer;" onclick="openHRGraph()" role="button" aria-label="Click to expand heart rate graph" tabindex="0" onkeydown="if(event.key==='Enter')openHRGraph()"><polyline id="spark-line" fill="none" stroke="var(--yellow)" stroke-width="1.5" points="0,12 10,14 20,10 30,16 40,12 50,8"/></svg>
+      <div class="vital-bar"><div class="vital-fill" id="hr-fill" style="width:68%;background:var(--yellow)"></div></div>
+      <div class="vital-status" style="color:var(--yellow)" id="hr-status">↑ Elevated</div>
+    </div>
+    
+    <div class="vital-row">
+      <div class="vital-label">SpO₂<span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span></div>
+      <div class="vital-value" style="color:var(--green)" id="spo2-value">97</div>
+      <div class="vital-bar"><div class="vital-fill" id="spo2-fill" style="width:97%;background:var(--green)"></div></div>
+      <div class="vital-status" style="color:var(--green)" id="spo2-status">Normal</div>
+    </div>
+    
+    <div class="vital-row" id="il6-row" title="GENE · IL-6 inflammatory marker (pg/mL)">
+      <div class="vital-label">IL-6<span class="agent-tag gene" title="Monitored by GENE">GENE</span></div>
+      <div class="vital-value" style="color:var(--green)" id="il6-value">--</div>
+      <div class="vital-bar"><div class="vital-fill" id="il6-fill" style="width:0%;background:var(--green)"></div></div>
+      <div class="vital-status" style="color:var(--green)" id="il6-status">--</div>
+    </div>
+    
+    <div class="vital-row">
+      <div class="vital-label">Sleep<span class="agent-tag mirror" title="Monitored by MIRROR">MIRROR</span></div>
+      <div class="vital-value" style="color:var(--orange)" id="sleep-value">71</div>
+      <div class="vital-bar"><div class="vital-fill" id="sleep-fill" style="width:71%;background:var(--orange)"></div></div>
+      <div class="vital-status" style="color:var(--orange)" id="sleep-status">↓ Poor</div>
+    </div>
+    
+    <div class="radiation-section">
+      <div class="rad-header">
+        <span><span class="rad-icon">☢</span> Radiation Exposure <span class="agent-tag solaris" title="Monitored by SOLARIS" style="margin-left:.4rem;">SOLARIS</span></span>
+        <span style="color:var(--green)" id="rad-value">142 / 600 mSv</span>
+      </div>
+      <div class="rad-bar"><div class="rad-fill" id="rad-fill"></div></div>
+      <div class="rad-sub">
+        <span>Mission total vs. career limit</span>
+        <span>Last 24 h: <strong id="rad24-value" style="color:var(--green)">--</strong> <span id="rad24-status"></span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Terminal -->
+  <div class="voice-panel">
+    <div class="voice-title">Voice Terminal</div>
+    <div class="voice-input">
+      <button class="mic-btn" id="micBtn" onclick="toggleListening()" aria-label="Activate voice input" aria-pressed="false">🎙️</button>
+      <div class="voice-status" id="voiceStatus" role="status">Tap to speak with AEGIS</div>
+    </div>
+    <form class="ask-form" id="askForm" onsubmit="event.preventDefault(); submitTypedQuestion();">
+      <input type="text" id="askInput" class="ask-input" maxlength="500" autocomplete="off"
+             placeholder="…or type a question, e.g. &quot;How is Nakamura's radiation?&quot;" aria-label="Type a question for the selected agent">
+      <button type="submit" class="ask-btn" aria-label="Ask">Ask</button>
+    </form>
+    <div class="response-area" aria-live="polite">
+      <div class="response-label">AEGIS Response</div>
+      <div class="response-text" id="responseText" role="log">Awaiting your command...</div>
+    </div>
+  </div>
+
+  <!-- Alert Panel -->
+  <div class="alert-panel" id="alert-panel">
+    <div class="alert-header">
+      <span class="alert-icon" id="alert-icon">⚡</span>
+      <span class="alert-title" id="alert-title">CASCADE ALERT · Day 54</span>
+    </div>
+    <div class="alert-body" id="alert-desc">
+      4-agent convergence detected: radiation-induced immune stress pattern. All monitoring systems have aligned on this finding.
+    </div>
+    <div class="alert-agents" id="alert-agents">
+      <span class="alert-badge" style="background:rgba(200,176,112,.15);color:var(--solaris)">SOLARIS</span>
+      <span class="alert-badge" style="background:rgba(160,152,200,.15);color:var(--gene)">GENE</span>
+      <span class="alert-badge" style="background:rgba(200,136,136,.15);color:var(--pulse)">PULSE</span>
+      <span class="alert-badge" style="background:rgba(122,173,154,.15);color:var(--mirror)">MIRROR</span>
+    </div>
+    <button class="confirm-btn" id="confirm-btn" onclick="confirmProtocol()" aria-describedby="alert-desc">Confirm Protocol RECOVER-3</button>
+  </div>
+
+  <!-- Recommendations Panel (PREVENT Tier) -->
+  <div class="recs-panel">
+    <div class="recs-title"><span class="icon">🛡️</span> Active Recommendations · Tier 2 PREVENT<span class="recs-count" id="recs-count"></span></div>
+    <div class="recs-list">
+      
+      <!-- Recommendation 1: PULSE → AEGIS -->
+      <div class="rec-card urgent">
+        <div class="rec-header">
+          <div class="rec-agents">
+            <span class="rec-agent" style="background:rgba(200,136,136,.2);color:var(--pulse);">💓 PULSE</span>
+            <span class="rec-arrow">→</span>
+            <span class="rec-agent" style="background:rgba(90,159,215,.2);color:var(--aegis);">◈ AEGIS</span>
+          </div>
+          <div class="rec-target">👩‍🚀 Cmdr. Chen</div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-detection">"Elevated cortisol trend detected: +12% over 3 days, correlating with reduced sleep quality (71%)"</div>
+          <div class="rec-intervention">↳ Recommendation: Adjust sleep schedule +30 minutes</div>
+          <div class="rec-evidence">Evidence: HRP Protocol 4.2.1 — Stress Countermeasures</div>
+        </div>
+        <div class="rec-actions">
+          <button class="rec-btn accept" onclick="acceptRec(1)">✓ Accept</button>
+          <button class="rec-btn defer" onclick="deferRec(1)">◷ Defer</button>
+          <button class="rec-btn dismiss" onclick="dismissRec(1)">✕ Dismiss</button>
+        </div>
+      </div>
+
+      <!-- Recommendation 2: SOLARIS → AEGIS -->
+      <div class="rec-card">
+        <div class="rec-header">
+          <div class="rec-agents">
+            <span class="rec-agent" style="background:rgba(200,176,112,.2);color:var(--solaris);">☀️ SOLARIS</span>
+            <span class="rec-arrow">→</span>
+            <span class="rec-agent" style="background:rgba(90,159,215,.2);color:var(--aegis);">◈ AEGIS</span>
+          </div>
+          <div class="rec-target">👥 All Crew</div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-detection">"CME arrival predicted in 18 hours. Expected Kp index: 6 (moderate storm)"</div>
+          <div class="rec-intervention">↳ Recommendation: Reschedule EVA-7 from Day 55 to Day 57</div>
+          <div class="rec-evidence">Evidence: NOAA SWPC Forecast + NASA EVA Radiation Limits (50 mSv/EVA)</div>
+        </div>
+        <div class="rec-actions">
+          <button class="rec-btn accept" onclick="acceptRec(2)">✓ Accept</button>
+          <button class="rec-btn defer" onclick="deferRec(2)">◷ Defer</button>
+          <button class="rec-btn dismiss" onclick="dismissRec(2)">✕ Dismiss</button>
+        </div>
+      </div>
+
+      <!-- Recommendation 3: MIRROR → AEGIS -->
+      <div class="rec-card">
+        <div class="rec-header">
+          <div class="rec-agents">
+            <span class="rec-agent" style="background:rgba(122,173,154,.2);color:var(--mirror);">🪞 MIRROR</span>
+            <span class="rec-arrow">→</span>
+            <span class="rec-agent" style="background:rgba(90,159,215,.2);color:var(--aegis);">◈ AEGIS</span>
+          </div>
+          <div class="rec-target">👨‍🚀 Dr. Okonkwo</div>
+        </div>
+        <div class="rec-body">
+          <div class="rec-detection">"Social interaction frequency decreased 23% this week. Voice sentiment analysis shows mild fatigue markers."</div>
+          <div class="rec-intervention">↳ Recommendation: Schedule optional group activity session</div>
+          <div class="rec-evidence">Evidence: Mars Comm Delays Study — Crew Autonomy Protocols</div>
+        </div>
+        <div class="rec-actions">
+          <button class="rec-btn accept" onclick="acceptRec(3)">✓ Accept</button>
+          <button class="rec-btn defer" onclick="deferRec(3)">◷ Defer</button>
+          <button class="rec-btn dismiss" onclick="dismissRec(3)">✕ Dismiss</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </div><!-- End Mission Control Page -->
+
+  <!-- Crew Roster Page -->
+  <div class="page" id="page-roster">
+    <div class="roster-page">
+      <div class="crew-card selected" onclick="selectCrew('chen')" tabindex="0">
+        <span class="status-badge elevated">Elevated</span>
+        <div class="crew-avatar">👩‍🚀</div>
+        <div class="crew-name">Commander Sarah Chen</div>
+        <div class="crew-role">Mission Commander · MD, PhD</div>
+        <div class="crew-vitals">
+          <div class="crew-vital">
+            <div class="crew-vital-label">Heart Rate</div>
+            <div class="crew-vital-value" style="color:var(--yellow)">68 BPM</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">SpO₂</div>
+            <div class="crew-vital-value" style="color:var(--green)">97%</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">Stress</div>
+            <div class="crew-vital-value" style="color:var(--yellow)">34%</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">Sleep</div>
+            <div class="crew-vital-value" style="color:var(--orange)">71%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="crew-card" onclick="selectCrew('kowalski')" tabindex="0">
+        <span class="status-badge nominal">Nominal</span>
+        <div class="crew-avatar">👩‍🚀</div>
+        <div class="crew-name">Dr. Anna Kowalski</div>
+        <div class="crew-role">Flight Engineer · PhD Aerospace</div>
+        <div class="crew-vitals">
+          <div class="crew-vital">
+            <div class="crew-vital-label">Heart Rate</div>
+            <div class="crew-vital-value" style="color:var(--green)">62 BPM</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">SpO₂</div>
+            <div class="crew-vital-value" style="color:var(--green)">98%</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">Stress</div>
+            <div class="crew-vital-value" style="color:var(--green)">22%</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">Sleep</div>
+            <div class="crew-vital-value" style="color:var(--green)">89%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="crew-card" onclick="selectCrew('nakamura')" tabindex="0">
+        <span class="status-badge alert">Alert</span>
+        <div class="crew-avatar">👨‍⚕️</div>
+        <div class="crew-name">Dr. Kenji Nakamura</div>
+        <div class="crew-role">Medical Officer · MD, Neurology</div>
+        <div class="crew-vitals">
+          <div class="crew-vital">
+            <div class="crew-vital-label">Heart Rate</div>
+            <div class="crew-vital-value" style="color:var(--red)">88 BPM</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">SpO₂</div>
+            <div class="crew-vital-value" style="color:var(--yellow)">95%</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">Stress</div>
+            <div class="crew-vital-value" style="color:var(--red)">67%</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">Sleep</div>
+            <div class="crew-vital-value" style="color:var(--red)">48%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="crew-card" onclick="selectCrew('okonkwo')" tabindex="0">
+        <span class="status-badge nominal">Nominal</span>
+        <div class="crew-avatar">👨‍🔬</div>
+        <div class="crew-name">Eng. David Okonkwo</div>
+        <div class="crew-role">Science Officer · PhD Geology</div>
+        <div class="crew-vitals">
+          <div class="crew-vital">
+            <div class="crew-vital-label">Heart Rate</div>
+            <div class="crew-vital-value" style="color:var(--green)">58 BPM</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">SpO₂</div>
+            <div class="crew-vital-value" style="color:var(--green)">99%</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">Stress</div>
+            <div class="crew-vital-value" style="color:var(--green)">18%</div>
+          </div>
+          <div class="crew-vital">
+            <div class="crew-vital-label">Sleep</div>
+            <div class="crew-vital-value" style="color:var(--green)">92%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- End Crew Roster Page -->
+
+  <!-- Agent Insights Page -->
+  <div class="page" id="page-insights">
+    <div class="insights-page">
+      <div class="insight-card" style="--node-color:var(--aegis)">
+        <div class="insight-header">
+          <div class="insight-avatar" style="border-color:var(--aegis)">◈</div>
+          <div>
+            <div class="insight-agent-name" style="color:var(--aegis)">AEGIS</div>
+            <div class="insight-agent-role">Chief Medical Coordinator</div>
+          </div>
+          <span class="insight-status">Active</span>
+        </div>
+        <div class="insight-log">
+          <div class="insight-entry">
+            <div class="insight-time">14:32:05 UTC</div>
+            <div class="insight-action">Initiated CASCADE ALERT for Cmdr. Chen</div>
+            <div class="insight-reasoning">4-agent convergence detected: Elevated HR + Low HRV + Poor Sleep + Radiation Exposure pattern matches immune stress response profile</div>
+          </div>
+          <div class="insight-entry">
+            <div class="insight-time">14:30:22 UTC</div>
+            <div class="insight-action">Requested consultation from MIRROR</div>
+            <div class="insight-reasoning">Physiological anomalies may have psychological component - need behavioral assessment</div>
+          </div>
+          <div class="insight-entry">
+            <div class="insight-time">14:28:15 UTC</div>
+            <div class="insight-action">Elevated monitoring frequency for Crew</div>
+            <div class="insight-reasoning">Solar storm approaching - preemptive measure to catch early stress indicators</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card" style="--node-color:var(--pulse)">
+        <div class="insight-header">
+          <div class="insight-avatar" style="border-color:var(--pulse)">💓</div>
+          <div>
+            <div class="insight-agent-name" style="color:var(--pulse)">PULSE</div>
+            <div class="insight-agent-role">Physiological Monitor</div>
+          </div>
+          <span class="insight-status" style="background:rgba(200,180,90,.15);color:var(--yellow)">Monitoring</span>
+        </div>
+        <div class="insight-log">
+          <div class="insight-entry">
+            <div class="insight-time">14:31:45 UTC</div>
+            <div class="insight-action">Flagged HRV anomaly for Cmdr. Chen</div>
+            <div class="insight-reasoning">HRV dropped below 50ms threshold for 15+ minutes - indicates autonomic stress response</div>
+          </div>
+          <div class="insight-entry">
+            <div class="insight-time">14:25:00 UTC</div>
+            <div class="insight-action">Detected elevated resting HR</div>
+            <div class="insight-reasoning">Baseline HR typically 62 BPM; current 68 BPM sustained - not exercise-related</div>
+          </div>
+          <div class="insight-entry">
+            <div class="insight-time">08:00:00 UTC</div>
+            <div class="insight-action">Sleep quality analysis complete</div>
+            <div class="insight-reasoning">71% sleep efficiency with fragmented REM cycles - recommend sleep protocol adjustment</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card" style="--node-color:var(--solaris)">
+        <div class="insight-header">
+          <div class="insight-avatar" style="border-color:var(--solaris)">☀</div>
+          <div>
+            <div class="insight-agent-name" style="color:var(--solaris)">SOLARIS</div>
+            <div class="insight-agent-role">Space Weather Analyst</div>
+          </div>
+          <span class="insight-status" style="background:rgba(200,106,106,.15);color:var(--red)">Alert</span>
+        </div>
+        <div class="insight-log">
+          <div class="insight-entry">
+            <div class="insight-time">14:00:00 UTC</div>
+            <div class="insight-action">Solar proton event detected</div>
+            <div class="insight-reasoning">NOAA/SWPC reports M2.3 flare - particle flux elevated 40% above baseline for next 8 hours</div>
+          </div>
+          <div class="insight-entry">
+            <div class="insight-time">13:45:22 UTC</div>
+            <div class="insight-action">Updated radiation forecast</div>
+            <div class="insight-reasoning">Cumulative exposure on track to reach 150 mSv by Day 60 - within career limits but warrants monitoring</div>
+          </div>
+          <div class="insight-entry">
+            <div class="insight-time">06:00:00 UTC</div>
+            <div class="insight-action">Recommended EVA postponement</div>
+            <div class="insight-reasoning">Forecasted SPE would exceed single-event limit during planned 4-hour EVA window</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card" style="--node-color:var(--mirror)">
+        <div class="insight-header">
+          <div class="insight-avatar" style="border-color:var(--mirror)">🪞</div>
+          <div>
+            <div class="insight-agent-name" style="color:var(--mirror)">MIRROR</div>
+            <div class="insight-agent-role">Behavioral Health Analyst</div>
+          </div>
+          <span class="insight-status">Active</span>
+        </div>
+        <div class="insight-log">
+          <div class="insight-entry">
+            <div class="insight-time">14:31:00 UTC</div>
+            <div class="insight-action">Behavioral pattern analysis</div>
+            <div class="insight-reasoning">Communication frequency down 23% from baseline - possible early indicator of withdrawal</div>
+          </div>
+          <div class="insight-entry">
+            <div class="insight-time">12:00:00 UTC</div>
+            <div class="insight-action">Cognitive assessment scheduled</div>
+            <div class="insight-reasoning">Routine weekly check - focus metrics trending 14% below optimal for Cmdr. Chen</div>
+          </div>
+          <div class="insight-entry">
+            <div class="insight-time">09:30:00 UTC</div>
+            <div class="insight-action">Crew morale index updated</div>
+            <div class="insight-reasoning">Overall crew morale at 78% - slight decline attributed to mission day 50+ milestone</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- End Agent Insights Page -->
+</main>
+
+<script>
+// Theme toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.querySelector('.theme-toggle');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+    announce('Dark mode enabled');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    btn.textContent = '☀️';
+    announce('Light mode enabled');
+  }
+}
+
+// Page Navigation
+function switchPage(pageName) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  
+  // Show selected page
+  const page = document.getElementById('page-' + pageName);
+  const tab = document.getElementById('tab-' + pageName);
+  if (page) page.classList.add('active');
+  if (tab) {
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+  }
+  
+  playTone(350, 0.1);
+  announce(pageName.charAt(0).toUpperCase() + pageName.slice(1) + ' page');
+}
+
+// H4: API configuration
+const DASH_API = {
+  baseUrl: 'http://127.0.0.1:8000',
+  selectedCrewId: 'crew-001',  // Maps to backend IDs
+  crewIdMap: {
+    'chen': 'crew-001',
+    'okonkwo': 'crew-002',
+    'kowalski': 'crew-003',
+    'nakamura': 'crew-004'
+  }
+};
+
+// Crew Selection
+const CREW_DATA = {
+  chen: { name: 'Commander Sarah Chen', firstName: 'Commander Chen', hr: 68, spo2: 97, stress: 34, sleep: 71, status: 'elevated', greeting: 'Commander Chen selected. Current status: ELEVATED. Heart rate at 68 BPM with reduced HRV. Cascade alert is active — 4 agents have converged on an immune stress pattern. Recommend Protocol RECOVER-3.' },
+  kowalski: { name: 'Dr. Anna Kowalski', firstName: 'Dr. Kowalski', hr: 62, spo2: 98, stress: 22, sleep: 89, status: 'nominal', greeting: 'Dr. Kowalski selected. Current status: NOMINAL. All vitals within optimal range. Sleep quality excellent at 89%. No active alerts. Cleared for EVA operations.' },
+  nakamura: { name: 'Dr. Kenji Nakamura', firstName: 'Dr. Nakamura', hr: 88, spo2: 95, stress: 67, sleep: 48, status: 'alert', greeting: 'Dr. Nakamura selected. Current status: ALERT. Heart rate elevated to 88 BPM. Stress index at 67% — significantly above baseline. Sleep quality critically low at 48%. MIRROR recommends immediate wellness intervention.' },
+  okonkwo: { name: 'Eng. David Okonkwo', firstName: 'Eng. Okonkwo', hr: 58, spo2: 99, stress: 18, sleep: 92, status: 'nominal', greeting: 'Engineer Okonkwo selected. Current status: NOMINAL. Exceptional vitals across all metrics. Lowest stress index among crew at 18%. Ideal candidate for high-focus tasks.' }
+};
+
+let selectedCrew = 'chen';
+
+function selectCrew(crewId) {
+  selectedCrew = crewId;
+  const crew = CREW_DATA[crewId];
+  
+  // H4: Set API crew ID for live vitals fetch
+  DASH_API.selectedCrewId = DASH_API.crewIdMap[crewId] || 'crew-001';
+  
+  // Update card selection
+  document.querySelectorAll('.crew-card').forEach(card => card.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  
+  // Update vitals panel title
+  const vitalsTitle = document.querySelector('.vitals-title');
+  if (vitalsTitle) vitalsTitle.textContent = 'Live Vitals · ' + crew.firstName;
+  
+  // Update vitals values (on mission page)
+  const hrVal = document.getElementById('hr-value');
+  if (hrVal) hrVal.textContent = crew.hr;
+  
+  playTone(400, 0.15);
+  announce('Selected ' + crew.name);
+  
+  // Switch to mission page and have AEGIS respond
+  setTimeout(() => {
+    switchPage('mission');
+    setTimeout(() => {
+      askAgent(currentAgent, 'Summarise this crew member\'s current status in two sentences.', crew.greeting);
+    }, 300);
+  }, 200);
+}
+
+// Accessibility: Screen reader announcements
+function announce(message) {
+  const live = document.getElementById('a11y-live');
+  if (live) { live.textContent = ''; setTimeout(() => live.textContent = message, 50); }
+}
+
+// Agent data
+const AGENTS = {
+  aegis: { name: 'AEGIS', color: '#5a9fd7', greeting: 'AEGIS online. All systems monitored. How can I assist you today, Commander?' },
+  solaris: { name: 'SOLARIS', color: '#c8b070', greeting: 'SOLARIS here. Current solar activity is moderate. No immediate radiation threats detected.' },
+  gene: { name: 'GENE', color: '#a098c8', greeting: 'GENE reporting. Genomic analysis shows TP53 repair pathway at 2.1x baseline. Monitoring closely.' },
+  pulse: { name: 'PULSE', color: '#c88888', greeting: 'PULSE active. Heart rate variability is below optimal. Recommend stress reduction protocol.' },
+  mirror: { name: 'MIRROR', color: '#7aad9a', greeting: 'MIRROR online. Cognitive performance trending 14% below baseline. Sleep quality may be a factor.' }
+};
+
+let currentAgent = 'aegis';
+let isListening = false;
+let recognition = null;
+
+// L7: Audio context for tones - lazy init on first click
+let audioCtx = null;
+let userHasInteracted = false;
+document.addEventListener('click', () => { userHasInteracted = true; }, { once: true });
+document.addEventListener('keydown', () => { userHasInteracted = true; }, { once: true });
+
+function playTone(freq, duration) {
+  // M3: Skip audio until user has interacted
+  if (!userHasInteracted) return;
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+// ── Live agent answers (Voice Terminal) ─────────────────────────────────────────────
+// Every spoken/typed question and every agent/crew selection goes to POST /api/ask: the chosen agent
+// analyses the selected crew member's CURRENT vitals and DeepSeek answers in that agent's voice
+// (rule-based answer if the model is unavailable; the canned line only if the backend is offline).
+let _askSeq = 0;
+async function askAgent(agentKey, question, fallbackText) {
+  const seq = ++_askSeq;                       // ignore answers to older questions
+  const agent = AGENTS[agentKey] ? agentKey : 'aegis';
+  const agentName = AGENTS[agent].name;
+  const crewId = DASH_API.crewIdMap[selectedCrew] || 'crew-001';
+  const label = document.querySelector('.response-label');
+  const askBtn = document.querySelector('.ask-btn');
+  if (label) label.textContent = `${agentName} Response`;
+  if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+  const el = document.getElementById('responseText');
+  el.textContent = `${agentName} is analysing live data…`;
+  if (askBtn) askBtn.disabled = true;
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/ask`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, agent: agentName, crew_id: crewId })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (seq !== _askSeq) return;
+    if (label) {
+      label.textContent = `${data.agent || agentName} Response`;
+      const tag = document.createElement('span');
+      tag.className = 'response-source' + (data.source === 'deepseek' ? '' : ' rules');
+      tag.textContent = data.source === 'deepseek' ? '🧠 LIVE · DEEPSEEK' : 'LIVE · RULES';
+      tag.title = `Agents consulted: ${(data.agents_consulted || []).join(', ')} · ${data.latency_s}s`;
+      label.appendChild(tag);
+    }
+    typeResponse(data.answer || fallbackText || 'No answer available.', true);
+  } catch (e) {
+    if (seq !== _askSeq) return;
+    typeResponse(fallbackText || `${agentName} could not reach the AEGIS backend.`);
+  } finally {
+    if (seq === _askSeq && askBtn) askBtn.disabled = false;
+  }
+}
+
+function submitTypedQuestion() {
+  const input = document.getElementById('askInput');
+  const q = (input.value || '').trim();
+  if (q.length < 2) return;
+  input.value = '';
+  processCommand(q.toLowerCase());
+}
+
+// Select agent - glow the connection line
+// opts.silent: switch agent visually without asking for a status report (a question follows)
+function selectAgent(name, opts = {}) {
+  currentAgent = name;
+  
+  // Reset all lines and nodes
+  document.querySelectorAll('.conn-line').forEach(l => { l.classList.remove('active'); l.classList.remove('flowing'); });
+  document.querySelectorAll('.agent-node').forEach(n => { 
+    n.classList.remove('active'); 
+    n.setAttribute('aria-pressed', 'false');
+  });
+  
+  // Remove vital pulse
+  document.querySelectorAll('.vital-pulse').forEach(el => el.classList.remove('vital-pulse'));
+  
+  // Activate selected
+  document.querySelector('.node-aegis').classList.add('active');
+  document.querySelector('.node-aegis').setAttribute('aria-pressed', 'true');
+  
+  if (name !== 'aegis') {
+    const line = document.getElementById('line-' + name);
+    const node = document.getElementById('node-' + name);
+    if (line) { line.classList.add('active'); line.classList.add('flowing'); }
+    if (node) { 
+      node.classList.add('active'); 
+      node.setAttribute('aria-pressed', 'true');
+      // WOW: Particle burst effect
+      createParticleBurst(node);
+    }
+  } else {
+    // Particle burst on AEGIS too
+    createParticleBurst(document.querySelector('.node-aegis'));
+  }
+  
+  // WOW: Pulse animation when PULSE agent selected
+  if (name === 'pulse') {
+    document.querySelectorAll('.vital-value').forEach((el, i) => {
+      if (i === 0) el.classList.add('vital-pulse'); // HR value pulses
+    });
+  }
+  
+  playTone(400 + Math.random() * 200, 0.15);
+  announce(AGENTS[name].name + ' selected');
+  document.getElementById('voiceStatus').textContent = 'Tap to speak with ' + AGENTS[name].name;
+  if (!opts.silent) {
+    const q = name === 'aegis'
+      ? 'Give a brief overall status report for this crew member and flag anything that needs attention.'
+      : 'Give your current status report for this crew member from your domain.';
+    askAgent(name, q, AGENTS[name].greeting);
+  }
+}
+
+// WOW: Particle burst animation
+function createParticleBurst(node) {
+  const ring = document.createElement('div');
+  ring.className = 'particle-ring';
+  node.appendChild(ring);
+  setTimeout(() => ring.remove(), 600);
+}
+
+// WOW: Boot sequence - staggered fade-in
+function bootSequence() {
+  const order = ['node-aegis', 'node-solaris', 'node-gene', 'node-pulse', 'node-mirror'];
+  
+  order.forEach((cls, i) => {
+    const node = document.querySelector('.' + cls);
+    if (node) {
+      node.style.opacity = '0';
+      setTimeout(() => {
+        node.style.transition = 'opacity 0.4s ease-out';
+        node.style.opacity = '1';
+        playTone(220 + i * 80, 0.1);
+      }, i * 200);
+    }
+  });
+}
+
+// Typewriter effect for response
+let typingTimer = null;
+
+function typeResponse(text, isLiveAnswer = false) {
+  // Scripted messages (protocol confirmations, alert read-outs) must not carry the previous "LIVE" tag
+  if (!isLiveAnswer) {
+    const label = document.querySelector('.response-label');
+    if (label && label.querySelector('.response-source')) label.textContent = 'AEGIS Response';
+  }
+  // Cancel any existing typing animation
+  if (typingTimer) {
+    clearTimeout(typingTimer);
+    typingTimer = null;
+  }
+  // Stop any ongoing speech
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+  }
+  
+  const el = document.getElementById('responseText');
+  el.innerHTML = '';
+  let i = 0;
+  const cursor = document.createElement('span');
+  cursor.className = 'typing-cursor';
+  
+  function type() {
+    if (i < text.length) {
+      el.textContent = text.substring(0, i + 1);
+      el.appendChild(cursor);
+      i++;
+      typingTimer = setTimeout(type, 30);
+    } else {
+      cursor.remove();
+      typingTimer = null;
+      speak(text);
+    }
+  }
+  type();
+}
+
+// Speech synthesis
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1;
+    utter.pitch = 1;
+    speechSynthesis.speak(utter);
+  }
+}
+
+// Voice recognition
+function toggleListening() {
+  if (isListening) {
+    stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    typeResponse('Voice recognition not supported in this browser. Try Chrome.');
+    return;
+  }
+  
+  recognition = new SR();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('micBtn').textContent = '🔴';
+    document.getElementById('micBtn').setAttribute('aria-pressed', 'true');
+    document.getElementById('micBtn').setAttribute('aria-label', 'Stop listening');
+    document.getElementById('voiceStatus').textContent = 'Listening...';
+    document.getElementById('voiceStatus').classList.add('listening');
+    announce('Listening for your voice command');
+  };
+  
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript.toLowerCase();
+    announce('You said: ' + transcript);
+    processCommand(transcript);
+  };
+  
+  recognition.onerror = recognition.onend = () => stopListening();
+  recognition.start();
+}
+
+function stopListening() {
+  isListening = false;
+  if (recognition) { try { recognition.stop(); } catch(e) {} }
+  document.getElementById('micBtn').classList.remove('listening');
+  document.getElementById('micBtn').textContent = '🎙️';
+  document.getElementById('micBtn').setAttribute('aria-pressed', 'false');
+  document.getElementById('micBtn').setAttribute('aria-label', 'Activate voice input');
+  document.getElementById('voiceStatus').textContent = 'Tap to speak with ' + AGENTS[currentAgent].name;
+  document.getElementById('voiceStatus').classList.remove('listening');
+}
+
+function processCommand(cmd) {
+  stopListening();
+  
+  cmd = (cmd || '').trim();
+  // Wake word: "hey solaris, what's the dose?" → SOLARIS answers the rest.
+  // A wake word on its own → that agent gives a live status report.
+  const wake = cmd.match(/^(?:hey\s+|ok\s+)?(aegis|solaris|gene|pulse|mirror)\b[\s,.:!?-]*(.*)$/);
+  if (wake) {
+    const rest = wake[2].trim();
+    if (rest.split(/\s+/).filter(Boolean).length >= 2) {
+      selectAgent(wake[1], { silent: true });
+      askAgent(wake[1], rest);
+    } else {
+      selectAgent(wake[1]);
+    }
+    return;
+  }
+  // No wake word: route obvious domain questions to the specialist, otherwise ask the current agent
+  let agent = currentAgent;
+  if (currentAgent === 'aegis') {
+    if (/radiation|solar|dose|shelter|sievert|msv/.test(cmd)) agent = 'solaris';
+    else if (/il-?6|crp|inflamm|immune|biomarker/.test(cmd)) agent = 'gene';
+    else if (/heart|pulse|blood pressure|spo2|oxygen|bone|muscle/.test(cmd)) agent = 'pulse';
+    else if (/stress|sleep|mood|mental|behavio|isolation|fatigue/.test(cmd)) agent = 'mirror';
+  }
+  if (agent !== currentAgent) selectAgent(agent, { silent: true });
+  askAgent(agent, cmd);
+}
+
+// Cascade animation
+function triggerCascade() {
+  const agents = ['solaris', 'gene', 'pulse', 'mirror'];
+  agents.forEach((agent, i) => {
+    setTimeout(() => {
+      const line = document.getElementById('line-' + agent);
+      const node = document.getElementById('node-' + agent);
+      if (line) { line.classList.add('active'); setTimeout(() => line.classList.remove('active'), 600); }
+      if (node) { node.classList.add('active'); setTimeout(() => node.classList.remove('active'), 600); }
+      playTone(300 + i * 100, 0.2);
+    }, i * 400);
+  });
+}
+
+function confirmProtocol() {
+  // E2E: acknowledge the live backend alert (if any) so the confirmation is recorded
+  const ackId = LIVE_ALERT.id;
+  const ackProtocol = LIVE_ALERT.protocol || 'RECOVER-3';
+  const ackCrew = LIVE_ALERT.crewName || 'Commander Chen';
+  const ackCrewKey = LIVE_ALERT.crewKey || 'chen';
+  LIVE_ALERT.pauseUntil = Date.now() + 6000;  // keep the success state visible briefly
+  // Show the protocol being carried out on board (spacecraft sim pop-up)
+  setTimeout(() => openSimForProtocol(ackProtocol, ackCrewKey), 1700);
+  if (ackId) {
+    const B = DASH_API.baseUrl;
+    const ack = id => fetch(`${B}/api/alerts/${encodeURIComponent(id)}/acknowledge`, { method: 'POST' });
+    (async () => {
+      await ack(ackId);
+      // RECOVER-3 resolves the cascade (story: Day 61 "all indicators normalized");
+      // SHELTER-1 rides out the SPE, and the sim ends on "Await all-clear". Both return the simulator to nominal.
+      if (ackProtocol.startsWith('RECOVER') || ackProtocol.startsWith('SHELTER')) {
+        await fetch(`${B}/api/simulation/scenario/nominal`, { method: 'POST' }).catch(() => {});
+      }
+      if (ackProtocol.startsWith('RECOVER')) {
+        // RECOVER-3 covers every domain for that crew member (e.g. MIRROR's stress alert raised during the cascade)
+        try {
+          const crewId = DASH_API.crewIdMap[ackCrewKey];
+          const open = await (await fetch(`${B}/api/alerts?unacknowledged_only=true&limit=200`)).json();
+          await Promise.all(open.filter(a => a.crew_member_id === crewId && !/SHELTER/i.test(a.title || '')).map(a => ack(a.id)));
+        } catch (e) {}
+      }
+      if (ackProtocol.startsWith('SHELTER')) {
+        // SHELTER-1 is crew-wide: one confirmation covers every open SHELTER alert (SPE raises one per crew member)
+        const sweep = async () => {
+          try {
+            const open = await (await fetch(`${B}/api/alerts?unacknowledged_only=true&limit=200`)).json();
+            await Promise.all(open.filter(a => /SHELTER/i.test(a.title || '')).map(a => ack(a.id)));
+          } catch (e) {}
+        };
+        await sweep();
+        // Second sweep catches alerts from an analysis run that was already in flight when we confirmed
+        await new Promise(r => setTimeout(r, 4000));
+        await sweep();
+      }
+      setTimeout(refreshLiveAlerts, 6000);
+    })().catch(() => {});
+  }
+
+  // WOW: Screen celebration pulse
+  const overlay = document.createElement('div');
+  overlay.className = 'celebration-overlay';
+  document.body.appendChild(overlay);
+  setTimeout(() => overlay.remove(), 1000);
+  
+  // WOW: Cascade with checkmarks
+  const agents = ['solaris', 'gene', 'pulse', 'mirror'];
+  agents.forEach((agent, i) => {
+    setTimeout(() => {
+      const line = document.getElementById('line-' + agent);
+      const node = document.getElementById('node-' + agent);
+      if (line) { line.classList.add('active'); setTimeout(() => line.classList.remove('active'), 800); }
+      if (node) { 
+        node.classList.add('active'); 
+        // Add checkmark
+        let check = node.querySelector('.checkmark');
+        if (!check) {
+          check = document.createElement('span');
+          check.className = 'checkmark';
+          check.textContent = '✓';
+          check.style.color = 'var(--green)';
+          node.appendChild(check);
+        }
+        check.classList.add('show');
+        setTimeout(() => node.classList.remove('active'), 800);
+      }
+      playTone(400 + i * 100, 0.15);
+    }, i * 300);
+  });
+  
+  // Victory sound sequence
+  setTimeout(() => {
+    playTone(523, 0.15); // C
+    setTimeout(() => playTone(659, 0.15), 100); // E
+    setTimeout(() => playTone(784, 0.3), 200); // G
+  }, 1200);
+  
+  setTimeout(() => {
+    if (ackProtocol.startsWith('SHELTER')) {
+      typeResponse(`Protocol ${ackProtocol} confirmed. All crew proceeding to the storm shelter. SOLARIS will announce the all-clear when proton flux drops.`);
+    } else {
+      typeResponse(`Protocol ${ackProtocol} confirmed for ${ackCrew}. Initiating countermeasures: increased hydration, reduced exertion, antioxidant supplements, daily biomarker check-ins. All agents synchronized.`);
+    }
+    document.querySelector('.confirm-btn').textContent = '✓ Protocol Active';
+    document.querySelector('.confirm-btn').style.background = 'rgba(90,173,140,.3)';
+    document.querySelector('.confirm-btn').disabled = true;
+  }, 1500);
+}
+
+// Recommendation actions (PREVENT Tier)
+function acceptRec(id) {
+  const cards = document.querySelectorAll('.rec-card');
+  const card = cards[id - 1];
+  if (!card) return;
+  
+  card.style.borderColor = 'var(--green)';
+  card.style.background = 'rgba(90,173,140,.1)';
+  card.querySelector('.rec-intervention').style.color = 'var(--green)';
+  card.querySelector('.rec-actions').innerHTML = '<div style="text-align:center;color:var(--green);font-weight:600;padding:.5rem;">✓ Accepted — Scheduling intervention</div>';
+  
+  playTone(523, 0.1);
+  setTimeout(() => playTone(659, 0.15), 100);
+  
+  typeResponse('Recommendation accepted. AEGIS is coordinating with habitat systems to implement the intervention. Crew member will be notified via personal display.');
+}
+
+function deferRec(id) {
+  const cards = document.querySelectorAll('.rec-card');
+  const card = cards[id - 1];
+  if (!card) return;
+  
+  card.style.opacity = '0.7';
+  card.querySelector('.rec-actions').innerHTML = '<div style="text-align:center;color:var(--yellow);font-size:.8rem;padding:.5rem;">◷ Deferred — Will re-evaluate in 4 hours</div>';
+  
+  playTone(350, 0.1);
+}
+
+function dismissRec(id) {
+  const cards = document.querySelectorAll('.rec-card');
+  const card = cards[id - 1];
+  if (!card) return;
+  
+  card.style.opacity = '0.4';
+  card.style.transform = 'scale(0.98)';
+  card.querySelector('.rec-actions').innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.8rem;padding:.5rem;">✕ Dismissed — Logged for review</div>';
+  
+  playTone(250, 0.1);
+}
+
+// H4: Fetch live vitals from API for selected crew member
+let hrHistory = [68, 67, 69, 66, 68, 70];
+async function fetchAndUpdateVitals() {
+  try {
+    const response = await fetch(`${DASH_API.baseUrl}/api/crew/${DASH_API.selectedCrewId}`);
+    if (!response.ok) throw new Error('API unavailable');
+    const crew = await response.json();
+    const vitals = crew.vitals;
+    if (!vitals) return;
+    
+    // Update HR
+    const hrEl = document.getElementById('hr-value');
+    const hrFill = document.getElementById('hr-fill');
+    const hrStatus = document.getElementById('hr-status');
+    if (hrEl) {
+      const hr = Math.round(vitals.heart_rate);
+      hrEl.textContent = hr;
+      if (hrFill) hrFill.style.width = Math.min(100, hr) + '%';
+      // Update sparkline history
+      hrHistory.push(hr);
+      if (hrHistory.length > 6) hrHistory.shift();
+      const sparkLine = document.getElementById('spark-line');
+      if (sparkLine) {
+        // Scale 40-160 bpm into the 24px-high sparkline (clamped so high rates stay visible)
+        const points = hrHistory.map((v, i) => `${i * 10},${Math.max(2, Math.min(22, 22 - (v - 40) * 20 / 120)).toFixed(1)}`).join(' ');
+        sparkLine.setAttribute('points', points);
+      }
+      // Same thresholds as the PULSE agent: >150 or <40 critical, >100 warning
+      const hrColor = (hr > 120 || hr < 40) ? 'var(--red)' : hr > 100 ? 'var(--yellow)' : 'var(--green)';
+      const hrLabel = hr > 150 ? '↑ Critical' : hr < 40 ? '↓ Critical' : hr > 120 ? '↑ Very high' : hr > 100 ? '↑ High' : 'Normal';
+      hrEl.style.color = hrColor;
+      if (hrFill) hrFill.style.background = hrColor;
+      if (hrStatus) { hrStatus.textContent = hrLabel; hrStatus.style.color = hrColor; }
+    }
+    
+    // GENE: IL-6 / CRP from the backend (the exact values and thresholds the GENE agent evaluates)
+    try {
+      const br = await fetch(`${DASH_API.baseUrl}/api/crew/${DASH_API.selectedCrewId}/biomarkers`);
+      if (br.ok) {
+        const bm = await br.json();
+        const il6El = document.getElementById('il6-value');
+        const il6Fill = document.getElementById('il6-fill');
+        const il6Status = document.getElementById('il6-status');
+        const il6Row = document.getElementById('il6-row');
+        const color = bm.status === 'elevated' ? 'var(--red)' : bm.status === 'mild' ? 'var(--yellow)' : 'var(--green)';
+        const label = bm.status === 'elevated' ? '↑ Elevated' : bm.status === 'mild' ? '↑ Mild' : 'Normal';
+        if (il6El) { il6El.textContent = bm.il6.toFixed(1); il6El.style.color = color; }
+        if (il6Fill) { il6Fill.style.width = Math.min(100, bm.il6 / 20 * 100) + '%'; il6Fill.style.background = color; }
+        if (il6Status) { il6Status.textContent = label; il6Status.style.color = color; }
+        if (il6Row) il6Row.title = `GENE · IL-6 ${bm.il6} ${bm.il6_unit}, CRP ${bm.crp} ${bm.crp_unit}` +
+          ` (mild > ${bm.thresholds.il6_caution}, elevated > ${bm.thresholds.il6_warning} pg/mL)` +
+          (bm.source === 'modelled' ? ' · modelled from stress + radiation until a biomarker feed is connected' : '');
+      }
+    } catch (e) { /* keep last value */ }
+    
+    // H1: Update per-crew radiation from API
+    const radEl = document.getElementById('rad-value');
+    const radFill = document.getElementById('rad-fill');
+    if (radEl && crew.cumulative_radiation !== undefined) {
+      const rad = Math.round(crew.cumulative_radiation);
+      radEl.textContent = `${rad} / 600 mSv`;
+      const radPct = Math.min(100, (rad / 600) * 100);
+      if (radFill) radFill.style.width = radPct + '%';
+      const radColor = rad > 400 ? 'var(--red)' : rad > 250 ? 'var(--yellow)' : 'var(--green)';
+      radEl.style.color = radColor;
+      if (radFill) radFill.style.background = radColor;
+    }
+    // SOLARIS: 24-hour dose (same thresholds as the agent: >0.5 elevated, >1.0 shelter)
+    const rad24El = document.getElementById('rad24-value');
+    const rad24Status = document.getElementById('rad24-status');
+    if (rad24El && vitals.radiation_dose_24h !== undefined && vitals.radiation_dose_24h !== null) {
+      const d = vitals.radiation_dose_24h;
+      const c = d > 1.0 ? 'var(--red)' : d > 0.5 ? 'var(--yellow)' : 'var(--green)';
+      rad24El.textContent = d.toFixed(2) + ' mSv';
+      rad24El.style.color = c;
+      if (rad24Status) { rad24Status.textContent = d > 1.0 ? '· SHELTER' : d > 0.5 ? '· Elevated' : '· Normal'; rad24Status.style.color = c; }
+    }
+    
+    // Update SpO2
+    const spo2El = document.getElementById('spo2-value');
+    const spo2Fill = document.getElementById('spo2-fill');
+    const spo2Status = document.getElementById('spo2-status');
+    if (spo2El && vitals.spo2 !== undefined) {
+      const spo2 = Math.round(vitals.spo2);
+      spo2El.textContent = spo2 + '%';
+      if (spo2Fill) spo2Fill.style.width = spo2 + '%';
+      // Same thresholds as the PULSE agent: <90 critical, <95 low
+      const spo2Color = spo2 < 90 ? 'var(--red)' : spo2 < 95 ? 'var(--yellow)' : 'var(--green)';
+      const spo2Label = spo2 < 90 ? '↓ Critical' : spo2 < 95 ? '↓ Low' : 'Normal';
+      spo2El.style.color = spo2Color;
+      if (spo2Fill) spo2Fill.style.background = spo2Color;
+      if (spo2Status) { spo2Status.textContent = spo2Label; spo2Status.style.color = spo2Color; }
+    }
+    
+    // Update Sleep
+    const sleepEl = document.getElementById('sleep-value');
+    const sleepFill = document.getElementById('sleep-fill');
+    const sleepStatus = document.getElementById('sleep-status');
+    if (sleepEl && vitals.sleep_quality !== undefined) {
+      const sleep = Math.round(vitals.sleep_quality);
+      sleepEl.textContent = sleep + '%';
+      if (sleepFill) sleepFill.style.width = sleep + '%';
+      const sleepColor = sleep < 50 ? 'var(--red)' : sleep < 70 ? 'var(--orange)' : 'var(--green)';
+      const sleepLabel = sleep < 50 ? '↓ Poor' : sleep < 70 ? '↓ Fair' : 'Good';
+      sleepEl.style.color = sleepColor;
+      if (sleepFill) sleepFill.style.background = sleepColor;
+      if (sleepStatus) { sleepStatus.textContent = sleepLabel; sleepStatus.style.color = sleepColor; }
+    }
+  } catch (e) {
+    // Fallback to local animation if API unavailable
+    animateVitalsLocal();
+  }
+}
+
+// Fallback local animation (original behavior)
+function animateVitalsLocal() {
+  const hrEl = document.getElementById('hr-value');
+  const hrFill = document.getElementById('hr-fill');
+  const sparkLine = document.getElementById('spark-line');
+  
+  const currentHR = parseInt(hrEl.textContent);
+  const newHR = Math.max(62, Math.min(75, currentHR + Math.floor(Math.random() * 7) - 3));
+  hrEl.textContent = newHR;
+  if (hrFill) hrFill.style.width = newHR + '%';
+  
+  hrHistory.push(newHR);
+  if (hrHistory.length > 6) hrHistory.shift();
+  const points = hrHistory.map((v, i) => `${i * 10},${24 - (v - 60) * 1.5}`).join(' ');
+  if (sparkLine) sparkLine.setAttribute('points', points);
+}
+
+// H4: Use API fetch instead of pure local animation
+setInterval(fetchAndUpdateVitals, 5000);
+// Also fetch immediately on load
+setTimeout(fetchAndUpdateVitals, 2000);
+
+// ============================================
+// E2E WIRING: live alerts, roster status, demo controls (Claude, Sep 28)
+// ============================================
+const LIVE_ALERT = { id: null, protocol: 'RECOVER-3', crewName: null, crewKey: 'chen', pauseUntil: 0 };
+const CREW_KEY_BY_ID = Object.fromEntries(Object.entries(DASH_API.crewIdMap).map(([k, v]) => [v, k]));
+const AGENT_BADGE_STYLE = {
+  SOLARIS: 'background:rgba(200,176,112,.15);color:var(--solaris)',
+  GENE:    'background:rgba(160,152,200,.15);color:var(--gene)',
+  PULSE:   'background:rgba(200,136,136,.15);color:var(--pulse)',
+  MIRROR:  'background:rgba(122,173,154,.15);color:var(--mirror)',
+  AEGIS:   'background:rgba(90,159,215,.15);color:var(--aegis)'
+};
+
+function _crewDisplayName(crewId) {
+  const key = CREW_KEY_BY_ID[crewId];
+  return (key && CREW_DATA[key]) ? CREW_DATA[key].firstName : (crewId || 'crew');
+}
+
+// DeepSeek reasoning layer: the backend appends "🧠 DeepSeek (AGENT): ..." to alert messages
+const AI_MARKER = '🧠 DeepSeek';
+function _splitAi(text) {
+  const i = (text || '').indexOf(AI_MARKER);
+  return i < 0 ? [String(text || '').trim(), ''] : [text.slice(0, i).trim(), text.slice(i).trim()];
+}
+function _renderAiNote(aiText) {
+  let el = document.getElementById('alert-ai');
+  if (!el) {
+    const desc = document.getElementById('alert-desc');
+    if (!desc) return;
+    el = document.createElement('div');
+    el.id = 'alert-ai';
+    el.className = 'alert-ai';
+    el.setAttribute('aria-live', 'polite');
+    desc.insertAdjacentElement('afterend', el);
+  }
+  if (!aiText) { el.style.display = 'none'; el.textContent = ''; return; }
+  const m = aiText.match(/^🧠 DeepSeek\s*\(([^)]+)\):\s*([\s\S]*)$/);
+  el.innerHTML = '';
+  const tag = document.createElement('span');
+  tag.className = 'alert-ai-tag';
+  tag.textContent = m ? `🧠 DeepSeek · ${m[1]}` : '🧠 DeepSeek';
+  const body = document.createElement('span');
+  body.textContent = m ? m[2] : aiText.replace(AI_MARKER, '').trim();
+  el.append(tag, body);
+  el.style.display = '';
+}
+
+function _alertRank(a) {
+  if (a.severity === 'critical' || /SHELTER/i.test(a.title)) return 2;   // PROTECT tier
+  if (/CASCADE/i.test(a.title)) return 1;                                 // cascade (PREVENT/RECOVER)
+  return 0;
+}
+
+function renderLiveAlert(a) {
+  const panel = document.getElementById('alert-panel');
+  const icon = document.getElementById('alert-icon');
+  const title = document.getElementById('alert-title');
+  const desc = document.getElementById('alert-desc');
+  const agentsEl = document.getElementById('alert-agents');
+  const btn = document.getElementById('confirm-btn');
+  if (!panel || !btn) return;
+
+  if (!a) {
+    // All clear
+    LIVE_ALERT.id = null;
+    panel.style.borderColor = 'var(--green)';
+    icon.textContent = '✓';
+    title.textContent = 'ALL CLEAR · No active alerts';
+    title.style.color = 'var(--green)';
+    desc.textContent = 'AEGIS is monitoring all crew. Cascade and Protect alerts will appear here the moment ≥3 agents converge or a hazard is detected.';
+    agentsEl.innerHTML = '';
+    btn.style.display = 'none';
+    _renderAiNote('');
+    return;
+  }
+
+  const isNew = a.id !== LIVE_ALERT.id;
+  const isShelter = _alertRank(a) === 2;
+  const protoMatch = (a.message || '').match(/(RECOVER-\d|SHELTER-\d|CALM-\d|SLEEP-\d|MEDIC-\d)/);
+  LIVE_ALERT.id = a.id;
+  LIVE_ALERT.protocol = protoMatch ? protoMatch[1] : (isShelter ? 'SHELTER-1' : 'RECOVER-3');
+  LIVE_ALERT.crewName = _crewDisplayName(a.crew_member_id);
+  LIVE_ALERT.crewKey = CREW_KEY_BY_ID[a.crew_member_id] || 'chen';
+
+  panel.style.borderColor = 'var(--red)';
+  icon.textContent = isShelter ? '☢' : '⚡';
+  title.style.color = '';
+  const cleanTitle = (a.title || 'ALERT').replace(/^🔺\s*/, '');
+  title.textContent = `${cleanTitle} · ${LIVE_ALERT.crewName}`;
+  // Rule-based text vs. DeepSeek assessment (appended by the backend a few seconds after the alert)
+  const [ruleMsg, aiMsg] = _splitAi(a.message || '');
+  desc.textContent = ruleMsg;
+  _renderAiNote(aiMsg);
+
+  const agentsMatch = (a.message || '').match(/Agents reporting:\s*([^.]*)/);
+  const agents = agentsMatch ? agentsMatch[1].split(',').map(s => s.trim()).filter(Boolean)
+                             : [String(a.source || 'AEGIS').toUpperCase()];
+  agentsEl.innerHTML = agents.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('');
+
+  btn.style.display = '';
+  if (isNew) {
+    btn.disabled = false;
+    btn.style.background = '';
+    btn.textContent = `Confirm Protocol ${LIVE_ALERT.protocol}`;
+    if (typeof playTone === 'function') { playTone(880, 0.12); setTimeout(() => playTone(660, 0.12), 150); }
+    if (typeof typeResponse === 'function') {
+      typeResponse(`${cleanTitle} for ${LIVE_ALERT.crewName}. ${agents.length} agent${agents.length > 1 ? 's' : ''} reporting: ${agents.join(', ')}. Recommend Protocol ${LIVE_ALERT.protocol}.`);
+    }
+  }
+}
+
+async function refreshLiveAlerts() {
+  if (Date.now() < LIVE_ALERT.pauseUntil) return;
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/alerts?unacknowledged_only=true&limit=50`);
+    if (!r.ok) return;                       // keep current display on error
+    const alerts = await r.json();
+    const top = alerts
+      .filter(a => _alertRank(a) > 0)
+      .sort((x, y) => _alertRank(y) - _alertRank(x) || new Date(y.timestamp) - new Date(x.timestamp))[0];
+    renderLiveAlert(top);
+  } catch (e) { /* backend offline: keep static demo content */ }
+}
+
+const STATUS_BADGE = {
+  nominal:  { text: 'Nominal',  cls: 'nominal'  },
+  caution:  { text: 'Elevated', cls: 'elevated' },
+  warning:  { text: 'Warning',  cls: 'alert'    },
+  critical: { text: 'Critical', cls: 'alert'    }
+};
+
+async function refreshRosterStatus() {
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/crew`);
+    if (!r.ok) return;
+    const crew = await r.json();
+    crew.forEach(m => {
+      const key = CREW_KEY_BY_ID[m.id];
+      if (!key) return;
+      const card = document.querySelector(`.crew-card[onclick*="'${key}'"]`);
+      const badge = card && card.querySelector('.status-badge');
+      const s = STATUS_BADGE[m.status] || STATUS_BADGE.nominal;
+      if (badge) { badge.textContent = s.text; badge.className = `status-badge ${s.cls}`; }
+      if (CREW_DATA[key]) CREW_DATA[key].status = s.cls;
+    });
+  } catch (e) { /* offline: keep static badges */ }
+}
+
+// Demo controls: Shift+D starts the cascade demo, Shift+S a solar particle event, Shift+N returns to nominal
+async function setDemoScenario(name) {
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/simulation/scenario/${name}`, { method: 'POST' });
+    if (!r.ok) throw new Error(r.status);
+    const label = { cascade_demo: 'Cascade demo started: agents will converge within ~30 seconds.',
+                    spe_event: 'Solar particle event scenario started.',
+                    nominal: 'Returned to nominal operations.' }[name] || `Scenario ${name} set.`;
+    if (typeof typeResponse === 'function') typeResponse(label);
+  } catch (e) {
+    if (typeof typeResponse === 'function') typeResponse('Could not reach the AEGIS backend to change the scenario.');
+  }
+}
+document.addEventListener('keydown', (e) => {
+  if (!e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (e.key === 'D') setDemoScenario('cascade_demo');
+  else if (e.key === 'S') setDemoScenario('spe_event');
+  else if (e.key === 'N') setDemoScenario('nominal');
+});
+// Also allow ?demo=cascade in the URL
+if (new URLSearchParams(location.search).get('demo') === 'cascade') setTimeout(() => setDemoScenario('cascade_demo'), 1500);
+
+setInterval(refreshLiveAlerts, 5000);
+setInterval(refreshRosterStatus, 5000);
+setTimeout(() => { refreshLiveAlerts(); refreshRosterStatus(); }, 1500);
+
+// Init
+bootSequence();
+setTimeout(() => {
+  typeResponse('Good morning. AEGIS online. Please select a crew member to begin health monitoring.');
+}, 1200);
+
+// Expanded HR Graph Modal
+function openHRGraph() {
+  document.getElementById('hrModal').classList.add('open');
+  updateExpandedChart();
+  announce('Heart rate graph expanded');
+}
+
+function closeHRGraph() {
+  document.getElementById('hrModal').classList.remove('open');
+  announce('Graph closed');
+}
+
+// Extended history for expanded view (last 20 readings)
+let hrHistoryExtended = [68, 67, 69, 66, 68, 70, 69, 71, 68, 67, 65, 68, 70, 72, 69, 67, 68, 66, 69, 68];
+
+function updateExpandedChart() {
+  const svg = document.getElementById('expanded-svg');
+  if (!svg) return;
+  
+  const width = 520, height = 160, padding = 30;
+  const data = hrHistoryExtended;
+  const min = Math.min(...data) - 5;
+  const max = Math.max(...data) + 5;
+  
+  // Build SVG content
+  let html = '';
+  
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = padding + (height - 2 * padding) * i / 4;
+    const val = Math.round(max - (max - min) * i / 4);
+    html += `<line class="chart-grid" x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}"/>`;
+    html += `<text class="chart-label" x="${padding - 5}" y="${y + 4}" text-anchor="end">${val}</text>`;
+  }
+  
+  // Line and points
+  const points = data.map((v, i) => {
+    const x = padding + (width - 2 * padding) * i / (data.length - 1);
+    const y = padding + (height - 2 * padding) * (1 - (v - min) / (max - min));
+    return { x, y, v };
+  });
+  
+  const linePoints = points.map(p => `${p.x},${p.y}`).join(' ');
+  html += `<polyline class="chart-line" points="${linePoints}"/>`;
+  
+  // Dots with values
+  points.forEach((p, i) => {
+    html += `<circle class="chart-dot" cx="${p.x}" cy="${p.y}" r="4"/>`;
+    if (i % 3 === 0 || i === data.length - 1) {
+      html += `<text class="chart-value" x="${p.x}" y="${p.y - 10}" text-anchor="middle">${p.v}</text>`;
+    }
+  });
+  
+  // X-axis labels (time)
+  for (let i = 0; i < data.length; i += 5) {
+    const x = padding + (width - 2 * padding) * i / (data.length - 1);
+    html += `<text class="chart-label" x="${x}" y="${height - 5}" text-anchor="middle">-${(data.length - 1 - i) * 3}s</text>`;
+  }
+  
+  svg.innerHTML = html;
+  
+  // Update stats
+  const avg = Math.round(data.reduce((a, b) => a + b, 0) / data.length);
+  const minVal = Math.min(...data);
+  const maxVal = Math.max(...data);
+  document.getElementById('hr-avg').textContent = avg;
+  document.getElementById('hr-min').textContent = minVal;
+  document.getElementById('hr-max').textContent = maxVal;
+}
+
+// Update extended history when vitals animate
+const origAnimateVitalsLocal = animateVitalsLocal;
+animateVitalsLocal = function() {
+  origAnimateVitalsLocal();
+  const newHR = parseInt(document.getElementById('hr-value').textContent);
+  hrHistoryExtended.push(newHR);
+  if (hrHistoryExtended.length > 20) hrHistoryExtended.shift();
+  if (document.getElementById('hrModal').classList.contains('open')) {
+    updateExpandedChart();
+  }
+};
+
+// Close modal on escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('hrModal').classList.contains('open')) {
+    closeHRGraph();
+  }
+  if (e.key === 'Escape' && document.getElementById('whatifModal').classList.contains('open')) {
+    closeWhatIf();
+  }
+});
+
+// ============================================
+// WHAT-IF SCENARIO SIMULATOR — the five dashboard metrics, evaluated by the real agents
+// (POST /api/whatif runs PULSE / GENE / MIRROR / SOLARIS rules + AEGIS decision; nothing is stored)
+// ============================================
+const WHATIF_METRICS = [
+  { key: 'heart_rate', label: 'Heart rate', icon: '💓', agent: 'pulse', unit: ' bpm', min: 40, max: 160, step: 1, dec: 0,
+    level: v => (v > 120 || v < 40) ? 'critical' : v > 100 ? 'warning' : 'normal', hint: 'PULSE: >100 high · >120 alert · >150 emergency' },
+  { key: 'spo2', label: 'SpO₂', icon: '🫁', agent: 'pulse', unit: '%', min: 85, max: 100, step: 0.5, dec: 1,
+    level: v => v < 90 ? 'critical' : v < 95 ? 'warning' : 'normal', hint: 'PULSE: <95 low · <90 critical' },
+  { key: 'il6', label: 'IL-6', icon: '🧬', agent: 'gene', unit: ' pg/mL', min: 0, max: 20, step: 0.1, dec: 1,
+    level: v => v > 12 ? 'critical' : v > 8 ? 'warning' : 'normal', hint: 'GENE: >8 mild · >12 elevated' },
+  { key: 'sleep_quality', label: 'Sleep quality', icon: '😴', agent: 'mirror', unit: '/100', min: 0, max: 100, step: 1, dec: 0,
+    level: v => v < 50 ? 'critical' : v < 70 ? 'warning' : 'normal', hint: 'MIRROR: <70 fair · <50 poor' },
+  { key: 'radiation_dose_24h', label: 'Radiation (last 24 h)', icon: '☢️', agent: 'solaris', unit: ' mSv', min: 0, max: 3, step: 0.05, dec: 2,
+    level: v => v > 1.0 ? 'critical' : v > 0.5 ? 'warning' : 'normal', hint: 'SOLARIS: >0.5 elevated · >1.0 shelter' },
+];
+const WHATIF_AGENTS = [
+  { key: 'PULSE', css: 'pulse', icon: '💓', metrics: 'Heart rate · SpO₂' },
+  { key: 'GENE', css: 'gene', icon: '🧬', metrics: 'IL-6' },
+  { key: 'MIRROR', css: 'mirror', icon: '🪞', metrics: 'Sleep' },
+  { key: 'SOLARIS', css: 'solaris', icon: '☀️', metrics: 'Radiation' },
+];
+const WHATIF_COLORS = { normal: 'var(--green)', warning: 'var(--yellow)', critical: 'var(--red)' };
+let cascadeTimeout = null;   // debounce timer for the backend evaluation
+let _whatifSeq = 0;
+let _whatifBuilt = false;
+let _whatifLastRank = 99;    // 99 = just reset: don't sound the alarm for the starting readings
+
+function _buildWhatIf() {
+  if (_whatifBuilt) return;
+  const sliders = document.getElementById('whatif-sliders');
+  sliders.innerHTML = WHATIF_METRICS.map((m, i) => `
+    <div class="slider-group"${i === WHATIF_METRICS.length - 1 ? ' style="grid-column:1/-1"' : ''}>
+      <div class="slider-header">
+        <span class="slider-label"><span class="icon">${m.icon}</span> ${m.label}
+          <span class="agent-tag ${m.agent}" style="margin-left:.35rem">${m.agent.toUpperCase()}</span></span>
+        <span class="slider-value normal" id="slider-${m.key}-value">--</span>
+      </div>
+      <div class="slider-track"><div class="slider-fill" id="slider-${m.key}-fill"></div></div>
+      <input type="range" class="slider-input" id="slider-${m.key}" min="${m.min}" max="${m.max}" step="${m.step}"
+             oninput="updateSlider('${m.key}')" aria-label="${m.label}">
+      <div class="slider-range"><span>${m.min}</span><span class="slider-hint">${m.hint}</span><span>${m.max}</span></div>
+    </div>`).join('');
+  const timeline = document.getElementById('cascade-timeline');
+  timeline.innerHTML = WHATIF_AGENTS.map(a => `
+    <div class="cascade-step" id="wi-step-${a.key}" style="--agent-color:var(--${a.css})">
+      <div class="agent-icon" style="color:var(--${a.css});border-color:var(--${a.css})">${a.icon}</div>
+      <span class="step-text" id="wi-text-${a.key}"><strong>${a.key}</strong> · ${a.metrics}</span>
+      <span class="step-status" id="wi-status-${a.key}">—</span>
+    </div>`).join('') + `
+    <div class="cascade-step" id="wi-step-AEGIS" style="--agent-color:var(--aegis)">
+      <div class="agent-icon" style="color:var(--aegis);border-color:var(--aegis)">◈</div>
+      <span class="step-text" id="wi-text-AEGIS"><strong>AEGIS</strong> · combines all four</span>
+      <span class="step-status" id="wi-status-AEGIS">—</span>
+    </div>`;
+  _whatifBuilt = true;
+}
+
+function openWhatIf() {
+  _buildWhatIf();
+  const crew = CREW_DATA[selectedCrew];
+  document.getElementById('whatif-title').textContent = `What-If Simulator · ${crew ? crew.firstName : 'Crew'}`;
+  document.getElementById('whatifModal').classList.add('open');
+  resetSliders();
+  announce('What-If Scenario Simulator opened');
+}
+
+function closeWhatIf() {
+  document.getElementById('whatifModal').classList.remove('open');
+  if (cascadeTimeout) clearTimeout(cascadeTimeout);
+  announce('Simulator closed');
+}
+
+function _whatifValues() {
+  const vals = {};
+  WHATIF_METRICS.forEach(m => { vals[m.key] = parseFloat(document.getElementById('slider-' + m.key).value); });
+  return vals;
+}
+
+function updateSlider(key, skipEvaluate) {
+  const m = WHATIF_METRICS.find(x => x.key === key);
+  if (!m) return;
+  const slider = document.getElementById('slider-' + key);
+  const v = parseFloat(slider.value);
+  const lvl = m.level(v);
+  const valueEl = document.getElementById('slider-' + key + '-value');
+  const fillEl = document.getElementById('slider-' + key + '-fill');
+  valueEl.textContent = v.toFixed(m.dec) + m.unit;
+  valueEl.className = 'slider-value ' + lvl;
+  fillEl.style.width = ((v - m.min) / (m.max - m.min) * 100) + '%';
+  fillEl.style.background = WHATIF_COLORS[lvl];
+  if (!skipEvaluate) {
+    playTone({ normal: 300, warning: 400, critical: 500 }[lvl], 0.04);
+    _scheduleWhatIf();
+  }
+}
+
+function _scheduleWhatIf() {
+  if (cascadeTimeout) clearTimeout(cascadeTimeout);
+  document.getElementById('status-text').innerHTML = '<strong>Evaluating…</strong> agents are checking the new values';
+  cascadeTimeout = setTimeout(evaluateWhatIf, 700);
+}
+
+async function evaluateWhatIf() {
+  const seq = ++_whatifSeq;
+  const crewId = DASH_API.crewIdMap[selectedCrew] || 'crew-001';
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  let data;
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/whatif`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ..._whatifValues(), crew_id: crewId, explain: true })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    data = await r.json();
+  } catch (e) {
+    if (seq !== _whatifSeq) return;
+    statusDot.className = 'status-dot warning';
+    statusText.innerHTML = '<strong>Backend offline</strong> — start the AEGIS backend to evaluate scenarios';
+    return;
+  }
+  if (seq !== _whatifSeq) return;   // a newer slider change is already being evaluated
+
+  // Per-agent rows
+  const chip = { ok: ['NORMAL', 'ok'], watch: ['OUT OF RANGE', 'watch'], alert: ['ALERT', 'alert'], critical: ['CRITICAL', 'alert'] };
+  WHATIF_AGENTS.forEach(a => {
+    const res = (data.agents || {})[a.key] || { level: 'ok', findings: [] };
+    const [label, cls] = chip[res.level] || chip.ok;
+    document.getElementById('wi-step-' + a.key).classList.toggle('active', res.level !== 'ok');
+    document.getElementById('wi-text-' + a.key).innerHTML =
+      `<strong>${a.key}</strong> · ${res.findings.length ? res.findings.map(escWI).join('; ') : a.metrics + ' within range'}`;
+    const st = document.getElementById('wi-status-' + a.key);
+    st.textContent = label; st.className = 'step-status ' + cls;
+    if (res.level !== 'ok') flashAgent(a.css);
+  });
+  // AEGIS decision
+  const vCls = { NOMINAL: 'ok', WATCH: 'watch', ALERT: 'alert', CASCADE: 'alert', PROTECT: 'alert' }[data.verdict] || 'ok';
+  document.getElementById('wi-step-AEGIS').classList.toggle('active', data.verdict !== 'NOMINAL');
+  document.getElementById('wi-text-AEGIS').innerHTML = `<strong>AEGIS</strong> · ${escWI(data.summary)}`;
+  const ast = document.getElementById('wi-status-AEGIS');
+  ast.textContent = data.verdict + (data.protocol ? ' → ' + data.protocol : ''); ast.className = 'step-status ' + vCls;
+
+  statusDot.className = 'status-dot ' + (vCls === 'ok' ? '' : vCls === 'watch' ? 'warning' : 'critical');
+  statusText.innerHTML = `<strong>${data.verdict}</strong> — ${escWI(data.summary)}`;
+
+  // Escalation feedback: alarm tone + spoken read-out when the verdict gets worse (ALERT or above)
+  const rank = { NOMINAL: 0, WATCH: 1, ALERT: 2, CASCADE: 3, PROTECT: 4 }[data.verdict] ?? 0;
+  if (rank >= 2 && rank > _whatifLastRank) {
+    playTone(880, 0.12); setTimeout(() => playTone(660, 0.12), 150); setTimeout(() => playTone(880, 0.18), 300);
+    if (typeof typeResponse === 'function') {
+      typeResponse(`What-if ${data.verdict.toLowerCase()}: ${data.summary}${data.protocol ? ' Recommended protocol ' + data.protocol + '.' : ''}`);
+    }
+  }
+  _whatifLastRank = rank;
+
+  // Recommendation (DeepSeek explanation when available)
+  const recBox = document.getElementById('aegis-rec');
+  if (data.verdict === 'NOMINAL') { recBox.style.display = 'none'; return; }
+  document.getElementById('rec-title').textContent =
+    (data.protocol ? `AEGIS Recommendation · Protocol ${data.protocol}`
+                   : data.verdict === 'ALERT' ? 'Agent Alert' : 'AEGIS Assessment') +
+    (data.source === 'deepseek' ? ' · 🧠 DeepSeek' : '');
+  document.getElementById('rec-message').textContent = data.explanation || data.summary;
+  recBox.style.display = 'flex';
+}
+
+function escWI(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function flashAgent(agent) {
+  const node = document.getElementById('node-' + agent);
+  const line = document.getElementById('line-' + agent);
+  if (node) {
+    node.classList.add('active');
+    setTimeout(() => node.classList.remove('active'), 800);
+  }
+  if (line) {
+    line.classList.add('active', 'flowing');
+    setTimeout(() => line.classList.remove('active', 'flowing'), 800);
+  }
+}
+
+// Reset = start from the selected crew member's CURRENT live readings
+async function resetSliders() {
+  _buildWhatIf();
+  const crewId = DASH_API.crewIdMap[selectedCrew] || 'crew-001';
+  const fallback = { heart_rate: 70, spo2: 98, il6: 4, sleep_quality: 78, radiation_dose_24h: 0.3 };
+  let vals = { ...fallback };
+  try {
+    const [c, b] = await Promise.all([
+      fetch(`${DASH_API.baseUrl}/api/crew/${crewId}`).then(r => r.json()),
+      fetch(`${DASH_API.baseUrl}/api/crew/${crewId}/biomarkers`).then(r => r.json()),
+    ]);
+    if (c && c.vitals) {
+      vals = { heart_rate: c.vitals.heart_rate, spo2: c.vitals.spo2, il6: b && b.il6 != null ? b.il6 : fallback.il6,
+               sleep_quality: c.vitals.sleep_quality ?? fallback.sleep_quality,
+               radiation_dose_24h: c.vitals.radiation_dose_24h ?? fallback.radiation_dose_24h };
+    }
+  } catch (e) { /* offline: typical values */ }
+  WHATIF_METRICS.forEach(m => {
+    const s = document.getElementById('slider-' + m.key);
+    s.value = Math.min(m.max, Math.max(m.min, vals[m.key]));
+    updateSlider(m.key, true);
+  });
+  playTone(300, 0.1);
+  _whatifLastRank = 99;
+  evaluateWhatIf();
+}
+</script>
+
+<!-- HR Graph Modal -->
+<div id="hrModal" class="graph-modal" role="dialog" aria-labelledby="modal-title" onclick="if(event.target===this)closeHRGraph()">
+  <div class="graph-modal-content">
+    <button class="graph-modal-close" onclick="closeHRGraph()" aria-label="Close graph">&times;</button>
+    <h2 id="modal-title">❤️ Heart Rate History — Commander Chen</h2>
+    <div class="expanded-chart">
+      <svg id="expanded-svg" class="chart-svg" viewBox="0 0 520 160"></svg>
+    </div>
+    <div class="chart-stats">
+      <div class="stat-item">
+        <div class="stat-value" id="hr-avg">68</div>
+        <div class="stat-label">Average BPM</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="hr-min">65</div>
+        <div class="stat-label">Min BPM</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="hr-max">72</div>
+        <div class="stat-label">Max BPM</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- What-If Simulator Modal -->
+<div id="whatifModal" class="whatif-modal" role="dialog" aria-labelledby="whatif-title" onclick="if(event.target===this)closeWhatIf()">
+  <div class="whatif-content">
+    <button class="whatif-close" onclick="closeWhatIf()" aria-label="Close simulator">&times;</button>
+    <div class="whatif-header">
+      <span class="icon">🔮</span>
+      <h2 id="whatif-title">What-If Scenario Simulator</h2>
+    </div>
+    
+    <div class="live-status">
+      <div class="status-dot" id="status-dot"></div>
+      <div class="status-text" id="status-text"><strong>Normal</strong> — All vitals within acceptable range</div>
+    </div>
+    
+    <p class="whatif-intro">Move a slider to try a hypothetical reading. The real agents evaluate it with the same rules as the live dashboard; nothing is saved. <em>Reset</em> loads this crew member's current readings.</p>
+
+    <div class="slider-controls" id="whatif-sliders"></div>
+    
+    <div class="agent-cascade">
+      <h3>🤖 Agent Evaluation</h3>
+      <div class="cascade-timeline" id="cascade-timeline"></div>
+    </div>
+    
+    <div class="aegis-recommendation" id="aegis-rec" style="display:none;">
+      <span class="rec-icon">💡</span>
+      <div class="rec-text">
+        <h4 id="rec-title">AEGIS Recommendation</h4>
+        <p id="rec-message">--</p>
+      </div>
+    </div>
+    
+    <button class="run-sim-btn" id="reset-sim-btn" onclick="resetSliders()">🔄 Reset to current readings</button>
+  </div>
+</div>
+
+<!-- Spacecraft sim pop-up: shows the confirmed protocol being carried out on board -->
+<div class="sim-modal" id="sim-modal" role="dialog" aria-modal="true" aria-labelledby="sim-modal-title">
+  <div class="sim-modal-box">
+    <div class="sim-modal-head">
+      <span>🛰️ On board</span>
+      <strong id="sim-modal-title">Protocol</strong>
+      <span class="sim-modal-status" id="sim-modal-status">Running…</span>
+      <a id="sim-modal-newtab" href="aegis-spacecraft-sim-2d.html" target="_blank" rel="noopener">Open in new tab ↗</a>
+      <button type="button" onclick="closeSimModal()" aria-label="Close simulation">✕ Close</button>
+    </div>
+    <iframe id="sim-frame" title="AEGIS spacecraft simulation"></iframe>
+  </div>
+</div>
+
+<script>
+// ── Protocol → spacecraft sim link (Claude, Sep 29) ──
+const SIM_PAGE = 'aegis-spacecraft-sim-2d.html';
+let _simLoaded = false;
+
+function openSimForProtocol(protocol, crewKey) {
+  const modal = document.getElementById('sim-modal');
+  const frame = document.getElementById('sim-frame');
+  if (!modal || !frame) return;
+  const qs = `protocol=${encodeURIComponent(protocol)}&crew=${encodeURIComponent(crewKey || 'chen')}`;
+  document.getElementById('sim-modal-title').textContent = `Protocol ${protocol}`;
+  const status = document.getElementById('sim-modal-status');
+  status.textContent = 'Running…'; status.classList.remove('done');
+  document.getElementById('sim-modal-newtab').href = `${SIM_PAGE}?${qs}`;
+  modal.classList.add('open');
+  if (_simLoaded && frame.contentWindow) {
+    // Sim already loaded: send the protocol without reloading (crew keep their positions)
+    frame.contentWindow.postMessage({ type: 'aegis-protocol', protocol, crew: crewKey }, location.origin);
+  } else {
+    frame.onload = () => { _simLoaded = true; };
+    frame.src = `${SIM_PAGE}?${qs}`;
+  }
+  document.querySelector('#sim-modal button')?.focus();
+}
+
+function closeSimModal() {
+  document.getElementById('sim-modal')?.classList.remove('open');
+}
+
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
+  if (e.data && e.data.type === 'aegis-protocol-complete') {
+    const status = document.getElementById('sim-modal-status');
+    if (status) { status.textContent = '✓ Complete'; status.classList.add('done'); }
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSimModal(); });
+document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.target.id === 'sim-modal') closeSimModal(); });
+</script>
+
+<!-- AEGIS API Client - connects frontend to backend -->
+<script src="aegis-api-client.js?v=5"></script>
+
+</body>
+</html>

@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project Horizons — NASA Space Apps 2026 Research Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1528;
+    --bg3: #151d35;
+    --card: #131929;
+    --border: #1e2d50;
+    --nasa-blue: #0b3d91;
+    --nasa-red: #fc3d21;
+    --accent: #1a6bc7;
+    --accent2: #2e8fff;
+    --text: #e8eaf6;
+    --text-muted: #8899bb;
+    --green: #00e676;
+    --yellow: #ffd600;
+    --orange: #ff6d00;
+    --purple: #8b5cf6;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,14,26,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0;
+    padding: 0 2rem; height: 52px;
+    overflow-x: auto;
+  }
+  .nav-brand {
+    font-weight: 700; font-size: 14px; color: var(--nasa-red);
+    letter-spacing: .05em; white-space: nowrap; margin-right: 1.5rem;
+    text-transform: uppercase;
+  }
+  nav a {
+    color: var(--text-muted); text-decoration: none;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    padding: 0 .75rem; height: 52px; display: flex; align-items: center;
+    border-bottom: 2px solid transparent; transition: all .2s;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  nav a:hover { color: var(--text); border-color: var(--accent2); }
+
+  /* ── LAYOUT ── */
+  .hero {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0b1e3d 50%, #0f0a1a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 4rem 2rem 3rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 60% 40%, rgba(11,61,145,.35) 0%, transparent 60%),
+                radial-gradient(ellipse at 30% 70%, rgba(252,61,33,.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-block; background: var(--nasa-red);
+    color: #fff; font-size: 11px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    padding: .25rem .75rem; border-radius: 2px; margin-bottom: 1rem;
+  }
+  .hero h1 {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 800; letter-spacing: -.01em;
+    line-height: 1.15; margin-bottom: .75rem;
+    background: linear-gradient(90deg, #fff 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p { color: var(--text-muted); font-size: 1rem; max-width: 600px; margin: 0 auto; }
+  .hero-meta {
+    display: flex; justify-content: center; gap: 2rem;
+    margin-top: 1.5rem; flex-wrap: wrap;
+  }
+  .hero-meta span {
+    font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em;
+  }
+  .hero-meta span strong { color: var(--accent2); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  section { margin-bottom: 4rem; }
+
+  h2 {
+    font-size: 1.4rem; font-weight: 700;
+    color: #fff; margin-bottom: 1.5rem;
+    padding-bottom: .6rem;
+    border-bottom: 2px solid var(--nasa-blue);
+    display: flex; align-items: center; gap: .6rem;
+  }
+  h2 .sec-num {
+    background: var(--nasa-blue); color: #fff;
+    font-size: 11px; font-weight: 700;
+    padding: .2rem .5rem; border-radius: 3px;
+    letter-spacing: .05em;
+  }
+
+  h3 { font-size: 1.05rem; font-weight: 600; color: var(--accent2); margin: 1.5rem 0 .6rem; }
+
+  p { color: var(--text-muted); margin-bottom: .8rem; }
+  p strong { color: var(--text); }
+
+  /* ── CALLOUT CARDS ── */
+  .callout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .callout {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem 1.25rem 1rem;
+    position: relative; overflow: hidden;
+  }
+  .callout::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .callout.trophy::before { background: var(--yellow); }
+  .callout.focus::before { background: var(--accent2); }
+  .callout.risk::before { background: var(--nasa-red); }
+  .callout.idea::before { background: var(--green); }
+  .callout-icon { font-size: 1.6rem; margin-bottom: .5rem; display: block; }
+  .callout-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--text-muted); margin-bottom: .4rem;
+  }
+  .callout-title { font-size: .95rem; font-weight: 700; color: #fff; margin-bottom: .4rem; }
+  .callout-body { font-size: .82rem; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── RISK TABLE ── */
+  .risk-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .risk-table th {
+    background: var(--bg3); color: var(--text-muted);
+    font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    padding: .6rem .9rem; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .risk-table td { padding: .6rem .9rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+  .risk-table tr:hover td { background: var(--bg3); }
+  .risk-table td:first-child { color: var(--text); font-weight: 600; }
+
+  /* ── PROJECT CARDS ── */
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+  .project-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem;
+  }
+  .project-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .6rem; }
+  .project-name { font-size: 1rem; font-weight: 700; color: #fff; }
+  .project-year {
+    font-size: 11px; font-weight: 700; background: var(--nasa-blue);
+    color: #fff; padding: .2rem .5rem; border-radius: 3px; white-space: nowrap;
+  }
+  .project-award {
+    font-size: 11px; color: var(--yellow); margin-bottom: .5rem;
+    font-weight: 600; letter-spacing: .04em;
+  }
+  .project-desc { font-size: .83rem; color: var(--text-muted); line-height: 1.55; margin-bottom: .8rem; }
+  .project-link a {
+    font-size: .8rem; color: var(--accent2); text-decoration: none;
+    border: 1px solid var(--accent); padding: .2rem .6rem; border-radius: 4px;
+  }
+  .project-link a:hover { background: var(--accent); color: #fff; }
+  .relevance-tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    padding: .15rem .5rem; border-radius: 3px; margin-top: .5rem;
+  }
+  .rel-high { background: rgba(0,230,118,.15); color: var(--green); border: 1px solid rgba(0,230,118,.3); }
+  .rel-med { background: rgba(255,214,0,.12); color: var(--yellow); border: 1px solid rgba(255,214,0,.3); }
+
+  /* ── PATTERN BADGES ── */
+  .pattern-list { display: flex; flex-direction: column; gap: .75rem; }
+  .pattern-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; padding: .9rem 1rem;
+    display: flex; gap: .9rem; align-items: flex-start;
+  }
+  .pattern-num {
+    background: var(--nasa-blue); color: #fff;
+    font-size: 11px; font-weight: 800;
+    min-width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .pattern-title { font-size: .92rem; font-weight: 700; color: #fff; margin-bottom: .25rem; }
+  .pattern-body { font-size: .82rem; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── DATA SOURCE CARDS ── */
+  .datasource-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+  .ds-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.1rem;
+  }
+  .ds-name { font-size: .95rem; font-weight: 700; color: var(--accent2); margin-bottom: .3rem; }
+  .ds-url { font-size: .78rem; color: var(--nasa-red); margin-bottom: .5rem; }
+  .ds-desc { font-size: .82rem; color: var(--text-muted); line-height: 1.5; }
+  .ds-tag {
+    display: inline-block; margin-top: .6rem;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    padding: .15rem .5rem; border-radius: 3px;
+    background: rgba(11,61,145,.4); color: var(--accent2); border: 1px solid var(--border);
+  }
+
+  /* ── GAP HIGHLIGHTS ── */
+  .gap-grid { display: flex; flex-direction: column; gap: 1rem; }
+  .gap-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 8px 8px 0; padding: 1rem 1.1rem;
+  }
+  .gap-title { font-size: .95rem; font-weight: 700; color: #fff; margin-bottom: .35rem; }
+  .gap-body { font-size: .83rem; color: var(--text-muted); line-height: 1.55; }
+  .gap-opportunity {
+    margin-top: .5rem; font-size: .8rem; font-weight: 600;
+    color: var(--green);
+  }
+
+  /* ── RECOMMENDATIONS ── */
+  .rec-list { display: flex; flex-direction: column; gap: .75rem; }
+  .rec-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; padding: .9rem 1rem;
+    display: flex; gap: .9rem; align-items: flex-start;
+  }
+  .rec-num {
+    font-size: 1.1rem; font-weight: 800; color: var(--nasa-red);
+    min-width: 28px; flex-shrink: 0; margin-top: 1px;
+  }
+  .rec-title { font-size: .92rem; font-weight: 700; color: #fff; margin-bottom: .25rem; }
+  .rec-body { font-size: .82rem; color: var(--text-muted); line-height: 1.5; }
+  .rec-tags { display: flex; gap: .4rem; margin-top: .4rem; flex-wrap: wrap; }
+  .tag {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    padding: .15rem .5rem; border-radius: 3px;
+  }
+  .tag-impact-high { background: rgba(0,230,118,.15); color: var(--green); border: 1px solid rgba(0,230,118,.3); }
+  .tag-impact-med { background: rgba(255,214,0,.12); color: var(--yellow); border: 1px solid rgba(255,214,0,.3); }
+  .tag-effort-low { background: rgba(46,143,255,.12); color: var(--accent2); border: 1px solid rgba(46,143,255,.3); }
+  .tag-effort-high { background: rgba(255,109,0,.12); color: var(--orange); border: 1px solid rgba(255,109,0,.3); }
+
+  /* ── CHARTS ── */
+  .chart-wrap {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.5rem;
+  }
+  .chart-title {
+    font-size: .9rem; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin-bottom: 1rem;
+  }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem; margin-bottom: 1.5rem;
+  }
+  canvas { max-width: 100%; }
+
+  /* ── AWARD TABLE ── */
+  .award-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  .award-table th {
+    background: var(--bg3); color: var(--text-muted);
+    font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    padding: .6rem .9rem; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .award-table td { padding: .6rem .9rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+  .award-table tr:hover td { background: var(--bg3); }
+  .award-table td:first-child { color: #fff; font-weight: 600; }
+  .target-yes { color: var(--green); font-weight: 700; }
+  .target-possible { color: var(--yellow); }
+  .target-no { color: var(--text-muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border); padding: 2rem 1.5rem;
+    text-align: center; color: var(--text-muted); font-size: .8rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">🚀 Project Horizons</span>
+  <a href="#summary">Summary</a>
+  <a href="#challenge">Challenge</a>
+  <a href="#projects">Past Winners</a>
+  <a href="#patterns">Patterns</a>
+  <a href="#data">Data Sources</a>
+  <a href="#stacks">Tech Stacks</a>
+  <a href="#gaps">Gaps</a>
+  <a href="#recs">Recommendations</a>
+</nav>
+
+<div class="hero">
+  <span class="hero-badge">NASA Space Apps Challenge 2026</span>
+  <h1>Project Horizons<br/>Research Intelligence Report</h1>
+  <p>Competitive analysis, data landscape, and strategic recommendations for the Astronaut Health Monitor challenge.</p>
+  <div class="hero-meta">
+    <span>Prepared: <strong>September 2026</strong></span>
+    <span>Hackathon: <strong>November 14–15, 2026</strong></span>
+    <span>Stack: <strong>React · FastAPI · Docker</strong></span>
+    <span>Target Award: <strong>Best Use of Science</strong></span>
+  </div>
+</div>
+
+<main>
+
+  <!-- ── 1. EXECUTIVE SUMMARY ── -->
+  <section id="summary">
+    <h2><span class="sec-num">01</span> Executive Summary</h2>
+    <div class="callout-grid">
+      <div class="callout trophy">
+        <span class="callout-icon">🏆</span>
+        <div class="callout-label">Top Opportunity</div>
+        <div class="callout-title">Multi-stressor systemic integration</div>
+        <div class="callout-body">No winning team has combined radiation, bone loss, cardiovascular, and behavioral health into a single integrated risk score. This is the white space.</div>
+      </div>
+      <div class="callout focus">
+        <span class="callout-icon">🎯</span>
+        <div class="callout-label">Our Focus</div>
+        <div class="callout-title">Crew-autonomous decision support</div>
+        <div class="callout-body">A "flight surgeon in a box" — an AI-assisted system that works without ground support, on real NASA Inspiration4 omics data, trained for Artemis-era missions.</div>
+      </div>
+      <div class="callout risk">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-label">Key Risk</div>
+        <div class="callout-title">No live URL = no win</div>
+        <div class="callout-body">SpaceGenes+ won with a Framer-deployed live demo. Local-only builds are a significant scoring disadvantage. Deploy to Vercel or HuggingFace Spaces before submission.</div>
+      </div>
+      <div class="callout idea">
+        <span class="callout-icon">💡</span>
+        <div class="callout-label">Differentiator</div>
+        <div class="callout-title">Behavioral health is the untouched gap</div>
+        <div class="callout-body">NASA HRP rates psychological health as the #1 long-duration risk. No recent global winner has addressed it. Done tastefully, it could also win "Most Inspirational."</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2. CHALLENGE ANALYSIS ── -->
+  <section id="challenge">
+    <h2><span class="sec-num">02</span> Challenge Analysis</h2>
+    <p>Long-duration missions to Mars (18–24 month round trip) expose astronauts to compounding physiological and psychological stresses that <strong>ground teams cannot monitor in real time</strong> (12–24 minute signal lag). The challenge targets the gap between ISS-era medicine (daily ground support) and deep-space autonomy (no resupply, no emergency evacuation).</p>
+
+    <h3>Six Risk Domains NASA Wants Addressed</h3>
+    <table class="risk-table">
+      <thead><tr><th>Risk Domain</th><th>Mechanism</th><th>Current NASA Programme</th></tr></thead>
+      <tbody>
+        <tr><td>Space Radiation</td><td>GCR + SPE → DNA damage, cancer, CNS degeneration</td><td>NASA Space Radiation Laboratory, HRP</td></tr>
+        <tr><td>Isolation &amp; Confinement</td><td>HPA-axis dysregulation, interpersonal conflict, sleep disruption</td><td>Behavioral Health &amp; Performance (BHP)</td></tr>
+        <tr><td>Altered Gravity</td><td>Bone loss ~1–2%/month, muscle atrophy, cardiovascular deconditioning</td><td>Bone/Muscle/Cardiovascular research</td></tr>
+        <tr><td>Immune Dysregulation</td><td>Reactivation of latent herpes viruses, reduced T-cell function</td><td>Space Immunology research</td></tr>
+        <tr><td>Sensorimotor Adaptation</td><td>Vestibular mismatch, altered proprioception</td><td>ISS sensorimotor experiments</td></tr>
+        <tr><td>Behavioral Health</td><td>Depression, cognitive decline, crew cohesion breakdown</td><td>Psychology/Sleep research</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Award Categories &amp; Project Horizons Targets</h3>
+    <table class="award-table">
+      <thead><tr><th>Award</th><th>What Judges Look For</th><th>Our Target?</th></tr></thead>
+      <tbody>
+        <tr><td>Best Use of Science</td><td>Rigorous scientific method, primary data use, novel findings</td><td class="target-yes">✅ Primary</td></tr>
+        <tr><td>Best Use of Data</td><td>Makes NASA data more accessible, unique application</td><td class="target-yes">✅ Secondary</td></tr>
+        <tr><td>Best Use of Technology</td><td>Innovative ML, novel architecture, hardware</td><td class="target-possible">Possible</td></tr>
+        <tr><td>Galactic Impact</td><td>Highest potential to improve life on Earth or in space</td><td class="target-possible">Possible</td></tr>
+        <tr><td>Most Inspirational</td><td>Compelling human story, emotional resonance</td><td class="target-possible">Possible (behavioral health angle)</td></tr>
+        <tr><td>Best Mission Concept</td><td>Plausible, well-designed systems concept</td><td class="target-no">Fallback</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── 3. PAST WINNING PROJECTS ── -->
+  <section id="projects">
+    <h2><span class="sec-num">03</span> Past Winning Projects</h2>
+    <div class="project-grid">
+
+      <div class="project-card">
+        <div class="project-card-header">
+          <div class="project-name">SpaceGenes+</div>
+          <div class="project-year">2025</div>
+        </div>
+        <div class="project-award">🥇 Best Use of Science — Global Winner</div>
+        <div class="project-desc">Interactive dashboard querying NASA GeneLab/OSDR to surface how radiation and microgravity interact synergistically at the gene expression level. Developed a "Synergy Threshold Formula" — flagged TP53 and ATM as hidden molecular risks only emerging under combined stressors.</div>
+        <div class="project-link"><a href="https://spacegenes-plus.framer.website/" target="_blank">Live Demo ↗</a></div>
+        <span class="relevance-tag rel-high">High Relevance — Our Gold Standard</span>
+      </div>
+
+      <div class="project-card">
+        <div class="project-card-header">
+          <div class="project-name">PureFlow</div>
+          <div class="project-year">2025</div>
+        </div>
+        <div class="project-award">🥇 Best Mission Concept — Global Winner</div>
+        <div class="project-desc">Life-support and recycling system design for an interplanetary habitat, centered on crew safety and system redundancy against solar threats. Won without a fully working prototype — concept framing alone was enough for this award category.</div>
+        <div class="project-link"><a href="https://www.spaceappschallenge.org/2025/find-a-team/pureflow2/?tab=project" target="_blank">Project Page ↗</a></div>
+        <span class="relevance-tag rel-med">Medium — Concept-only award path</span>
+      </div>
+
+      <div class="project-card">
+        <div class="project-card-header">
+          <div class="project-name">Storm Prophet</div>
+          <div class="project-year">2023</div>
+        </div>
+        <div class="project-award">🥇 Best Use of Data — Global Winner</div>
+        <div class="project-desc">LSTM-based model predicting geomagnetic storm levels from DSCOVR satellite time-series data. Demonstrated the "NASA time-series → LSTM → actionable prediction" pattern that has become a reliable winning formula.</div>
+        <span class="relevance-tag rel-high">High — Our ML pipeline mirrors this pattern</span>
+      </div>
+
+      <div class="project-card">
+        <div class="project-card-header">
+          <div class="project-name">42 QuakeHeroes</div>
+          <div class="project-year">2024</div>
+        </div>
+        <div class="project-award">🥇 Best Use of Technology — Global Winner</div>
+        <div class="project-desc">Deep neural network for precise seismic event detection in time-series data. Same technical profile as biosensor health monitoring: time-series signals → anomaly detection → classification. Substitute seismic for ECG/HRV waveforms.</div>
+        <span class="relevance-tag rel-high">High — Identical ML architecture pattern</span>
+      </div>
+
+      <div class="project-card">
+        <div class="project-card-header">
+          <div class="project-name">Sleep Shift Scheduling Tool</div>
+          <div class="project-year">2020</div>
+        </div>
+        <div class="project-award">⭐ Challenge Winner</div>
+        <div class="project-desc">Comprehensive crew wellness system covering calorie tracking, sleep regulation, and autonomous schedule recommendations for managing astronaut fatigue. The direct archetype for Project Horizons — essentially the same problem statement.</div>
+        <span class="relevance-tag rel-high">High — Direct predecessor to our challenge</span>
+      </div>
+
+      <div class="project-card">
+        <div class="project-card-header">
+          <div class="project-name">BioMU</div>
+          <div class="project-year">2014</div>
+        </div>
+        <div class="project-award">⭐ Notable Entry</div>
+        <div class="project-desc">Bio Monitoring Undergarment — smart garment + Google Glass + web display for real-time vital sign monitoring (HR, respiratory rate, body temp, blood pressure) during IVA/EVA. Wearable biosensor archetype that continues to appear in submissions.</div>
+        <div class="project-link"><a href="https://2014.spaceappschallenge.org/project/biomu---bio-monitoring-undergarment/" target="_blank">Project Page ↗</a></div>
+        <span class="relevance-tag rel-med">Medium — Hardware-first, but UX lessons apply</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 4. WINNING PATTERNS ── -->
+  <section id="patterns">
+    <h2><span class="sec-num">04</span> Winning Patterns</h2>
+    <div class="pattern-list">
+      <div class="pattern-item">
+        <div class="pattern-num">1</div>
+        <div>
+          <div class="pattern-title">Deep integration with NASA's primary datasets — not just branding</div>
+          <div class="pattern-body">Winners ingest raw NASA data (GeneLab omics, OSDR studies, DSCOVR telemetry) and process it themselves. Projects that reference NASA without direct API/data integration score poorly. Our path: Inspiration4 dataset directly.</div>
+        </div>
+      </div>
+      <div class="pattern-item">
+        <div class="pattern-num">2</div>
+        <div>
+          <div class="pattern-title">Interactive, polished web-based demo with a live URL</div>
+          <div class="pattern-body">Every global winner delivers a live web app or interactive demo — not a PDF or slideshow. Judges experience the project. Static reports do not win. SpaceGenes+ deployed to Framer and had a working URL on submission day.</div>
+        </div>
+      </div>
+      <div class="pattern-item">
+        <div class="pattern-num">3</div>
+        <div>
+          <div class="pattern-title">ML/AI applied to time-series prediction or anomaly detection</div>
+          <div class="pattern-body">Storm Prophet (LSTM), 42 QuakeHeroes (deep neural nets), SpaceGenes+ (synergy threshold algorithm) — the pattern is consistent across years. An ML component showing predictive capability (not just lookup) significantly boosts scores.</div>
+        </div>
+      </div>
+      <div class="pattern-item">
+        <div class="pattern-num">4</div>
+        <div>
+          <div class="pattern-title">Multi-stressor interaction — not a single variable</div>
+          <div class="pattern-body">SpaceGenes+ won for addressing radiation AND microgravity in combination, detecting non-additive interactions. Prior submissions studied one stressor in isolation. Multi-variable analysis is treated as scientifically more valuable.</div>
+        </div>
+      </div>
+      <div class="pattern-item">
+        <div class="pattern-num">5</div>
+        <div>
+          <div class="pattern-title">Working demo &gt; polish &gt; novelty</div>
+          <div class="pattern-body">A functioning MVP with a live URL beats a concept document with beautiful slides. Framer-hosted SpaceGenes+ is a working interactive tool, not a prototype description.</div>
+        </div>
+      </div>
+      <div class="pattern-item">
+        <div class="pattern-num">6</div>
+        <div>
+          <div class="pattern-title">Data accessibility — make science usable by non-experts</div>
+          <div class="pattern-body">LunarTech Ensemble made seismology accessible. SpaceGenes+ made genomics accessible to mission planners. For a health monitor challenge, the interface for the astronaut (not the scientist) matters.</div>
+        </div>
+      </div>
+      <div class="pattern-item">
+        <div class="pattern-num">7</div>
+        <div>
+          <div class="pattern-title">Open Science alignment (NASA TOPS initiative)</div>
+          <div class="pattern-body">Since 2023 the challenge has aligned with NASA's Transform to Open Science (TOPS) initiative. Open-source code on GitHub, reproducible analyses, and documented APIs are explicitly favoured by judges.</div>
+        </div>
+      </div>
+      <div class="pattern-item">
+        <div class="pattern-num">8</div>
+        <div>
+          <div class="pattern-title">Clear Artemis/Mars mission relevance</div>
+          <div class="pattern-body">Every winning project connects to a real NASA mission need. A health monitor framed as "what Artemis IV through Mars transit crews need" resonates with judges who work on those programs.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5. NASA DATA SOURCES ── -->
+  <section id="data">
+    <h2><span class="sec-num">05</span> NASA Data Sources &amp; APIs</h2>
+    <div class="datasource-grid">
+      <div class="ds-card">
+        <div class="ds-name">NASA OSDR (Open Science Data Repository)</div>
+        <div class="ds-url">osdr.nasa.gov</div>
+        <div class="ds-desc">460+ spaceflight biology studies covering omics, physiological data, behavioral data, environmental telemetry, and bioimaging. Primary source for human astronaut datasets.</div>
+        <span class="ds-tag">REST API Available</span>
+      </div>
+      <div class="ds-card">
+        <div class="ds-name">Inspiration4 (I4) Mission Dataset ⭐</div>
+        <div class="ds-url">genelab.nasa.gov/I4data_OSDR</div>
+        <div class="ds-desc">12 datasets from 4 civilian astronauts — metagenomics, metabolomics, clonal hematopoiesis, proteomics, cytokine panels. Only public multi-omic human spaceflight dataset. Used by SpaceGenes+ to win in 2025.</div>
+        <span class="ds-tag">Our Primary Dataset</span>
+      </div>
+      <div class="ds-card">
+        <div class="ds-name">NASA GeneLab</div>
+        <div class="ds-url">genelab.nasa.gov</div>
+        <div class="ds-desc">Space-relevant omics data — RNA-seq, microarray, proteomics, epigenomics from spaceflight and simulated spaceflight (bed rest, ground radiation, simulated microgravity).</div>
+        <span class="ds-tag">API + Visualization Apps</span>
+      </div>
+      <div class="ds-card">
+        <div class="ds-name">RadLab (OSDR Component)</div>
+        <div class="ds-url">Via OSDR</div>
+        <div class="ds-desc">Radiation dosimetry from ISS-located detectors. Enables correlation between radiation dose (environmental telemetry) and biological/physiological outcome data — core to our multi-stressor engine.</div>
+        <span class="ds-tag">Radiation + Bio Correlation</span>
+      </div>
+      <div class="ds-card">
+        <div class="ds-name">NASA Human Research Program (HRP)</div>
+        <div class="ds-url">Via OSDR</div>
+        <div class="ds-desc">Physiological data, medical imaging, behavioral data, bed rest study data. The Space Health investigation (2025) collected cardiovascular wearable vest/headband data expected in OSDR soon.</div>
+        <span class="ds-tag">Wearable Data Incoming</span>
+      </div>
+      <div class="ds-card">
+        <div class="ds-name">DSCOVR Real-Time Solar Wind</div>
+        <div class="ds-url">earthdata.nasa.gov</div>
+        <div class="ds-desc">Real-time solar wind and solar particle event data used by Storm Prophet (2023 winner). Integrating space weather alerts into a health monitor enables proactive SPE crew protection.</div>
+        <span class="ds-tag">Space Weather Integration</span>
+      </div>
+      <div class="ds-card">
+        <div class="ds-name">NASA Integrated Medical Model (IMM)</div>
+        <div class="ds-url">nasa.gov/general/nasas-integrated-medical-model-imm</div>
+        <div class="ds-desc">Probabilistic model of medical event risk during spaceflight — quantifies likelihood of specific health events given mission profile, crew size, duration, and available countermeasures.</div>
+        <span class="ds-tag">Risk Quantification</span>
+      </div>
+      <div class="ds-card">
+        <div class="ds-name">NASA NTRS Technical Papers</div>
+        <div class="ds-url">ntrs.nasa.gov</div>
+        <div class="ds-desc">Technical papers on crew health monitoring, Astroskin wearable biosensor system, IMM documentation. Source for scientific validation of our health monitoring approach.</div>
+        <span class="ds-tag">Scientific Validation</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 6. TECHNOLOGY STACK TRENDS ── -->
+  <section id="stacks">
+    <h2><span class="sec-num">06</span> Technology Stack Trends</h2>
+    <p>Analysis of technology choices across 2022–2025 global winners and notable finalists in data/science/health challenge categories.</p>
+    <div class="charts-grid">
+      <div class="chart-wrap">
+        <div class="chart-title">Tech Frequency Among Winners (2022–2025)</div>
+        <canvas id="techChart" height="260"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Health Risk Areas — Severity vs Coverage by Past Teams</div>
+        <canvas id="radarChart" height="260"></canvas>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Project Horizons Build Timeline — Sep 22 → Nov 14, 2026</div>
+      <canvas id="ganttChart" height="220"></canvas>
+    </div>
+  </section>
+
+  <!-- ── 7. GAPS & OPPORTUNITIES ── -->
+  <section id="gaps">
+    <h2><span class="sec-num">07</span> Gaps &amp; Opportunities for Project Horizons</h2>
+    <div class="gap-grid">
+      <div class="gap-item">
+        <div class="gap-title">Gap 1 — Multi-stressor systemic integration</div>
+        <div class="gap-body">SpaceGenes+ addressed multi-stressor interaction at the molecular (genomics) level. No winning project has addressed it at the systemic/clinical level — combining radiation dose + bone density trend + cardiovascular deconditioning + behavioral indicators into a single integrated risk score.</div>
+        <div class="gap-opportunity">→ Opportunity: A "crew health credit score" that synthesizes multi-modal biomarker streams into one actionable status.</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-title">Gap 2 — Behavioral health monitoring</div>
+        <div class="gap-body">Psychological health (mood, cognitive performance, sleep quality, crew cohesion) is NASA HRP's #1 long-duration risk, yet almost no Space Apps project has tackled it. Quantifiable indicators exist: reaction time tests, sentiment analysis, sleep stage data, cortisol levels.</div>
+        <div class="gap-opportunity">→ Opportunity: Tasteful, consent-driven behavioral health module — potentially also wins "Most Inspirational."</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-title">Gap 3 — Crew-autonomous decision support (no ground team)</div>
+        <div class="gap-body">Most prior health monitoring projects implicitly assume ground team access. None have explicitly modeled the loss-of-signal scenario: what does the crew do when there is no one to call?</div>
+        <div class="gap-opportunity">→ Opportunity: "Flight surgeon in a box" — AI-assisted system that runs entirely on-board, interprets trends, and gives explainable crew-side recommendations.</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-title">Gap 4 — Predictive early warning, not just current state display</div>
+        <div class="gap-body">Most biosensor dashboards show current vital signs. Predicting health events 48–72 hours in advance (impending cardiovascular event, radiation-induced immune suppression, behavioral health crisis onset) is the more valuable — and harder — problem.</div>
+        <div class="gap-opportunity">→ Opportunity: LSTM-based predictive model on OSDR biomarker time-series — validated on Inspiration4 data.</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-title">Gap 5 — Radiation → immune → behavioral health triple linkage</div>
+        <div class="gap-body">NASA research confirms radiation suppresses immune function AND increases psychological stress markers (via cortisol and inflammatory cytokines). No hackathon team has built a model showing this causal chain.</div>
+        <div class="gap-opportunity">→ Opportunity: Show environmental radiation dose → immune marker change → behavioral health risk score. Scientifically novel, directly actionable.</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-title">Gap 6 — Astronaut-facing UX (not researcher-facing)</div>
+        <div class="gap-body">SpaceGenes+ and similar winning projects build interfaces for researchers. The Astronaut Health Monitor challenge asks for tools the crew can use autonomously. A crew-facing interface has different UX requirements: clear alert hierarchy, no information overload, guided diagnostic flows.</div>
+        <div class="gap-opportunity">→ Opportunity: Two-view design — researcher/physician mode (dense data) + crew mode (traffic-light status, plain-language alerts, guided check-ins).</div>
+      </div>
+      <div class="gap-item">
+        <div class="gap-title">Gap 7 — Longitudinal trend detection over mission timeline</div>
+        <div class="gap-body">Most projects focus on real-time monitoring. The medically meaningful signal for long-duration missions is the trend — is bone density declining faster than expected this month? Is collective crew mood trending down over 3 weeks?</div>
+        <div class="gap-opportunity">→ Opportunity: Longitudinal trend analysis with anomaly detection against mission-specific (not population) baselines.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 8. RECOMMENDATIONS ── -->
+  <section id="recs">
+    <h2><span class="sec-num">08</span> Recommendations for Project Horizons</h2>
+    <div class="rec-list">
+      <div class="rec-item">
+        <div class="rec-num">1</div>
+        <div>
+          <div class="rec-title">Target "Best Use of Science" primarily, "Best Use of Data" secondarily</div>
+          <div class="rec-body">These two awards are where health/biology projects have the best shot. Use OSDR/Inspiration4 data directly and apply rigorous scientific method.</div>
+          <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-low">Low Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">2</div>
+        <div>
+          <div class="rec-title">Build the "Crew Health Intelligence Dashboard" — not a monitor</div>
+          <div class="rec-body">Frame it as: "If a flight surgeon had to encode their decision-making into software that runs without ground support, this is what it looks like." Active synthesis + prediction &gt; passive display.</div>
+          <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-high">High Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">3</div>
+        <div>
+          <div class="rec-title">Use the Inspiration4 dataset as your primary data source</div>
+          <div class="rec-body">12 datasets from 4 civilian astronauts covering omics, metabolomics, and cytokines. Public, underutilized by hackathon teams, directly relevant. Claim: "trained on real human spaceflight data."</div>
+          <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-low">Low Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">4</div>
+        <div>
+          <div class="rec-title">Deploy a live URL before submission deadline</div>
+          <div class="rec-body">Use Vercel (React/Vite fits natively), HuggingFace Spaces for ML demos, or Framer for fast visual deployment. Judges need to click a link and experience the tool — local-only is a major scoring penalty.</div>
+          <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-low">Low Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">5</div>
+        <div>
+          <div class="rec-title">Address behavioral health — it is the untouched white space</div>
+          <div class="rec-body">Frame it carefully (consent-driven, aggregate trend analysis, not surveillance). Cognitive performance test + mood check-in + sleep HRV + cortisol proxy. Also plays for "Most Inspirational."</div>
+          <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-high">High Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">6</div>
+        <div>
+          <div class="rec-title">Show the prediction, not just the measurement</div>
+          <div class="rec-body">LSTM or transformer-based 48-hour prediction window for cardiovascular anomaly or immune suppression risk, validated on OSDR data. Predictive capability is the technical differentiator that wins "Best Use of Science."</div>
+          <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-high">High Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">7</div>
+        <div>
+          <div class="rec-title">Make the narrative Artemis-specific</div>
+          <div class="rec-body">Frame explicitly as "what Artemis IV through Mars transit crews need." Judges work on those programs. Connect every feature to a specific mission need (signal lag, resupply cycle, crew size).</div>
+          <div class="rec-tags"><span class="tag tag-impact-med">Med Impact</span><span class="tag tag-effort-low">Low Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">8</div>
+        <div>
+          <div class="rec-title">Open-source everything on GitHub</div>
+          <div class="rec-body">Public repo with a clear README, documented API, and reproducible analysis scripts. Aligns with NASA TOPS initiative and FAIR data principles — explicitly scored since 2023.</div>
+          <div class="rec-tags"><span class="tag tag-impact-med">Med Impact</span><span class="tag tag-effort-low">Low Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">9</div>
+        <div>
+          <div class="rec-title">Design two distinct UI modes: researcher view + crew view</div>
+          <div class="rec-body">Researcher/physician mode: dense charts, correlations, full data access. Crew mode: traffic-light health status, plain-language alerts, guided check-in flows, minimal cognitive load. Shows judges you understand real deployment context.</div>
+          <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-high">High Effort</span></div>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">10</div>
+        <div>
+          <div class="rec-title">Apply SpaceGenes+ "synergy" logic to physiological + behavioral data</div>
+          <div class="rec-body">Identify which combinations of biomarker changes signal a cascade risk: radiation dose spike + sleep deterioration + elevated HRV = high risk of immune crisis in 5 days. Non-additive multi-stressor detection is what won in 2025.</div>
+          <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-high">High Effort</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Project Horizons · NASA Space Apps Challenge 2026 · Research prepared September 2026 ·
+  Sources: <a href="https://www.nasa.gov/learning-resources/stem-engagement-at-nasa/nasa-announces-2025-international-space-apps-challenge-global-winners/" style="color:var(--accent2)">NASA 2025 Winners</a> ·
+  <a href="https://osdr.nasa.gov" style="color:var(--accent2)">NASA OSDR</a> ·
+  <a href="https://genelab.nasa.gov/I4data_OSDR" style="color:var(--accent2)">Inspiration4 Data</a>
+</footer>
+
+<script>
+// ── CHART 1: Tech Stack Bar Chart ──
+{
+  const ctx = document.getElementById('techChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['React / Next.js', 'Python / FastAPI', 'LSTM / Deep Learning', 'D3.js / Plotly', 'Vercel / Framer Deploy', 'Docker', 'scikit-learn / XGBoost', 'Jupyter Notebooks', 'Tailwind CSS', 'Three.js / WebGL'],
+      datasets: [{
+        label: 'Frequency among winners & finalists',
+        data: [18, 16, 12, 10, 9, 7, 8, 11, 7, 4],
+        backgroundColor: [
+          'rgba(46,143,255,0.7)', 'rgba(46,143,255,0.7)', 'rgba(252,61,33,0.7)',
+          'rgba(46,143,255,0.6)', 'rgba(0,230,118,0.7)', 'rgba(46,143,255,0.5)',
+          'rgba(252,61,33,0.6)', 'rgba(46,143,255,0.5)', 'rgba(46,143,255,0.4)',
+          'rgba(139,92,246,0.7)'
+        ],
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} projects` } }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#8899bb', font: { size: 11 } },
+          border: { color: 'rgba(255,255,255,0.1)' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#e8eaf6', font: { size: 11 } },
+          border: { color: 'rgba(255,255,255,0.1)' }
+        }
+      }
+    }
+  });
+}
+
+// ── CHART 2: Health Risk Radar ──
+{
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Space Radiation', 'Isolation / Confinement', 'Altered Gravity', 'Immune Dysregulation', 'Behavioral Health', 'Cardiovascular'],
+      datasets: [
+        {
+          label: 'Mission Severity (NASA HRP)',
+          data: [9, 8, 7, 8, 9, 7],
+          backgroundColor: 'rgba(252,61,33,0.18)',
+          borderColor: 'rgba(252,61,33,0.85)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(252,61,33,1)',
+          pointRadius: 4,
+        },
+        {
+          label: 'Coverage by Past Hackathon Teams',
+          data: [6, 3, 5, 5, 1, 4],
+          backgroundColor: 'rgba(46,143,255,0.15)',
+          borderColor: 'rgba(46,143,255,0.85)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(46,143,255,1)',
+          pointRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: { color: '#8899bb', font: { size: 11 }, boxWidth: 14 }
+        }
+      },
+      scales: {
+        r: {
+          min: 0, max: 10,
+          grid: { color: 'rgba(255,255,255,0.08)' },
+          angleLines: { color: 'rgba(255,255,255,0.08)' },
+          ticks: { display: false },
+          pointLabels: { color: '#e8eaf6', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// ── CHART 3: Gantt / Timeline ──
+{
+  const ctx = document.getElementById('ganttChart').getContext('2d');
+  // Days from Sep 22 as origin. Nov 14 = day 53.
+  const phases = [
+    { label: 'Research & Design',       start: 0,  end: 10, color: 'rgba(139,92,246,0.8)' },
+    { label: 'Core Backend (FastAPI)',   start: 7,  end: 21, color: 'rgba(11,61,145,0.85)' },
+    { label: 'Frontend Dashboard',      start: 14, end: 30, color: 'rgba(46,143,255,0.8)' },
+    { label: 'ML / Analysis Engine',    start: 18, end: 38, color: 'rgba(252,61,33,0.8)' },
+    { label: 'Integration & Polish',    start: 35, end: 49, color: 'rgba(0,200,100,0.8)' },
+    { label: 'Demo Prep & Deploy',      start: 46, end: 53, color: 'rgba(255,214,0,0.8)' },
+  ];
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: phases.map(p => p.label),
+      datasets: [
+        {
+          label: 'gap',
+          data: phases.map(p => p.start),
+          backgroundColor: 'transparent',
+          borderWidth: 0,
+          skipNull: true,
+        },
+        {
+          label: 'Duration',
+          data: phases.map(p => p.end - p.start),
+          backgroundColor: phases.map(p => p.color),
+          borderRadius: 4,
+          borderWidth: 0,
+        }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              if (ctx.datasetIndex === 0) return null;
+              const p = phases[ctx.dataIndex];
+              const start = new Date('2026-09-22'); start.setDate(start.getDate() + p.start);
+              const end = new Date('2026-09-22'); end.setDate(end.getDate() + p.end);
+              return ` ${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true, min: 0, max: 54,
+          ticks: {
+            color: '#8899bb', font: { size: 10 },
+            callback: v => {
+              const d = new Date('2026-09-22'); d.setDate(d.getDate() + v);
+              return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+            },
+            maxTicksLimit: 9
+          },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          border: { color: 'rgba(255,255,255,0.1)' }
+        },
+        y: {
+          stacked: true,
+          ticks: { color: '#e8eaf6', font: { size: 11 } },
+          grid: { display: false },
+          border: { color: 'rgba(255,255,255,0.1)' }
+        }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
