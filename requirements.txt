@@ -17,6 +17,5 @@ pydantic>=2.5.0
 # Utilities
 python-dotenv>=1.0.0
 
-# Optional: LLM Integration (uncomment if using)
-# openai>=1.10.0
-# httpx>=0.26.0
+# HTTP client: DeepSeek reasoning layer and the Twilio phone alarm
+httpx>=0.26.0

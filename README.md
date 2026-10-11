@@ -1,230 +1,210 @@
 # AEGIS - Autonomous Expert Group for Integrated Space Health
 
-**NASA Space Apps Challenge 2026**
+**NASA Space Apps Challenge 2026 · Create Health Monitoring Software for Astronauts on Space Missions**
 
-A multi-agent AI system for autonomous crew health monitoring and decision support during deep space missions with communication delays.
+A multi-agent system that monitors crew health on deep-space missions, where help from Earth is minutes away.
+Four specialist agents watch one area each, and AEGIS combines them to **predict** problems before they
+happen, **prevent** them with early countermeasures, and **protect** the crew with emergency protocols.
+
+> **Prototype, not a medical device.** Vitals come from a simulator (no wearable hardware is connected),
+> IL-6 is modelled from stress and radiation, and nothing here is clinically validated. See
+> `artifacts/AEGIS-Accuracy-Report.html` for how the rules and the AI were tested against real NASA data.
 
 ---
 
-## Quick Start
+## The agents
+
+| Agent | Watches | Raises |
+|---|---|---|
+| **AEGIS** | Combines the four specialists for each crew member | Predicted cascade (3+ systems heading out of range), cascade alert, protocol choice |
+| **PULSE** | Heart rate, blood oxygen (SpO₂) | Fast/slow heart rate, low oxygen → medical response (MEDIC-1) |
+| **GENE** | Inflammation signal (IL-6, modelled) | Raised inflammation |
+| **MIRROR** | Sleep quality | Fair / poor sleep |
+| **SOLARIS** | Radiation dose (24 h and mission total) | Elevated dose, solar storm → storm shelter (SHELTER-1) |
+
+**The three pillars**
+
+1. **PREDICT** - a least-squares trend over the last ~2 minutes of each reading forecasts when it will cross its
+   agent's limit (`aegis_trends.py`). Three systems forecast to cross = an early cascade warning with a countdown.
+2. **PREVENT** - a prevention plan (PREVENT-1) and rule-approved recommendations, worded by DeepSeek and
+   grounded in NASA sources (RAG over ChromaDB).
+3. **PROTECT** - live alerts with one-click protocols: RECOVER-3 (cascade), SHELTER-1 (radiation storm),
+   MEDIC-1 (medical emergency), shown on board in the 2D spacecraft simulation.
+
+**Keeping the AI honest** - the rules decide *when* to act; DeepSeek only explains and words the advice.
+Every AI recommendation is fact-checked by `aegis_verify.py` (numbers, citations, approved actions, no
+invented medicines) before it is shown; if it fails twice the card shows the rule-based advice instead.
+Crew names are never sent to the model.
+
+---
+
+## Quick start (Windows)
 
 ### Prerequisites
+- Python 3.10+ (3.13 used in development)
+- Optional: [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
-- **Python 3.10+** (Python 3.13 recommended)
-- **uv** (Python package manager) - [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
-  ```bash
-  # Windows (PowerShell)
-  irm https://astral.sh/uv/install.ps1 | iex
-  
-  # macOS/Linux
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
+### 1. Install
 
-### 1. Install Dependencies
-
-```bash
-cd C:\Users\kgeor\Desktop\NASA_Hackathon_Challenge
-
-# Create virtual environment and install dependencies
-uv sync
-```
-
-Or with pip:
-```bash
-# Create venv
+```powershell
+cd path\to\project-horizons-AEGIS-nasa-apps-challeng
 python -m venv .venv
-
-# Activate (Windows)
 .venv\Scripts\activate
-
-# Activate (macOS/Linux)
-source .venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Start the Backend API
+(or `uv sync`)
 
-```bash
-# Using uv (recommended)
-uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+### 2. Configure
 
-# Or if venv is activated
-uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```powershell
+copy .env.example .env
 ```
 
-The backend will start at: **http://127.0.0.1:8000**
+Then edit `.env` (see [Configuration](#configuration)). Everything works without keys, using rule-based answers.
+
+### 3. Start the backend
+
+```powershell
+$env:PYTHONUTF8 = "1"        # the startup log prints emoji; avoids a Windows console encoding error
+uvicorn main:app --host 127.0.0.1 --port 8000
+```
 
 - API docs: http://127.0.0.1:8000/docs
 - Health check: http://127.0.0.1:8000/health
 
-### 3. Start the Frontend (Static Server)
+The first start loads the embedding model and the knowledge base (about 20-40 s).
 
-Open a **new terminal** and run:
+### 4. Serve the dashboard
 
-```bash
-cd C:\Users\kgeor\Desktop\NASA_Hackathon_Challenge
+In a second terminal:
 
-# Using Python's built-in server
-python -m http.server 3000 --bind 127.0.0.1
+```powershell
+python -m http.server 8080 --bind 127.0.0.1
 ```
 
-The frontend will be at: **http://127.0.0.1:3000/aegis-mission-control.html**
+Open **http://127.0.0.1:8080/aegis-mission-control.html**. The header shows **🟢 Live** when the backend is
+connected and **🔴 Offline** when it isn't. Click anywhere once so the browser allows the agents' voices.
 
-### 4. Open the Dashboard
+### Demo shortcuts (on the dashboard)
 
-Navigate to: **http://127.0.0.1:3000/aegis-mission-control.html**
-
-You should see the AEGIS Mission Control dashboard with:
-- 🟢 **Live** indicator (top-right) = API connected
-- 🔴 **Disconnected** = Backend not running
-
----
-
-## Project Structure
-
-```
-NASA_Hackathon_Challenge/
-├── main.py                    # FastAPI backend server
-├── models.py                  # Pydantic data models
-├── database.py                # In-memory database
-├── agents.py                  # Multi-agent AI system
-├── aegis_rag.py               # RAG knowledge base
-├── simulator.py               # Vitals simulation
-├── setup_chromadb.py          # Knowledge base setup
-├── aegis-mission-control.html # Main dashboard UI
-├── aegis-api-client.js        # Frontend API client
-├── aegis-spacecraft-sim-2d.html # 2D spacecraft visualization
-├── requirements.txt           # Python dependencies
-├── pyproject.toml             # Project config (uv)
-├── .env                       # Environment variables
-├── aegis.db                   # SQLite database (auto-created)
-├── chroma_db/                 # Vector database
-├── data/                      # NASA data sources
-│   ├── aegis_knowledge_base.json
-│   ├── nasa_hrr_risks.json
-│   ├── hrp_docs/              # NASA HRP PDFs
-│   ├── live_feeds/            # Space weather data
-│   └── osdr_metadata/         # OSDR datasets
-└── artifacts/                 # Design documents
-    ├── AEGIS-Development-Plan.html
-    ├── AEGIS-Technical-Architecture.html
-    └── aegis-solution-brief.html
-```
+| Keys | Scenario |
+|---|---|
+| **Shift + B** | Slow build-up for the selected crew member → early warning, countdown, then "Start prevention plan" |
+| **Shift + D** | Cascade for the selected crew member → recovery plan |
+| **Shift + M** | Medical emergency (low oxygen) for the selected crew member → medical response |
+| **Shift + S** | Solar storm for the whole crew → storm shelter |
+| **Shift + N** | Back to normal |
 
 ---
 
 ## Configuration
 
-### Environment Variables (.env)
+`.env` (never commit it; it is in `.gitignore`):
 
 ```bash
-# Server
-HOST=127.0.0.1
-PORT=8000
+# DeepSeek: agents' explanations, Voice Terminal answers, RAG recommendations
+DEEPSEEK_API_KEY=
+DEEPSEEK_MODEL=deepseek-flash
+# AEGIS_LLM=off               # force rule-based mode
 
-# Optional: LLM API Keys for enhanced recommendations
-# OPENAI_API_KEY=sk-...
-# DEEPSEEK_API_KEY=sk-...
+# Phone alarm (optional, Twilio): AEGIS phones the on-call flight surgeon on critical alerts
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_FROM_NUMBER=           # your Twilio number, e.g. +1...
+AEGIS_ONCALL_NUMBER=          # the phone to ring (on a trial account it must be verified)
+# AEGIS_CALLS=off             # turn calls off without removing the keys
+# AEGIS_CALL_COOLDOWN_MIN=10
+# AEGIS_CALL_MAX_PER_HOUR=4
 ```
 
-### LLM Integration (Optional)
-
-The system works without LLM keys using rule-based recommendations. To enable AI-enhanced recommendations:
-
-1. Uncomment the desired API key in `.env`
-2. Add your key
-3. Restart the backend
+Without Twilio keys the alarm is logged ("would have called") instead of dialled. Test it with
+`POST /api/notify/test` in the API docs.
 
 ---
 
-## API Endpoints
+## Project structure
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/crew` | Get all crew members |
-| GET | `/crew/{id}` | Get crew member by ID |
-| GET | `/recommendations` | Get all recommendations |
-| POST | `/recommendations/{id}/action` | Accept/dismiss recommendation |
-| GET | `/alerts` | Get active alerts |
-| POST | `/query` | RAG knowledge base query |
-| POST | `/analyze` | Trigger crew analysis |
-| GET | `/simulation/state` | Get simulation state |
-| POST | `/simulation/start` | Start vitals simulation |
-| POST | `/simulation/stop` | Stop simulation |
+```
+project-horizons-AEGIS-nasa-apps-challeng/
+├── main.py                       # FastAPI backend (all routes under /api)
+├── agents.py                     # PULSE, GENE, MIRROR, SOLARIS + AEGIS coordinator
+├── aegis_trends.py               # PREDICT: trends, time-to-limit forecasts, predicted cascade
+├── aegis_llm.py                  # DeepSeek client (chat + tool calling), agent personas
+├── aegis_verify.py               # Fact checker for AI output (numbers, citations, actions, medicines)
+├── aegis_notify.py               # Phone alarm (Twilio voice call) + call_flight_surgeon tool
+├── aegis_rag.py                  # Knowledge-base retrieval (ChromaDB, all-MiniLM-L6-v2)
+├── simulator.py                  # Vitals simulator and demo scenarios
+├── database.py                   # SQLite storage (aegis.db, created on first run)
+├── models.py                     # Pydantic models
+├── setup_chromadb.py             # Builds the knowledge base into chroma_db/
+├── aegis-mission-control.html    # Dashboard (Cascade Map, vitals, voice terminal, alerts, recommendations)
+├── aegis-api-client.js           # Dashboard ↔ backend client
+├── aegis-spacecraft-sim-2d.html  # 2D spacecraft: protocols carried out on board
+├── chroma_db/                    # Vector database (knowledge base)
+├── data/
+│   ├── aegis_knowledge_base.json # Countermeasures, protocols, medications
+│   ├── nasa_hrr_risks.json       # NASA Human Research Roadmap risks
+│   ├── AEGIS_SOURCES.md          # Cited sources
+│   ├── hrp_docs/  live_feeds/  osdr_metadata/
+│   └── real/                     # Inspiration4 blood data (NASA OSDR OSD-575/569) + NTRS abstracts
+├── eval/                         # Accuracy evaluation (run_eval.py, results.json)
+└── artifacts/                    # Reports: accuracy, test plan, improvements, architecture, solution brief
+```
 
-Full API docs at: http://127.0.0.1:8000/docs
+---
+
+## Main API endpoints
+
+All under `http://127.0.0.1:8000`. Full list and try-it-out at `/docs`.
+
+| Method | Endpoint | What it does |
+|---|---|---|
+| GET | `/health` | Backend, simulator and AI status |
+| GET | `/api/crew` · `/api/crew/{id}` | Crew members and live vitals |
+| GET | `/api/crew/{id}/trends` | Trends and time-to-limit forecasts for one person |
+| GET | `/api/predict` | Forecasts and predicted cascades for the whole crew |
+| POST | `/api/crew/{id}/prevent` | Start the prevention plan |
+| GET | `/api/recommendations/pending` | Open recommendations (with fact-check result) |
+| POST | `/api/recommendations/{id}/action` | Accept, defer or dismiss |
+| GET | `/api/alerts` · POST `/api/alerts/{id}/acknowledge` | Alerts and confirming a protocol |
+| POST | `/api/ask` | Ask an agent a question (Voice Terminal) |
+| POST | `/api/whatif` | Run the agents on hypothetical readings |
+| POST | `/api/query` | Search the knowledge base |
+| POST | `/api/simulation/scenario/{name}` | Demo scenarios (`buildup_demo`, `cascade_demo`, `medical_emergency`, `spe_event`, `nominal`) |
+| GET | `/api/notify/status` · POST `/api/notify/test` | Phone alarm status and a test call |
+| GET | `/api/llm/status` | DeepSeek status (never shows the key) |
+
+---
+
+## Accuracy evaluation
+
+```powershell
+python eval\run_eval.py            # rules vs real data + DeepSeek grounding (uses the API)
+python eval\run_eval.py --no-llm   # rules vs real data only
+```
+
+It replays real Inspiration4 IL-6 values through GENE, measured ISS / Mars radiation through SOLARIS and
+clinical cut-offs through PULSE, then measures how often DeepSeek's output is grounded and how many planted
+hallucinations the fact checker catches. Results: `eval/results.json` and `artifacts/AEGIS-Accuracy-Report.html`.
+
+Known gaps (documented in the report): SOLARIS's daily-dose thresholds are below normal deep-space background;
+GENE's fixed IL-6 threshold misses the post-flight rise a personal baseline catches.
 
 ---
 
 ## Troubleshooting
 
-### Backend won't start
-```bash
-# Check if port 8000 is in use
-netstat -ano | findstr :8000
-
-# Kill process using port (replace PID)
-taskkill /PID <PID> /F
-```
-
-### Frontend shows "Disconnected"
-1. Make sure backend is running on port 8000
-2. Check browser console for CORS errors
-3. Verify you're accessing via http://127.0.0.1:3000 (not localhost)
-
-### Module not found errors
-```bash
-# Reinstall dependencies
-uv sync --reinstall
-
-# Or with pip
-pip install -r requirements.txt --force-reinstall
-```
-
-### ChromaDB issues
-```bash
-# Rebuild the knowledge base
-uv run python setup_chromadb.py
-```
-
----
-
-## Development
-
-### Running Tests
-```bash
-uv run pytest
-```
-
-### Code Formatting
-```bash
-uv run black .
-uv run ruff check .
-```
-
----
-
-## Architecture
-
-AEGIS uses a multi-agent AI architecture with three pillars:
-
-1. **PREDICT** - Forecasts health trends using ML models
-2. **PREVENT** - Proactive countermeasures to avoid health issues
-3. **RESPOND** - Emergency protocols when issues occur
-
-Agents:
-- **COORD** - Coordinator agent (orchestrates others)
-- **VITALS** - Vital signs monitoring
-- **PSYCH** - Psychological health
-- **PHYSIO** - Physiological analysis
-- **RAD** - Radiation exposure tracking
-- **ENV** - Environmental monitoring
+- **Dashboard shows 🔴 Offline** - the backend isn't running on port 8000, or the page was opened as a file.
+  Serve it over http (step 4).
+- **`UnicodeEncodeError` on startup** - set `$env:PYTHONUTF8 = "1"` before starting the backend.
+- **Port 8000 in use** - `netstat -ano | findstr :8000`, then `taskkill /PID <pid> /F`.
+- **No voice** - click the page once (browsers block speech until you interact); pick a voice in the Voice
+  Terminal if the list is empty.
+- **Knowledge base errors** - rebuild it: `python setup_chromadb.py`.
 
 ---
 
 ## License
 
-NASA Space Apps Challenge 2026 - Open Source
+NASA Space Apps Challenge 2026 - open source.
