@@ -12,6 +12,33 @@ happen, **prevent** them with early countermeasures, and **protect** the crew wi
 
 ---
 
+## Screenshots
+
+**Early warning: AEGIS predicts a health cascade minutes before it happens**
+
+![Cascade Map counting down to a predicted cascade](docs/screenshots/aegis-02-early-warning.png)
+
+The Cascade Map shows the four specialists around AEGIS. Each ring is how close a reading is to its agent's
+limit; links glow when strain spreads between systems; the centre counts down to the moment three systems
+are out of range together.
+
+| Prevented: "Cascade avoided" | Emergency: medical alert and the on-call phone alarm |
+|---|---|
+| ![Cascade avoided after the prevention plan](docs/screenshots/aegis-03-cascade-avoided.png) | ![Medical emergency on the Cascade Map](docs/screenshots/aegis-04b-medical-map.png)<br>![Medical alert with the phone call status](docs/screenshots/aegis-04-medical-alert-call.png) |
+
+| On board: the protocol carried out in the spacecraft | Dark mode |
+|---|---|
+| ![Spacecraft simulation running the medical response](docs/screenshots/aegis-06-spacecraft-protocol.png) | ![Dashboard in dark mode](docs/screenshots/aegis-07-dark-mode.png) |
+
+<details>
+<summary>Full dashboard</summary>
+
+![Full dashboard: Cascade Map, live vitals, voice terminal, crew at a glance, recommendations](docs/screenshots/aegis-01-dashboard.png)
+
+</details>
+
+---
+
 ## The agents
 
 | Agent | Watches | Raises |
