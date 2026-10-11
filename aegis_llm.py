@@ -36,22 +36,39 @@ _stats = {"calls": 0, "ok": 0, "errors": 0, "last_error": None,
           "last_latency_s": None, "last_call_at": None, "last_model": None}
 
 BASE_SYSTEM = (
-    "You are {persona}, part of AEGIS, an autonomous health-monitoring system for astronauts on a "
-    "long-duration deep-space mission where Earth support is delayed. You write for the crew medical "
-    "officer and commander.\n"
-    "Rules: use ONLY the measurements, findings and evidence given to you; never invent values, drugs, "
-    "doses or studies. This is a risk assessment, not a diagnosis. Refer to the crew member in the third "
-    "person by role only (for example 'the Commander'), never by ID and never as 'you'. Plain clinical "
-    "English, no markdown, no bullet points, at most {words} words."
+    "You are {persona}, part of AEGIS, the health team looking after astronauts on a long deep-space "
+    "mission where help from Earth is slow. You talk with mission control and the crew like a calm, "
+    "friendly crewmate who happens to be an expert.\n"
+    "How to talk: everyday words and short sentences, the way a person speaks out loud. No jargon, codes or "
+    "acronyms unless they are explained in a few plain words (say 'an inflammation signal in the blood' rather "
+    "than 'IL-6 elevation'; 'the recovery plan' rather than 'Protocol RECOVER-3'). Round numbers sensibly. "
+    "No markdown, no bullet points, no lists, at most {words} words.\n"
+    "Facts: use ONLY the measurements, findings and evidence given to you; never invent readings, drugs, doses "
+    "or studies. This is a heads-up about risk, not a diagnosis. Refer to a crew member by role (for example "
+    "'the Commander'), never by ID.\n"
+    "{mode_rules}"
 )
 
+MODE_RULES = {
+    # Alerts, recommendations, forecasts: plain and calm, no jokes
+    "report": "Tone: clear, calm and reassuring. No jokes here. Say what is happening, why it matters and the one "
+              "or two things to do, in that order. You are talking to mission control ABOUT the crew member, so use "
+              "the third person by role ('the Commander's sleep is a bit low'), never 'you' or 'your'.",
+    # Voice Terminal: a real conversation
+    "chat": "Tone: warm, natural and conversational, like talking to a colleague. You can chat about anything, not "
+            "only health. If someone asks for a joke, tell a short, kind one (space and science humour works well); a "
+            "light touch of humour is fine in relaxed moments too, but never when someone is in danger or an urgent "
+            "alert is open. If a health question comes in, answer it simply first.",
+}
+
 PERSONAS = {
-    "PULSE": "PULSE, the cardiovascular and physiology specialist agent",
-    "SOLARIS": "SOLARIS, the space-radiation specialist agent",
-    "GENE": "GENE, the immune and inflammatory biomarker (IL-6 / CRP) specialist agent",
-    "MIRROR": "MIRROR, the behavioral-health specialist agent (stress, sleep, isolation)",
-    "OSTEOWATCH": "OsteoWatch, the bone and muscle specialist agent",
-    "AEGIS": "the AEGIS orchestrator, which detects cascades where several health domains deteriorate together",
+    "PULSE": "PULSE, who keeps an eye on heart rate and oxygen levels (upbeat, coach-like)",
+    "SOLARIS": "SOLARIS, who watches space radiation and solar storms (calm, with a dry sense of humour)",
+    "GENE": "GENE, who tracks inflammation signals in the blood (curious and gentle)",
+    "MIRROR": "MIRROR, who looks after sleep and wellbeing (warm and supportive)",
+    "OSTEOWATCH": "OsteoWatch, who looks after bones and muscles",
+    "AEGIS": "AEGIS, the team lead who pulls everyone's findings together and spots when several problems build "
+             "up at once (steady, reassuring)",
 }
 
 
@@ -84,7 +101,7 @@ def _record(ok: bool, latency: float, error: Optional[str] = None):
 
 
 def chat(prompt: str, persona: str = "AEGIS", words: int = 70,
-         max_tokens: int = 1500, temperature: float = 0.3) -> Optional[str]:
+         max_tokens: int = 1500, temperature: Optional[float] = None, mode: str = "report") -> Optional[str]:
     """Blocking DeepSeek call. Returns the answer text, or None on any failure.
 
     DeepSeek's current models reason before answering and the reasoning counts against
@@ -93,7 +110,10 @@ def chat(prompt: str, persona: str = "AEGIS", words: int = 70,
     """
     if not enabled():
         return None
-    system = BASE_SYSTEM.format(persona=PERSONAS.get(persona.upper(), PERSONAS["AEGIS"]), words=words)
+    system = BASE_SYSTEM.format(persona=PERSONAS.get(persona.upper(), PERSONAS["AEGIS"]), words=words,
+                                mode_rules=MODE_RULES.get(mode, MODE_RULES["report"]))
+    if temperature is None:
+        temperature = 0.8 if mode == "chat" else 0.2   # lively conversation, steady health reports
     base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
     t0 = time.time()
     try:
@@ -117,6 +137,49 @@ def chat(prompt: str, persona: str = "AEGIS", words: int = 70,
         _record(False, time.time() - t0, "empty completion after retry (reasoning used the token budget)")
         return None
     except Exception as e:                                   # network, timeout, bad JSON...
+        _record(False, time.time() - t0, f"{type(e).__name__}: {e}")
+        return None
+
+
+def chat_tools(prompt: str, tools: list, persona: str = "AEGIS", words: int = 60,
+               max_tokens: int = 1500, mode: str = "chat") -> Optional[dict]:
+    """
+    DeepSeek call with function calling (OpenAI-compatible 'tools'). Returns
+    {"text": str, "tool_calls": [{"name": str, "arguments": dict}]} or None on failure.
+    The model decides whether to call a tool; the caller executes it.
+    """
+    if not enabled():
+        return None
+    import json as _json
+    system = BASE_SYSTEM.format(persona=PERSONAS.get(persona.upper(), PERSONAS["AEGIS"]), words=words,
+                                mode_rules=MODE_RULES.get(mode, MODE_RULES["report"]))
+    base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
+    t0 = time.time()
+    try:
+        r = httpx.post(
+            f"{base}/chat/completions",
+            headers={"Authorization": f"Bearer {_key()}"},
+            timeout=float(os.getenv("DEEPSEEK_TIMEOUT", "25")),
+            json={"model": model(), "max_tokens": max_tokens, "temperature": 0.3 if mode == "report" else 0.7,
+                  "tools": tools, "tool_choice": "auto",
+                  "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}]},
+        )
+        if r.status_code != 200:
+            _record(False, time.time() - t0, f"HTTP {r.status_code}: {r.text[:200]}")
+            return None
+        msg = ((r.json().get("choices") or [{}])[0].get("message") or {})
+        calls = []
+        for tc in msg.get("tool_calls") or []:
+            fn = tc.get("function") or {}
+            try:
+                args = _json.loads(fn.get("arguments") or "{}")
+            except ValueError:
+                args = {}
+            calls.append({"name": fn.get("name"), "arguments": args})
+        text = " ".join((msg.get("content") or "").replace("**", "").split())
+        _record(True, time.time() - t0)
+        return {"text": text, "tool_calls": calls}
+    except Exception as e:
         _record(False, time.time() - t0, f"{type(e).__name__}: {e}")
         return None
 

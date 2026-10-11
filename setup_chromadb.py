@@ -234,13 +234,23 @@ def index_citations(collection, citations: list[dict]):
     metadatas = []
     ids = []
     
+    # Real abstracts from the NASA Technical Reports Server (eval/fetch_ntrs.py), so a citation carries the
+    # paper's actual text instead of only its title
+    abstracts = {}
+    abs_path = DATA_DIR / "real" / "ntrs_abstracts.json"
+    if abs_path.exists():
+        abstracts = json.loads(abs_path.read_text(encoding="utf-8"))
+
     for i, citation in enumerate(citations):
-        documents.append(citation['text'])
-        metadatas.append({
-            "category": citation['category'],
-            "source": "AEGIS_SOURCES.md",
-            "type": "citation"
-        })
+        text = citation['text']
+        meta = {"category": citation['category'], "source": "AEGIS_SOURCES.md", "type": "citation"}
+        idm = re.search(r"\b((?:19|20)\d{9})\b", text)
+        rec = abstracts.get(idm.group(1)) if idm else None
+        if rec and rec.get("abstract"):
+            text = f"{text}. NTRS title: {rec.get('ntrs_title')}. Abstract: {rec['abstract'][:2000]}"
+            meta["has_abstract"] = True
+        documents.append(text)
+        metadatas.append(meta)
         ids.append(f"cite_{i:04d}")
     
     if documents:

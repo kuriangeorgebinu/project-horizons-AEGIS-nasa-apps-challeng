@@ -1,0 +1,574 @@
+{
+ "il6": [
+  {
+   "crew": "C001",
+   "tp": "L-3",
+   "pg_ml": 5.94
+  },
+  {
+   "crew": "C001",
+   "tp": "L-44",
+   "pg_ml": 2.58
+  },
+  {
+   "crew": "C001",
+   "tp": "L-92",
+   "pg_ml": 2.87
+  },
+  {
+   "crew": "C001",
+   "tp": "R+1",
+   "pg_ml": 6.86
+  },
+  {
+   "crew": "C001",
+   "tp": "R+194",
+   "pg_ml": 4.26
+  },
+  {
+   "crew": "C001",
+   "tp": "R+45",
+   "pg_ml": 1.65
+  },
+  {
+   "crew": "C001",
+   "tp": "R+82",
+   "pg_ml": 1.04
+  },
+  {
+   "crew": "C002",
+   "tp": "L-3",
+   "pg_ml": 4.53
+  },
+  {
+   "crew": "C002",
+   "tp": "L-44",
+   "pg_ml": 4.19
+  },
+  {
+   "crew": "C002",
+   "tp": "L-92",
+   "pg_ml": 4.49
+  },
+  {
+   "crew": "C002",
+   "tp": "R+1",
+   "pg_ml": 5.76
+  },
+  {
+   "crew": "C002",
+   "tp": "R+194",
+   "pg_ml": 0.75
+  },
+  {
+   "crew": "C002",
+   "tp": "R+45",
+   "pg_ml": 12.07
+  },
+  {
+   "crew": "C002",
+   "tp": "R+82",
+   "pg_ml": 5.11
+  },
+  {
+   "crew": "C003",
+   "tp": "L-3",
+   "pg_ml": 2.51
+  },
+  {
+   "crew": "C003",
+   "tp": "L-44",
+   "pg_ml": 2.69
+  },
+  {
+   "crew": "C003",
+   "tp": "L-92",
+   "pg_ml": 2.67
+  },
+  {
+   "crew": "C003",
+   "tp": "R+1",
+   "pg_ml": 7.6
+  },
+  {
+   "crew": "C003",
+   "tp": "R+194",
+   "pg_ml": 5.78
+  },
+  {
+   "crew": "C003",
+   "tp": "R+45",
+   "pg_ml": 1.32
+  },
+  {
+   "crew": "C003",
+   "tp": "R+82",
+   "pg_ml": 3.64
+  },
+  {
+   "crew": "C004",
+   "tp": "L-3",
+   "pg_ml": 3.97
+  },
+  {
+   "crew": "C004",
+   "tp": "L-44",
+   "pg_ml": 3.09
+  },
+  {
+   "crew": "C004",
+   "tp": "L-92",
+   "pg_ml": 4.9
+  },
+  {
+   "crew": "C004",
+   "tp": "R+1",
+   "pg_ml": 6.34
+  },
+  {
+   "crew": "C004",
+   "tp": "R+194",
+   "pg_ml": 4.11
+  },
+  {
+   "crew": "C004",
+   "tp": "R+45",
+   "pg_ml": 3.59
+  },
+  {
+   "crew": "C004",
+   "tp": "R+82",
+   "pg_ml": 6.02
+  }
+ ],
+ "crp": [
+  {
+   "crew": "C001",
+   "tp": "L-3",
+   "mg_l": 5.132
+  },
+  {
+   "crew": "C001",
+   "tp": "L-44",
+   "mg_l": 2.191
+  },
+  {
+   "crew": "C001",
+   "tp": "L-92",
+   "mg_l": 18.385
+  },
+  {
+   "crew": "C001",
+   "tp": "R+1",
+   "mg_l": 10.638
+  },
+  {
+   "crew": "C001",
+   "tp": "R+194",
+   "mg_l": 15.415
+  },
+  {
+   "crew": "C001",
+   "tp": "R+45",
+   "mg_l": 6.714
+  },
+  {
+   "crew": "C001",
+   "tp": "R+82",
+   "mg_l": 25.03
+  },
+  {
+   "crew": "C002",
+   "tp": "L-3",
+   "mg_l": 11.967
+  },
+  {
+   "crew": "C002",
+   "tp": "L-44",
+   "mg_l": 1.569
+  },
+  {
+   "crew": "C002",
+   "tp": "L-92",
+   "mg_l": 8.927
+  },
+  {
+   "crew": "C002",
+   "tp": "R+1",
+   "mg_l": 9.312
+  },
+  {
+   "crew": "C002",
+   "tp": "R+194",
+   "mg_l": 21.462
+  },
+  {
+   "crew": "C002",
+   "tp": "R+45",
+   "mg_l": 3.677
+  },
+  {
+   "crew": "C002",
+   "tp": "R+82",
+   "mg_l": 8.634
+  },
+  {
+   "crew": "C003",
+   "tp": "L-3",
+   "mg_l": 42.838
+  },
+  {
+   "crew": "C003",
+   "tp": "L-44",
+   "mg_l": 9.383
+  },
+  {
+   "crew": "C003",
+   "tp": "L-92",
+   "mg_l": 75.749
+  },
+  {
+   "crew": "C003",
+   "tp": "R+1",
+   "mg_l": 83.617
+  },
+  {
+   "crew": "C003",
+   "tp": "R+194",
+   "mg_l": 9.379
+  },
+  {
+   "crew": "C003",
+   "tp": "R+45",
+   "mg_l": 39.19
+  },
+  {
+   "crew": "C003",
+   "tp": "R+82",
+   "mg_l": 12.68
+  },
+  {
+   "crew": "C004",
+   "tp": "L-3",
+   "mg_l": 13.742
+  },
+  {
+   "crew": "C004",
+   "tp": "L-44",
+   "mg_l": 1.29
+  },
+  {
+   "crew": "C004",
+   "tp": "L-92",
+   "mg_l": 21.378
+  },
+  {
+   "crew": "C004",
+   "tp": "R+1",
+   "mg_l": 17.701
+  },
+  {
+   "crew": "C004",
+   "tp": "R+194",
+   "mg_l": 46.006
+  },
+  {
+   "crew": "C004",
+   "tp": "R+45",
+   "mg_l": 22.407
+  },
+  {
+   "crew": "C004",
+   "tp": "R+82",
+   "mg_l": 7.902
+  }
+ ],
+ "cbc": [
+  {
+   "crew": "C001",
+   "tp": "L-3",
+   "wbc": 7.0,
+   "lymph": 2667.0
+  },
+  {
+   "crew": "C001",
+   "tp": "L-44",
+   "wbc": 5.5,
+   "lymph": 1859.0
+  },
+  {
+   "crew": "C001",
+   "tp": "L-92",
+   "wbc": 5.4,
+   "lymph": 2241.0
+  },
+  {
+   "crew": "C001",
+   "tp": "R+1",
+   "wbc": 5.0,
+   "lymph": 1640.0
+  },
+  {
+   "crew": "C001",
+   "tp": "R+194",
+   "wbc": 4.9,
+   "lymph": 1847.0
+  },
+  {
+   "crew": "C001",
+   "tp": "R+45",
+   "wbc": 4.9,
+   "lymph": 2146.0
+  },
+  {
+   "crew": "C001",
+   "tp": "R+82",
+   "wbc": 4.9,
+   "lymph": 2171.0
+  },
+  {
+   "crew": "C002",
+   "tp": "L-3",
+   "wbc": 7.2,
+   "lymph": 2873.0
+  },
+  {
+   "crew": "C002",
+   "tp": "L-44",
+   "wbc": 5.4,
+   "lymph": 1982.0
+  },
+  {
+   "crew": "C002",
+   "tp": "L-92",
+   "wbc": 6.5,
+   "lymph": 2119.0
+  },
+  {
+   "crew": "C002",
+   "tp": "R+1",
+   "wbc": 5.5,
+   "lymph": 1540.0
+  },
+  {
+   "crew": "C002",
+   "tp": "R+194",
+   "wbc": 6.4,
+   "lymph": 2573.0
+  },
+  {
+   "crew": "C002",
+   "tp": "R+45",
+   "wbc": 6.4,
+   "lymph": 2874.0
+  },
+  {
+   "crew": "C002",
+   "tp": "R+82",
+   "wbc": 5.3,
+   "lymph": 1701.0
+  },
+  {
+   "crew": "C003",
+   "tp": "L-3",
+   "wbc": 9.8,
+   "lymph": 3156.0
+  },
+  {
+   "crew": "C003",
+   "tp": "L-44",
+   "wbc": 9.3,
+   "lymph": 2083.0
+  },
+  {
+   "crew": "C003",
+   "tp": "L-92",
+   "wbc": 9.6,
+   "lymph": 6826.0
+  },
+  {
+   "crew": "C003",
+   "tp": "R+1",
+   "wbc": 7.0,
+   "lymph": 2086.0
+  },
+  {
+   "crew": "C003",
+   "tp": "R+194",
+   "wbc": 7.4,
+   "lymph": 2220.0
+  },
+  {
+   "crew": "C003",
+   "tp": "R+45",
+   "wbc": 7.8,
+   "lymph": 2379.0
+  },
+  {
+   "crew": "C003",
+   "tp": "R+82",
+   "wbc": 8.8,
+   "lymph": 3247.0
+  },
+  {
+   "crew": "C004",
+   "tp": "L-3",
+   "wbc": 10.6,
+   "lymph": 2947.0
+  },
+  {
+   "crew": "C004",
+   "tp": "L-44",
+   "wbc": 6.4,
+   "lymph": 1613.0
+  },
+  {
+   "crew": "C004",
+   "tp": "L-92",
+   "wbc": 7.7,
+   "lymph": 1786.0
+  },
+  {
+   "crew": "C004",
+   "tp": "R+1",
+   "wbc": 8.1,
+   "lymph": 2155.0
+  },
+  {
+   "crew": "C004",
+   "tp": "R+194",
+   "wbc": 8.3,
+   "lymph": 2639.0
+  },
+  {
+   "crew": "C004",
+   "tp": "R+45",
+   "wbc": 6.8,
+   "lymph": 1938.0
+  },
+  {
+   "crew": "C004",
+   "tp": "R+82",
+   "wbc": 7.9,
+   "lymph": 2307.0
+  }
+ ],
+ "il6_column": [
+  "il_6_concentration_picogram_per_milliliter"
+ ],
+ "immune_columns_sample": [
+  "6ckine_concentration_picogram_per_milliliter",
+  "bca_1_concentration_picogram_per_milliliter",
+  "ctack_concentration_picogram_per_milliliter",
+  "egf_concentration_picogram_per_milliliter",
+  "ena_78_concentration_picogram_per_milliliter",
+  "eotaxin_concentration_picogram_per_milliliter",
+  "eotaxin_2_concentration_picogram_per_milliliter",
+  "eotaxin_3_concentration_picogram_per_milliliter",
+  "fgf_2_concentration_picogram_per_milliliter",
+  "flt_3l_concentration_picogram_per_milliliter",
+  "fractalkine_concentration_picogram_per_milliliter",
+  "g_csf_concentration_picogram_per_milliliter",
+  "gm_csf_concentration_picogram_per_milliliter",
+  "gro\u03b1_concentration_picogram_per_milliliter",
+  "i_309_concentration_picogram_per_milliliter",
+  "ifn_\u03b12_concentration_picogram_per_milliliter",
+  "ifn\u03b3_concentration_picogram_per_milliliter",
+  "il_10_concentration_picogram_per_milliliter",
+  "il_12p40_concentration_picogram_per_milliliter",
+  "il_12p70_concentration_picogram_per_milliliter",
+  "il_13_concentration_picogram_per_milliliter",
+  "il_15_concentration_picogram_per_milliliter",
+  "il_16_concentration_picogram_per_milliliter",
+  "il_17a_concentration_picogram_per_milliliter",
+  "il_17e_per_il_25_concentration_picogram_per_milliliter",
+  "il_17f_concentration_picogram_per_milliliter",
+  "il_18_concentration_picogram_per_milliliter",
+  "il_1ra_concentration_picogram_per_milliliter",
+  "il_1\u03b1_concentration_picogram_per_milliliter",
+  "il_1\u03b2_concentration_picogram_per_milliliter",
+  "il_2_concentration_picogram_per_milliliter",
+  "il_20_concentration_picogram_per_milliliter",
+  "il_21_concentration_picogram_per_milliliter",
+  "il_22_concentration_picogram_per_milliliter",
+  "il_23_concentration_picogram_per_milliliter",
+  "il_27_concentration_picogram_per_milliliter",
+  "il_28a_concentration_picogram_per_milliliter",
+  "il_3_concentration_picogram_per_milliliter",
+  "il_33_concentration_picogram_per_milliliter",
+  "il_4_concentration_picogram_per_milliliter",
+  "il_5_concentration_picogram_per_milliliter",
+  "il_6_concentration_picogram_per_milliliter",
+  "il_7_concentration_picogram_per_milliliter",
+  "il_8_concentration_picogram_per_milliliter",
+  "il_9_concentration_picogram_per_milliliter",
+  "ip_10_concentration_picogram_per_milliliter",
+  "lif_concentration_picogram_per_milliliter",
+  "m_csf_concentration_picogram_per_milliliter",
+  "mcp_1_concentration_picogram_per_milliliter",
+  "mcp_2_concentration_picogram_per_milliliter",
+  "mcp_3_concentration_picogram_per_milliliter",
+  "mcp_4_concentration_picogram_per_milliliter",
+  "mdc_concentration_picogram_per_milliliter",
+  "mig_per_cxcl9_concentration_picogram_per_milliliter",
+  "mip_1\u03b1_concentration_picogram_per_milliliter",
+  "mip_1\u03b2_concentration_picogram_per_milliliter",
+  "mip_1\u03b4_concentration_picogram_per_milliliter",
+  "pdgf_aa_concentration_picogram_per_milliliter",
+  "pdgf_ab_per_bb_concentration_picogram_per_milliliter",
+  "rantes_concentration_picogram_per_milliliter",
+  "scd40l_concentration_picogram_per_milliliter",
+  "scf_concentration_picogram_per_milliliter",
+  "sdf_1\u03b1_plus_\u03b2_concentration_picogram_per_milliliter",
+  "tarc_concentration_picogram_per_milliliter",
+  "tgf\u03b1_concentration_picogram_per_milliliter",
+  "tnf\u03b1_concentration_picogram_per_milliliter",
+  "tnf\u03b2_concentration_picogram_per_milliliter",
+  "tpo_concentration_picogram_per_milliliter",
+  "trail_concentration_picogram_per_milliliter",
+  "tslp_concentration_picogram_per_milliliter",
+  "vegf_a_concentration_picogram_per_milliliter"
+ ],
+ "summary": {
+  "il6_pg_ml": {
+   "preflight": {
+    "n": 12,
+    "min": 2.51,
+    "median": 3.5300000000000002,
+    "max": 5.94
+   },
+   "return_day_1": {
+    "n": 4,
+    "min": 5.76,
+    "median": 6.6,
+    "max": 7.6
+   },
+   "recovery": {
+    "n": 12,
+    "min": 0.75,
+    "median": 3.875,
+    "max": 12.07
+   }
+  },
+  "crp_mg_l": {
+   "preflight": {
+    "n": 12,
+    "min": 1.29,
+    "median": 10.675,
+    "max": 75.749
+   },
+   "return_day_1": {
+    "n": 4,
+    "min": 9.312,
+    "median": 14.1695,
+    "max": 83.617
+   },
+   "recovery": {
+    "n": 12,
+    "min": 3.677,
+    "median": 14.0475,
+    "max": 46.006
+   }
+  }
+ }
+}

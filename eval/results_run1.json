@@ -1,0 +1,1867 @@
+{
+ "generated": "2026-10-11 04:57",
+ "model": "deepseek-flash",
+ "A1_gene_inspiration4": {
+  "rows": [
+   {
+    "crew": "C001",
+    "L-92": 2.87,
+    "L-44": 2.58,
+    "L-3": 5.94,
+    "baseline": 3.8,
+    "R+1": 6.86,
+    "R+45": 1.65,
+    "R+82": 1.04,
+    "R+194": 4.26
+   },
+   {
+    "crew": "C002",
+    "L-92": 4.49,
+    "L-44": 4.19,
+    "L-3": 4.53,
+    "baseline": 4.4,
+    "R+1": 5.76,
+    "R+45": 12.07,
+    "R+82": 5.11,
+    "R+194": 0.75
+   },
+   {
+    "crew": "C003",
+    "L-92": 2.67,
+    "L-44": 2.69,
+    "L-3": 2.51,
+    "baseline": 2.62,
+    "R+1": 7.6,
+    "R+45": 1.32,
+    "R+82": 3.64,
+    "R+194": 5.78
+   },
+   {
+    "crew": "C004",
+    "L-92": 4.9,
+    "L-44": 3.09,
+    "L-3": 3.97,
+    "baseline": 3.99,
+    "R+1": 6.34,
+    "R+45": 3.59,
+    "R+82": 6.02,
+    "R+194": 4.11
+   }
+  ],
+  "rules": [
+   {
+    "rule": "Current: absolute IL-6 > 8 pg/mL",
+    "detected_R+1": "0/4",
+    "preflight_false_alarms": "0/12"
+   },
+   {
+    "rule": "Personal baseline: >= 1.25x own pre-flight mean and +1.5 pg/mL",
+    "detected_R+1": "3/4",
+    "preflight_false_alarms": "1/12"
+   },
+   {
+    "rule": "Personal baseline: >= 1.5x own pre-flight mean and +1.5 pg/mL",
+    "detected_R+1": "3/4",
+    "preflight_false_alarms": "1/12"
+   },
+   {
+    "rule": "Personal baseline: >= 2.0x own pre-flight mean and +1.5 pg/mL",
+    "detected_R+1": "1/4",
+    "preflight_false_alarms": "1/12"
+   }
+  ],
+  "rose_on_return": "4/4",
+  "current_rule_any_flag_all_samples": 1
+ },
+ "A2_solaris_environments": [
+  {
+   "environment": "ISS, quiet sun (low end)",
+   "mSv_per_day": 0.44,
+   "source": "SIDC: ISS 80-160 mSv per 6 months",
+   "expected": "no alert",
+   "aegis_today": "no alert",
+   "projection": "",
+   "agrees": true
+  },
+  {
+   "environment": "ISS, high end",
+   "mSv_per_day": 0.88,
+   "source": "SIDC: ISS 80-160 mSv per 6 months",
+   "expected": "no alert",
+   "aegis_today": "warning",
+   "projection": "",
+   "agrees": false
+  },
+  {
+   "environment": "Mars surface (Curiosity RAD)",
+   "mSv_per_day": 0.64,
+   "source": "Hassler et al. 2014 / Space.com: 0.64 mSv/day",
+   "expected": "no alert",
+   "aegis_today": "warning",
+   "projection": "",
+   "agrees": false
+  },
+  {
+   "environment": "Deep-space cruise (Curiosity RAD)",
+   "mSv_per_day": 1.84,
+   "source": "Zeitlin et al. 2013 / Space.com: 1.84 mSv/day",
+   "expected": "no shelter (routine background)",
+   "aegis_today": "shelter",
+   "projection": "Projected dose at Day 365: 672 mSv (based on 1.8 mSv/day avg)",
+   "agrees": false
+  },
+  {
+   "environment": "Solar particle event at NASA's 250 mSv limit",
+   "mSv_per_day": 250.0,
+   "source": "NASA OCHMO radiation brief: 250 mSv SPE limit",
+   "expected": "shelter",
+   "aegis_today": "shelter",
+   "projection": "Projected dose at Day 365: 91250 mSv (based on 250.0 mSv/day avg)",
+   "agrees": true
+  }
+ ],
+ "A3_pulse_boundaries": [
+  {
+   "metric": "heart_rate",
+   "value": 99,
+   "expected": "none",
+   "aegis": "none",
+   "reference": "AHA: tachycardia is > 100 bpm at rest",
+   "agrees": true
+  },
+  {
+   "metric": "heart_rate",
+   "value": 105,
+   "expected": "warning",
+   "aegis": "warning",
+   "reference": "AHA: tachycardia is > 100 bpm at rest",
+   "agrees": true
+  },
+  {
+   "metric": "heart_rate",
+   "value": 45,
+   "expected": "watch (bradycardia < 60, often normal in fit people)",
+   "aegis": "none",
+   "reference": "AHA: bradycardia is < 60 bpm",
+   "agrees": null
+  },
+  {
+   "metric": "spo2",
+   "value": 96.0,
+   "expected": "none",
+   "aegis": "none",
+   "reference": "Normal SpO2 95-100 %",
+   "agrees": true
+  },
+  {
+   "metric": "spo2",
+   "value": 93.0,
+   "expected": "warning",
+   "aegis": "warning",
+   "reference": "Below the normal 95-100 % range",
+   "agrees": true
+  },
+  {
+   "metric": "spo2",
+   "value": 88.0,
+   "expected": "critical",
+   "aegis": "critical",
+   "reference": "Hypoxemia: SpO2 < 90 %",
+   "agrees": true
+  }
+ ],
+ "B_traces": [
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Commander's radiation dose over the last day is high enough to need shelter right away. At this rate the year's total could reach about 478, above safe career limits [3]. Watch for further spikes and how the Commander feels [2].",
+      "actions": [
+       "Move to the storm shelter area right now.",
+       "Put on the personal radiation monitor.",
+       "Wait for Mission Control to give the all-clear.",
+       "Log this exposure in the radiation tracking system."
+      ],
+      "sources": [
+       2,
+       3
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": false,
+      "score": 0.75,
+      "problems": [
+       "[2] does not support: 'Watch for further spikes and how the Commander feels .' (sim 0.12)"
+      ],
+      "checks": {
+       "numbers": {
+        "claimed": 1,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [
+         "[2] does not support: 'Watch for further spikes and how the Commander feels .' (sim 0.12)"
+        ],
+        "detail": [
+         {
+          "ref": 3,
+          "sim": 0.442,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 2,
+          "sim": 0.125,
+          "ok": false,
+          "weak_source": false
+         }
+        ],
+        "ok": false
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Move to the storm shelter area right now.",
+          "menu_item": "Move to designated storm shelter area NOW",
+          "sim": 0.861,
+          "ok": true
+         },
+         {
+          "action": "Put on the personal radiation monitor.",
+          "menu_item": "Don personal radiation monitoring device",
+          "sim": 0.708,
+          "ok": true
+         },
+         {
+          "action": "Wait for Mission Control to give the all-clear.",
+          "menu_item": "Await all-clear from Mission Control",
+          "sim": 0.749,
+          "ok": true
+         },
+         {
+          "action": "Log this exposure in the radiation tracking system.",
+          "menu_item": "Log exposure event in radiation tracking system",
+          "sim": 0.796,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    },
+    {
+     "data": {
+      "assessment": "Critical radiation levels have been detected around the Commander: 1.31 mSv in the last 24 hours [2]. If that rate holds, the projected dose by day 365 is about 478 mSv, above the safe career limits [1][3]. Watch the personal dosimeter and space weather alerts for any further rise.",
+      "actions": [
+       "Move to the designated storm shelter area right now",
+       "Put on the personal radiation monitoring device",
+       "Wait for the all-clear from Mission Control",
+       "Log the exposure event in the radiation tracking system"
+      ],
+      "sources": [
+       1,
+       2,
+       3
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": true,
+      "score": 1.0,
+      "problems": [],
+      "checks": {
+       "numbers": {
+        "claimed": 3,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 3,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 2,
+          "sim": 0.452,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 1,
+          "sim": 0.395,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 3,
+          "sim": 0.453,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Move to the designated storm shelter area right now",
+          "menu_item": "Move to designated storm shelter area NOW",
+          "sim": 0.975,
+          "ok": true
+         },
+         {
+          "action": "Put on the personal radiation monitoring device",
+          "menu_item": "Don personal radiation monitoring device",
+          "sim": 0.9,
+          "ok": true
+         },
+         {
+          "action": "Wait for the all-clear from Mission Control",
+          "menu_item": "Await all-clear from Mission Control",
+          "sim": 0.835,
+          "ok": true
+         },
+         {
+          "action": "Log the exposure event in the radiation tracking system",
+          "menu_item": "Log exposure event in radiation tracking system",
+          "sim": 0.954,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Move to designated storm shelter area NOW",
+    "Don personal radiation monitoring device",
+    "Await all-clear from Mission Control",
+    "Log exposure event in radiation tracking system"
+   ],
+   "passages": [
+    "NASA/TM-20160014511 - Space Radiation Protection Strategies: 13. NASA/TM-20160014511 - Space Radiation Protection Strategies. NTRS title: NASA Space Radiation Protection Strategies: Risk Assessment and Permissible Exposure Limits. Abstract: Permissible exposure limits (PELs) for short-term and career astronaut exposures to space radiation have been set and approved by NASA with the goal of protecting astronauts against health risks associated with ionizing radiation exposure. Short term PELs are intended to prevent clinically significant deterministic health effects, including performance decrements, which could threaten astronaut health and jeopardize ",
+    "NASA NTRS 20210009708 \u2014 Radiation Exposure: Risk: Radiation Exposure. Category: radiation. Severity: critical. Countermeasures: shielding, storm_shelter, SPE_forecasting, pharmaceutical_radioprotectants. Monitoring: personal_dosimetry, biodosimetry, space_weather_alerts",
+    "NASA/TM-19870011297 - Radiation Protection Guidelines for Space Missions: 15. NASA/TM-19870011297 - Radiation Protection Guidelines for Space Missions. NTRS title: Radiation protection guidelines for space missions. Abstract: NASA's current radiation protection guidelines date from 1970, when the career limit was set at 400 rem. Today, using the same approach, but with the current risk estimates, a considerably lower career limit would obtain. Also, there is considerably more information about the radiation environments to be experienced in different missions than previously. Since 1970 women have joined the ranks. For these and other reasons it was necessary to ree",
+    "NASA HRR \u2014 Risk of Radiation Carcinogenesis: NASA Official Risk: Risk of Radiation Carcinogenesis. Category: radiation. Status: active. Effects: cancer, CNS effects, cardiovascular"
+   ],
+   "facts": "Crew member eval-001 (role: commander), mission day 100, cumulative radiation 131 mSv. Monitored metrics: heart rate 72 bpm, SpO2 98.0%, sleep quality 82/100, radiation 1.31 mSv in last 24h, IL-6 7.9 pg/mL (modelled). Trends (last 2 min): all steady.\n[critical] Critical radiation exposure: 1.31 mSv in 24h; [prediction] Projected dose at Day 365: 478 mSv (based on 1.3 mSv/day avg)\nSHELTER IMMEDIATELY: Solar Particle Event. Elevated radiation levels detected. Immediate protective action required.\nCritical radiation exposure: 1.31 mSv in 24h",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "SHELTER IMMEDIATELY: Solar Particle Event",
+   "scenario": 1,
+   "agent": "SOLARIS",
+   "inputs": {
+    "radiation_dose_24h": 1.31
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Flight Engineer's radiation dose in the last day is higher than we want, on top of 72 mSv so far this mission. That can affect health and performance over time [1]. Sleep, heart rate and oxygen look steady. Watch tomorrow's dose and the inflammation signal in the blood [3].",
+      "actions": [
+       "Keep the Flight Engineer out of the areas with the most radiation for now",
+       "Hold off on spacewalks that are not essential",
+       "Check that the shielding where the crew works and sleeps is doing its job",
+       "If a protective medicine is on board, weigh whether to use it"
+      ],
+      "sources": [
+       1,
+       2,
+       3
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": false,
+      "score": 0.5,
+      "problems": [
+       "[1] does not support: 'That can affect health and performance over time .' (sim 0.26)",
+       "[3] does not support: 'Watch tomorrow's dose and the inflammation signal in the blood .' (sim 0.26)",
+       "not in approved menu: 'Keep the Flight Engineer out of the areas with the most radiation for now' (best 0.34)",
+       "not in approved menu: 'Hold off on spacewalks that are not essential' (best 0.34)",
+       "not in approved menu: 'Check that the shielding where the crew works and sleeps is doing its job' (best 0.41)",
+       "not in approved menu: 'If a protective medicine is on board, weigh whether to use it' (best 0.30)"
+      ],
+      "checks": {
+       "numbers": {
+        "claimed": 1,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [
+         "[1] does not support: 'That can affect health and performance over time .' (sim 0.26)",
+         "[3] does not support: 'Watch tomorrow's dose and the inflammation signal in the blood .' (sim 0.26)"
+        ],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.26,
+          "ok": false,
+          "weak_source": false
+         },
+         {
+          "ref": 3,
+          "sim": 0.264,
+          "ok": false,
+          "weak_source": false
+         }
+        ],
+        "ok": false
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [
+         "not in approved menu: 'Keep the Flight Engineer out of the areas with the most radiation for now' (best 0.34)",
+         "not in approved menu: 'Hold off on spacewalks that are not essential' (best 0.34)",
+         "not in approved menu: 'Check that the shielding where the crew works and sleeps is doing its job' (best 0.41)",
+         "not in approved menu: 'If a protective medicine is on board, weigh whether to use it' (best 0.30)"
+        ],
+        "detail": [
+         {
+          "action": "Keep the Flight Engineer out of the areas with the most radiation for now",
+          "menu_item": "Limit time in high-exposure areas",
+          "sim": 0.339,
+          "ok": false
+         },
+         {
+          "action": "Hold off on spacewalks that are not essential",
+          "menu_item": "Postpone non-essential EVA activities",
+          "sim": 0.341,
+          "ok": false
+         },
+         {
+          "action": "Check that the shielding where the crew works and sleeps is doing its job",
+          "menu_item": "Review shielding in current location",
+          "sim": 0.412,
+          "ok": false
+         },
+         {
+          "action": "If a protective medicine is on board, weigh whether to use it",
+          "menu_item": "Consider pharmaceutical radioprotectants if available",
+          "sim": 0.301,
+          "ok": false
+         }
+        ],
+        "ok": false
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    },
+    {
+     "data": {
+      "assessment": "The Flight Engineer's radiation dose was 0.72 millisieverts in the last day, part of 72 over the mission, and that is flagged as elevated [2]. Limits exist to guard against health risks from radiation [1]. Heart rate, oxygen and sleep look steady, so watch the next day's dose.",
+      "actions": [
+       "Limit time in high-exposure areas.",
+       "Postpone non-essential EVA activities.",
+       "Review shielding in current location."
+      ],
+      "sources": [
+       1,
+       2
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": true,
+      "score": 1.0,
+      "problems": [],
+      "checks": {
+       "numbers": {
+        "claimed": 2,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 2,
+          "sim": 0.461,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 1,
+          "sim": 0.703,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 3,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Limit time in high-exposure areas.",
+          "menu_item": "Limit time in high-exposure areas",
+          "sim": 0.969,
+          "ok": true
+         },
+         {
+          "action": "Postpone non-essential EVA activities.",
+          "menu_item": "Postpone non-essential EVA activities",
+          "sim": 0.976,
+          "ok": true
+         },
+         {
+          "action": "Review shielding in current location.",
+          "menu_item": "Review shielding in current location",
+          "sim": 0.984,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Limit time in high-exposure areas",
+    "Postpone non-essential EVA activities",
+    "Consider pharmaceutical radioprotectants if available",
+    "Review shielding in current location"
+   ],
+   "passages": [
+    "NASA/TM-20160014511 - Space Radiation Protection Strategies: 13. NASA/TM-20160014511 - Space Radiation Protection Strategies. NTRS title: NASA Space Radiation Protection Strategies: Risk Assessment and Permissible Exposure Limits. Abstract: Permissible exposure limits (PELs) for short-term and career astronaut exposures to space radiation have been set and approved by NASA with the goal of protecting astronauts against health risks associated with ionizing radiation exposure. Short term PELs are intended to prevent clinically significant deterministic health effects, including performance decrements, which could threaten astronaut health and jeopardize ",
+    "NASA NTRS 20210009708 \u2014 Radiation Exposure: Risk: Radiation Exposure. Category: radiation. Severity: critical. Countermeasures: shielding, storm_shelter, SPE_forecasting, pharmaceutical_radioprotectants. Monitoring: personal_dosimetry, biodosimetry, space_weather_alerts",
+    "NASA HRR \u2014 Risk of In Mission Impacts, Adverse Health Events or Long-Term Health Impacts due to Altered Immune Response: NASA Official Risk: Risk of In Mission Impacts, Adverse Health Events or Long-Term Health Impacts due to Altered Immune Response. Category: immunology. Status: active",
+    "NASA HRR \u2014 Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission: NASA Official Risk: Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission. Category: medical. Status: active. Effects: in-mission, long-term health"
+   ],
+   "facts": "Crew member eval-002 (role: flight_engineer), mission day 100, cumulative radiation 72 mSv. Monitored metrics: heart rate 72 bpm, SpO2 98.0%, sleep quality 82/100, radiation 0.72 mSv in last 24h, IL-6 6.2 pg/mL (modelled). Trends (last 2 min): all steady.\n[warning] Elevated radiation exposure: 0.72 mSv in 24h\nRadiation Exposure Management. Take precautionary measures to reduce radiation exposure.\nElevated radiation exposure: 0.72 mSv in 24h",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Radiation Exposure Management",
+   "scenario": 2,
+   "agent": "SOLARIS",
+   "inputs": {
+    "radiation_dose_24h": 0.72
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Mission Specialist's heart rate is up at 112, while oxygen levels and the current trend look fine. In long spaceflight the heart can lose some fitness, so settling this early matters [1][4]. Watch for the rate staying high, or any symptoms, at the next check.",
+      "actions": [
+       "Take it easy and avoid hard physical effort for the next two hours.",
+       "Drink about half a litre of water.",
+       "Do a few slow, relaxed breathing exercises.",
+       "Check the heart rate and oxygen again in 30 minutes."
+      ],
+      "sources": [
+       1,
+       4
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": true,
+      "score": 1.0,
+      "problems": [],
+      "checks": {
+       "numbers": {
+        "claimed": 1,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.585,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 4,
+          "sim": 0.478,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Take it easy and avoid hard physical effort for the next two hours.",
+          "menu_item": "Reduce physical exertion for next 2 hours",
+          "sim": 0.539,
+          "ok": true
+         },
+         {
+          "action": "Drink about half a litre of water.",
+          "menu_item": "Increase fluid intake (500mL water)",
+          "sim": 0.508,
+          "ok": true
+         },
+         {
+          "action": "Do a few slow, relaxed breathing exercises.",
+          "menu_item": "Perform relaxation breathing exercises",
+          "sim": 0.785,
+          "ok": true
+         },
+         {
+          "action": "Check the heart rate and oxygen again in 30 minutes.",
+          "menu_item": "Reduce physical exertion for next 2 hours",
+          "sim": 0.489,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Reduce physical exertion for next 2 hours",
+    "Increase fluid intake (500mL water)",
+    "Perform relaxation breathing exercises",
+    "Schedule follow-up vital check in 30 minutes"
+   ],
+   "passages": [
+    "NASA HRR \u2014 Risk of Cardiovascular Adaptations Contributing to Adverse Mission Performance and Health Outcomes: NASA Official Risk: Risk of Cardiovascular Adaptations Contributing to Adverse Mission Performance and Health Outcomes. Category: cardiovascular. Status: active",
+    "NASA HRR \u2014 Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission: NASA Official Risk: Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission. Category: medical. Status: active. Effects: in-mission, long-term health",
+    "NASA/TM-20170004604 - Risk of Adverse Health Outcomes: 58. NASA/TM-20170004604 - Risk of Adverse Health Outcomes. NTRS title: Risk of Adverse Health Outcomes and Decrements in Performance Due to In-flight Medical Conditions. Abstract: The drive to undertake long-duration space exploration missions at greater distances from Earth gives rise to many challenges concerning human performance under extreme conditions. At NASA, the Human Research Program (HRP) has been established to investigate the specific risks to astronaut health and performance presented by space exploration, in addition to developing necessary countermeasures and technology to redu",
+    "NASA NTRS 20040201532 \u2014 Cardiovascular Deconditioning: Risk: Cardiovascular Deconditioning. Category: cardiovascular. Severity: high. Effects: cardiac_atrophy, orthostatic_intolerance, reduced_exercise_capacity. Countermeasures: aerobic_exercise, LBNP, fluid_loading_prereturn, compression_garments. Monitoring: heart_rate, blood_pressure, echocardiogram, VO2max_testing"
+   ],
+   "facts": "Crew member eval-003 (role: mission_specialist), mission day 100, cumulative radiation 30 mSv. Monitored metrics: heart rate 112 bpm, SpO2 98.0%, sleep quality 82/100, radiation 0.30 mSv in last 24h, IL-6 4.9 pg/mL (modelled). Trends (last 2 min): all steady.\n[warning] Elevated heart rate: 112 BPM\nPreventive Care: Elevated Heart Rate. Elevated heart rate: 112 BPM. Early intervention recommended to prevent complications.\nElevated heart rate: 112 BPM",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Preventive Care: Elevated Heart Rate",
+   "scenario": 3,
+   "agent": "PULSE",
+   "inputs": {
+    "heart_rate": 112
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Commander's heart rate is 158 beats a minute, far above a resting level, and that counts as a critical warning. It matters now because fast heart rhythms in space can turn serious [2]. Watch for chest discomfort, dizziness or fainting, and keep him monitored.",
+      "actions": [
+       "Stop what he is doing right away",
+       "Take him to the medical bay, where the crew medical officer will meet him",
+       "Record a heart tracing and start the emergency heart plan if things get worse",
+       "Call the ground flight surgeon for advice"
+      ],
+      "sources": [
+       1,
+       2
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": true,
+      "score": 1.0,
+      "problems": [],
+      "checks": {
+       "numbers": {
+        "claimed": 1,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 1,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 2,
+          "sim": 0.526,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Stop what he is doing right away",
+          "menu_item": "Cease current activity immediately",
+          "sim": 0.471,
+          "ok": true
+         },
+         {
+          "action": "Take him to the medical bay, where the crew medical officer will meet him",
+          "menu_item": "Move to medical bay; crew medical officer attends",
+          "sim": 0.794,
+          "ok": true
+         },
+         {
+          "action": "Record a heart tracing and start the emergency heart plan if things get worse",
+          "menu_item": "Record ECG and initiate emergency cardiac protocol if symptoms worsen",
+          "sim": 0.656,
+          "ok": true
+         },
+         {
+          "action": "Call the ground flight surgeon for advice",
+          "menu_item": "Consult ground flight surgeon (MEDIC-1)",
+          "sim": 0.9,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Cease current activity immediately",
+    "Move to medical bay; crew medical officer attends",
+    "Record ECG and initiate emergency cardiac protocol if symptoms worsen",
+    "Consult ground flight surgeon (MEDIC-1)"
+   ],
+   "passages": [
+    "NASA/TM-20110011323 - Code Blue on Orbit: Treating Cardiac Arrest on ISS: 34. NASA/TM-20110011323 - Code Blue on Orbit: Treating Cardiac Arrest on ISS. NTRS title: Code Blue on Orbit: Treating Cardiac Arrest on the ISS. Abstract: As a result of the Columbia tragedy on February 1,2003, the International Space Station (ISS) crew size has been temporarily reduced from three to two. This change forces adaptations in many operational procedures used by the crew, including medical protocols which were designed for scenarios involving one casualty and two caregivers. The Office of Space Medicine directed that the procedure for the resuscitation of a crewmember in cardiac a",
+    "NASA/TM-20040201532 - Cardiovascular Changes in Spaceflight: 17. NASA/TM-20040201532 - Cardiovascular Changes in Spaceflight. NTRS title: Cardiovascular Deconditioning. Abstract: Spaceflight causes adaptive changes in cardiovascular function that may deleteriously affect crew health and safety. Over the last three decades, symptoms of cardiovascular changes have ranged from postflight orthostatic tachycardia and decreased exercise capacity to serious cardiac rhythm disturbances during extravehicular activities (EVA). The most documented symptom of cardiovascular dysfunction, postflight orthostatic intolerance, has affected a significant percentage of U.",
+    "NASA HRR \u2014 Risk of Cardiovascular Adaptations Contributing to Adverse Mission Performance and Health Outcomes: NASA Official Risk: Risk of Cardiovascular Adaptations Contributing to Adverse Mission Performance and Health Outcomes. Category: cardiovascular. Status: active",
+    "NASA NTRS 20110020471 \u2014 Space Motion Sickness (SMS): Risk: Space Motion Sickness (SMS). Category: sensorimotor. Severity: moderate. Symptoms: nausea, vomiting, vertigo, headache, fatigue, cold_sweating. Countermeasures: promethazine_im, promethazine_oral, scopolamine_patch, preflight_adaptation_training. Monitoring: self_report, crew_observation"
+   ],
+   "facts": "Crew member eval-004 (role: commander), mission day 100, cumulative radiation 30 mSv. Monitored metrics: heart rate 158 bpm, SpO2 98.0%, sleep quality 82/100, radiation 0.30 mSv in last 24h, IL-6 8.9 pg/mL (modelled). Trends (last 2 min): all steady.\n[critical] Critical tachycardia: 158 BPM\nImmediate Action: Critical Heart Rhythm. Critical tachycardia: 158 BPM. Immediate intervention required: Protocol MEDIC-1.\nCritical tachycardia: 158 BPM",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Immediate Action: Critical Heart Rhythm",
+   "scenario": 4,
+   "agent": "PULSE",
+   "inputs": {
+    "heart_rate": 158,
+    "stress_index": 80
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Medical Officer's oxygen level is a little low at 93.5 percent, while heart rate and sleep look fine. Low oxygen can quietly affect thinking and performance over time, so it is worth acting on early [1][2]. Watch for any further drop at the next check.",
+      "actions": [
+       "Take it easy and avoid hard exercise for the next two hours",
+       "Drink about 500 millilitres of water",
+       "Do some slow, relaxed breathing exercises",
+       "We will recheck the vital signs in 30 minutes"
+      ],
+      "sources": [
+       1,
+       2
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": false,
+      "score": 0.5,
+      "problems": [
+       "500",
+       "[2] does not support: 'Low oxygen can quietly affect thinking and performance over time, so it is worth' (sim 0.23)"
+      ],
+      "checks": {
+       "numbers": {
+        "claimed": 2,
+        "unsupported": [
+         "500"
+        ],
+        "ok": false
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [
+         "[2] does not support: 'Low oxygen can quietly affect thinking and performance over time, so it is worth' (sim 0.23)"
+        ],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.386,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 2,
+          "sim": 0.227,
+          "ok": false,
+          "weak_source": false
+         }
+        ],
+        "ok": false
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Take it easy and avoid hard exercise for the next two hours",
+          "menu_item": "Reduce physical exertion for next 2 hours",
+          "sim": 0.631,
+          "ok": true
+         },
+         {
+          "action": "Drink about 500 millilitres of water",
+          "menu_item": "Increase fluid intake (500mL water)",
+          "sim": 0.65,
+          "ok": true
+         },
+         {
+          "action": "Do some slow, relaxed breathing exercises",
+          "menu_item": "Perform relaxation breathing exercises",
+          "sim": 0.846,
+          "ok": true
+         },
+         {
+          "action": "We will recheck the vital signs in 30 minutes",
+          "menu_item": "Schedule follow-up vital check in 30 minutes",
+          "sim": 0.624,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    },
+    {
+     "data": {
+      "assessment": "The Medical Officer's blood oxygen is a little low at 93.5%, while heart rate (72) and breathing look steady. Low oxygen is a recognised in-flight risk, so acting early is sensible [1]. Nothing else stands out. Watch the follow-up check in 30 minutes and see whether the reading climbs back up.",
+      "actions": [
+       "Take it easier for the next two hours, no heavy exertion",
+       "Drink extra water, about half a litre",
+       "Do some slow, relaxed breathing exercises",
+       "Get a repeat vital check in 30 minutes"
+      ],
+      "sources": [
+       1
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": true,
+      "score": 1.0,
+      "problems": [],
+      "checks": {
+       "numbers": {
+        "claimed": 2,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 1,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.439,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Take it easier for the next two hours, no heavy exertion",
+          "menu_item": "Reduce physical exertion for next 2 hours",
+          "sim": 0.662,
+          "ok": true
+         },
+         {
+          "action": "Drink extra water, about half a litre",
+          "menu_item": "Increase fluid intake (500mL water)",
+          "sim": 0.612,
+          "ok": true
+         },
+         {
+          "action": "Do some slow, relaxed breathing exercises",
+          "menu_item": "Perform relaxation breathing exercises",
+          "sim": 0.846,
+          "ok": true
+         },
+         {
+          "action": "Get a repeat vital check in 30 minutes",
+          "menu_item": "Schedule follow-up vital check in 30 minutes",
+          "sim": 0.845,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Reduce physical exertion for next 2 hours",
+    "Increase fluid intake (500mL water)",
+    "Perform relaxation breathing exercises",
+    "Schedule follow-up vital check in 30 minutes"
+   ],
+   "passages": [
+    "NASA HRR \u2014 Risk of Reduced Crew Health and Performance Due to Hypoxia: NASA Official Risk: Risk of Reduced Crew Health and Performance Due to Hypoxia. Category: environmental. Status: active",
+    "NASA HRR \u2014 Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission: NASA Official Risk: Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission. Category: medical. Status: active. Effects: in-mission, long-term health",
+    "NASA/TM-20170004604 - Risk of Adverse Health Outcomes: 58. NASA/TM-20170004604 - Risk of Adverse Health Outcomes. NTRS title: Risk of Adverse Health Outcomes and Decrements in Performance Due to In-flight Medical Conditions. Abstract: The drive to undertake long-duration space exploration missions at greater distances from Earth gives rise to many challenges concerning human performance under extreme conditions. At NASA, the Human Research Program (HRP) has been established to investigate the specific risks to astronaut health and performance presented by space exploration, in addition to developing necessary countermeasures and technology to redu",
+    "Nature 2026 SANS Consensus \u2014 Spaceflight Associated Neuro-Ocular Syndrome (SANS): Risk: Spaceflight Associated Neuro-Ocular Syndrome (SANS). Category: neuro-ocular. Severity: high. Effects: optic_disc_edema, globe_flattening, choroidal_folds, hyperopic_shift. Countermeasures: LBNP, thigh_cuffs, ITD_breathing, nutritional_supplementation. Monitoring: OCT_imaging, fundoscopy, visual_acuity, IOP_measurement"
+   ],
+   "facts": "Crew member eval-005 (role: medical_officer), mission day 100, cumulative radiation 30 mSv. Monitored metrics: heart rate 72 bpm, SpO2 93.5%, sleep quality 82/100, radiation 0.30 mSv in last 24h, IL-6 4.9 pg/mL (modelled). Trends (last 2 min): all steady.\n[warning] Low oxygen saturation: SpO2 93.5%\nPreventive Care: Low Blood Oxygen. Low oxygen saturation: SpO2 93.5%. Early intervention recommended to prevent complications.\nLow oxygen saturation: SpO2 93.5%",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Preventive Care: Low Blood Oxygen",
+   "scenario": 5,
+   "agent": "PULSE",
+   "inputs": {
+    "spo2": 93.5
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Flight Engineer's heart rate is 104 [1] and blood oxygen is low at 88.5 percent \u2014 a critical reading that needs attention now. Low oxygen can strain the heart and affect performance [2]. Radiation and inflammation signals look steady. Next: ease exertion and recheck vital signs in 30 minutes.",
+      "actions": [
+       "Have the Flight Engineer take it easy and avoid hard physical work for the next two hours.",
+       "Check vital signs again in 30 minutes.",
+       "Have the Flight Engineer drink 500 millilitres of water.",
+       "Have the Flight Engineer do slow, calm breathing exercises."
+      ],
+      "sources": [
+       1,
+       2
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": false,
+      "score": 0.5,
+      "problems": [
+       "500",
+       "not in approved menu: 'Have the Flight Engineer take it easy and avoid hard physical work for the next ' (best 0.38)"
+      ],
+      "checks": {
+       "numbers": {
+        "claimed": 3,
+        "unsupported": [
+         "500"
+        ],
+        "ok": false
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.45,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 2,
+          "sim": 0.485,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [
+         "not in approved menu: 'Have the Flight Engineer take it easy and avoid hard physical work for the next ' (best 0.38)"
+        ],
+        "detail": [
+         {
+          "action": "Have the Flight Engineer take it easy and avoid hard physical work for the next two hours.",
+          "menu_item": "Reduce physical exertion for next 2 hours",
+          "sim": 0.378,
+          "ok": false
+         },
+         {
+          "action": "Check vital signs again in 30 minutes.",
+          "menu_item": "Schedule follow-up vital check in 30 minutes",
+          "sim": 0.641,
+          "ok": true
+         },
+         {
+          "action": "Have the Flight Engineer drink 500 millilitres of water.",
+          "menu_item": "Increase fluid intake (500mL water)",
+          "sim": 0.524,
+          "ok": true
+         },
+         {
+          "action": "Have the Flight Engineer do slow, calm breathing exercises.",
+          "menu_item": "Perform relaxation breathing exercises",
+          "sim": 0.566,
+          "ok": true
+         }
+        ],
+        "ok": false
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    },
+    {
+     "data": {
+      "assessment": "The Flight Engineer's heart rate is high at 104 and the oxygen level is critically low at 88.5 percent. That matters now because low oxygen and heart strain can hurt performance and health [2][1]. Next, watch whether the heart rate and oxygen settle after rest and fluids.",
+      "actions": [
+       "Have the Flight Engineer take it easy and avoid hard physical work for the next 2 hours",
+       "Offer the Flight Engineer 500 mL of water to drink",
+       "Have the Flight Engineer do slow, calm breathing exercises",
+       "Plan a repeat check of heart rate and oxygen in 30 minutes"
+      ],
+      "sources": [
+       1,
+       2
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": false,
+      "score": 0.25,
+      "problems": [
+       "500",
+       "not in approved menu: 'Have the Flight Engineer take it easy and avoid hard physical work for the next ' (best 0.39)",
+       "500 mL"
+      ],
+      "checks": {
+       "numbers": {
+        "claimed": 3,
+        "unsupported": [
+         "500"
+        ],
+        "ok": false
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 2,
+          "sim": 0.533,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 1,
+          "sim": 0.494,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [
+         "not in approved menu: 'Have the Flight Engineer take it easy and avoid hard physical work for the next ' (best 0.39)"
+        ],
+        "detail": [
+         {
+          "action": "Have the Flight Engineer take it easy and avoid hard physical work for the next 2 hours",
+          "menu_item": "Reduce physical exertion for next 2 hours",
+          "sim": 0.39,
+          "ok": false
+         },
+         {
+          "action": "Offer the Flight Engineer 500 mL of water to drink",
+          "menu_item": "Increase fluid intake (500mL water)",
+          "sim": 0.569,
+          "ok": true
+         },
+         {
+          "action": "Have the Flight Engineer do slow, calm breathing exercises",
+          "menu_item": "Perform relaxation breathing exercises",
+          "sim": 0.599,
+          "ok": true
+         },
+         {
+          "action": "Plan a repeat check of heart rate and oxygen in 30 minutes",
+          "menu_item": "Schedule follow-up vital check in 30 minutes",
+          "sim": 0.569,
+          "ok": true
+         }
+        ],
+        "ok": false
+       },
+       "medicine": {
+        "unsupported": [
+         "500 mL"
+        ],
+        "ok": false
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Reduce physical exertion for next 2 hours",
+    "Increase fluid intake (500mL water)",
+    "Perform relaxation breathing exercises",
+    "Schedule follow-up vital check in 30 minutes"
+   ],
+   "passages": [
+    "NASA HRR \u2014 Risk of Cardiovascular Adaptations Contributing to Adverse Mission Performance and Health Outcomes: NASA Official Risk: Risk of Cardiovascular Adaptations Contributing to Adverse Mission Performance and Health Outcomes. Category: cardiovascular. Status: active",
+    "NASA HRR \u2014 Risk of Reduced Crew Health and Performance Due to Hypoxia: NASA Official Risk: Risk of Reduced Crew Health and Performance Due to Hypoxia. Category: environmental. Status: active",
+    "NASA NTRS 20040201532 \u2014 Cardiovascular Deconditioning: Risk: Cardiovascular Deconditioning. Category: cardiovascular. Severity: high. Effects: cardiac_atrophy, orthostatic_intolerance, reduced_exercise_capacity. Countermeasures: aerobic_exercise, LBNP, fluid_loading_prereturn, compression_garments. Monitoring: heart_rate, blood_pressure, echocardiogram, VO2max_testing",
+    "NASA/TM-20140013304 - HRP Risk Integration Issues: 61. NASA/TM-20140013304 - HRP Risk Integration Issues. NTRS title: Identification and Evaluation of Integration and Cross Cutting Issues Across HRP Risks. Abstract: The HRP Integrated Research Plan contains the research plans for the 32 risks requiring research to characterize and mitigate. These risks to human health and performance in spaceflight are identified by evidence and each one focuses on a single aspect of human physiology or performance. They are further categorized by aspects of the spaceflight environment, such as altered gravity or space radiation, that that play a major role in"
+   ],
+   "facts": "Crew member eval-006 (role: flight_engineer), mission day 100, cumulative radiation 30 mSv. Monitored metrics: heart rate 104 bpm, SpO2 88.5%, sleep quality 82/100, radiation 0.30 mSv in last 24h, IL-6 4.9 pg/mL (modelled). Trends (last 2 min): all steady.\n[warning] Elevated heart rate: 104 BPM; [critical] Critical hypoxemia: SpO2 88.5%\nPreventive Care: Elevated Heart Rate. Elevated heart rate: 104 BPM. Early intervention recommended to prevent complications.\nElevated heart rate: 104 BPM",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Preventive Care: Elevated Heart Rate",
+   "scenario": 6,
+   "agent": "PULSE",
+   "inputs": {
+    "spo2": 88.5,
+    "heart_rate": 104
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Mission Specialist's inflammation signal in the blood is mildly raised, at 8.7. Other readings look steady. A raised signal can show the immune response shifting, which spaceflight can affect, so it is worth watching rather than treating [1][4]. Next: repeat the blood check and note any tiredness.",
+      "actions": [
+       "Plan another blood check in twenty-four hours.",
+       "Keep up fluids and regular meals.",
+       "Keep things calm and avoid extra strain where possible.",
+       "Note any tiredness or feeling unwell."
+      ],
+      "sources": [
+       1,
+       4
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": true,
+      "score": 1.0,
+      "problems": [],
+      "checks": {
+       "numbers": {
+        "claimed": 1,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.434,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 4,
+          "sim": 0.342,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Plan another blood check in twenty-four hours.",
+          "menu_item": "Schedule follow-up biomarker check in 24h",
+          "sim": 0.491,
+          "ok": true
+         },
+         {
+          "action": "Keep up fluids and regular meals.",
+          "menu_item": "Maintain hydration and nutrition",
+          "sim": 0.537,
+          "ok": true
+         },
+         {
+          "action": "Keep things calm and avoid extra strain where possible.",
+          "menu_item": "Avoid additional stressors if possible",
+          "sim": 0.667,
+          "ok": true
+         },
+         {
+          "action": "Note any tiredness or feeling unwell.",
+          "menu_item": "Log any symptoms of malaise or fatigue",
+          "sim": 0.551,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Schedule follow-up biomarker check in 24h",
+    "Maintain hydration and nutrition",
+    "Avoid additional stressors if possible",
+    "Log any symptoms of malaise or fatigue"
+   ],
+   "passages": [
+    "NASA HRR \u2014 Risk of In Mission Impacts, Adverse Health Events or Long-Term Health Impacts due to Altered Immune Response: NASA Official Risk: Risk of In Mission Impacts, Adverse Health Events or Long-Term Health Impacts due to Altered Immune Response. Category: immunology. Status: active",
+    "NASA HRR \u2014 Risk of Adverse In-Mission and Long-Term Health Effects Due to Host-Microorganism Interactions: NASA Official Risk: Risk of Adverse In-Mission and Long-Term Health Effects Due to Host-Microorganism Interactions. Category: immunology. Status: active",
+    "NASA/TM-20070035022 - Monitoring Immune Function and Latent Viruses in AG Study ### EVA & DCS: 38. NASA/TM-20070035022 - Monitoring Immune Function and Latent Viruses in AG Study ### EVA & DCS. NTRS title: Monitoring Immune System Function and Reactivation of Latent Viruses in the Artificial Gravity Pilot Study. Abstract: Numerous studies have indicated that dysregulation of the immune system occurs during or after spaceflight. Using 21 day -6 degrees head-down tilt bed rest as a spaceflight analog, this study describes the effects of artificial gravity (AG) as a daily countermeasure on immunity, stress and reactivation of clinically important latent herpes viruses. The specific aims we",
+    "PMC6038331 \u2014 Immune Dysregulation: Risk: Immune Dysregulation. Category: immunology. Severity: moderate. Effects: reduced_T_cell_function, latent_virus_reactivation, altered_cytokines. Countermeasures: exercise, nutrition, stress_management, probiotics, vaccination. Monitoring: viral_shedding, immune_markers, cytokine_profiles"
+   ],
+   "facts": "Crew member eval-007 (role: mission_specialist), mission day 100, cumulative radiation 40 mSv. Monitored metrics: heart rate 72 bpm, SpO2 98.0%, sleep quality 82/100, radiation 0.40 mSv in last 24h, IL-6 8.7 pg/mL (modelled). Trends (last 2 min): all steady.\n[caution] Mildly elevated IL-6: 8.7 pg/mL (monitoring)\nImmune Response Monitoring. Predictive markers suggest upcoming inflammatory response.\nMildly elevated IL-6: 8.7 pg/mL (monitoring)",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Immune Response Monitoring",
+   "scenario": 7,
+   "agent": "GENE",
+   "inputs": {
+    "stress_index": 75,
+    "radiation_dose_24h": 0.4
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "An inflammation signal in the Commander's blood is up at 12.5 pg/mL, and spaceflight is known to stress the immune system [1][2]. The rise is modest but worth watching, since it can affect how the crew performs during a mission [3]. Next: watch for tiredness and sore muscles.",
+      "actions": [
+       "Take it easier for the next day or two and ease off heavy physical work.",
+       "Build in longer rest breaks between activities.",
+       "Keep an eye out for tiredness and sore muscles.",
+       "Consider adding more anti-inflammatory foods to meals."
+      ],
+      "sources": [
+       1,
+       2,
+       3
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": true,
+      "score": 1.0,
+      "problems": [],
+      "checks": {
+       "numbers": {
+        "claimed": 1,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 3,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.442,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 2,
+          "sim": 0.542,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 3,
+          "sim": 0.303,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Take it easier for the next day or two and ease off heavy physical work.",
+          "menu_item": "Reduce physical exertion for 24-48 hours",
+          "sim": 0.515,
+          "ok": true
+         },
+         {
+          "action": "Build in longer rest breaks between activities.",
+          "menu_item": "Increase rest periods between activities",
+          "sim": 0.75,
+          "ok": true
+         },
+         {
+          "action": "Keep an eye out for tiredness and sore muscles.",
+          "menu_item": "Monitor for secondary symptoms (fatigue, myalgia)",
+          "sim": 0.511,
+          "ok": true
+         },
+         {
+          "action": "Consider adding more anti-inflammatory foods to meals.",
+          "menu_item": "Consider anti-inflammatory nutrition protocol",
+          "sim": 0.751,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Reduce physical exertion for 24-48 hours",
+    "Increase rest periods between activities",
+    "Monitor for secondary symptoms (fatigue, myalgia)",
+    "Consider anti-inflammatory nutrition protocol"
+   ],
+   "passages": [
+    "NASA HRR \u2014 Risk of In Mission Impacts, Adverse Health Events or Long-Term Health Impacts due to Altered Immune Response: NASA Official Risk: Risk of In Mission Impacts, Adverse Health Events or Long-Term Health Impacts due to Altered Immune Response. Category: immunology. Status: active",
+    "NASA/TM-20070035022 - Monitoring Immune Function and Latent Viruses in AG Study ### EVA & DCS: 38. NASA/TM-20070035022 - Monitoring Immune Function and Latent Viruses in AG Study ### EVA & DCS. NTRS title: Monitoring Immune System Function and Reactivation of Latent Viruses in the Artificial Gravity Pilot Study. Abstract: Numerous studies have indicated that dysregulation of the immune system occurs during or after spaceflight. Using 21 day -6 degrees head-down tilt bed rest as a spaceflight analog, this study describes the effects of artificial gravity (AG) as a daily countermeasure on immunity, stress and reactivation of clinically important latent herpes viruses. The specific aims we",
+    "NASA HRR \u2014 Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission: NASA Official Risk: Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission. Category: medical. Status: active. Effects: in-mission, long-term health",
+    "NASA NTRS 20110020471 \u2014 Space Motion Sickness (SMS): Risk: Space Motion Sickness (SMS). Category: sensorimotor. Severity: moderate. Symptoms: nausea, vomiting, vertigo, headache, fatigue, cold_sweating. Countermeasures: promethazine_im, promethazine_oral, scopolamine_patch, preflight_adaptation_training. Monitoring: self_report, crew_observation"
+   ],
+   "facts": "Crew member eval-008 (role: commander), mission day 100, cumulative radiation 100 mSv. Monitored metrics: heart rate 72 bpm, SpO2 98.0%, sleep quality 82/100, radiation 1.00 mSv in last 24h, IL-6 12.5 pg/mL (modelled). Trends (last 2 min): all steady.\n[warning] Elevated IL-6: 12.5 pg/mL\nInflammatory Response Management. Elevated inflammatory markers indicate systemic stress response.\nElevated IL-6: 12.5 pg/mL",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Inflammatory Response Management",
+   "scenario": 8,
+   "agent": "GENE",
+   "inputs": {
+    "stress_index": 95,
+    "radiation_dose_24h": 1.0
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Flight Engineer's sleep quality is below par at 58 out of 100, while heart rate, oxygen and radiation look steady. Poor sleep on long missions can wear down alertness and performance [1][2]. Watch for further drops and any signs of daytime fatigue over the next few nights [4].",
+      "actions": [
+       "Protect a full eight hours for sleep with no interruptions",
+       "Adjust the lighting to help the body clock stay on schedule",
+       "Review the bedtime routine and sleep habits together",
+       "Melatonin could be considered, with the doctor's approval"
+      ],
+      "sources": [
+       1,
+       2,
+       4
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": true,
+      "score": 1.0,
+      "problems": [],
+      "checks": {
+       "numbers": {
+        "claimed": 2,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 3,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.601,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 2,
+          "sim": 0.609,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 4,
+          "sim": 0.458,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [],
+        "detail": [
+         {
+          "action": "Protect a full eight hours for sleep with no interruptions",
+          "menu_item": "Ensure 8-hour protected sleep period",
+          "sim": 0.845,
+          "ok": true
+         },
+         {
+          "action": "Adjust the lighting to help the body clock stay on schedule",
+          "menu_item": "Adjust lighting to support circadian rhythm",
+          "sim": 0.738,
+          "ok": true
+         },
+         {
+          "action": "Review the bedtime routine and sleep habits together",
+          "menu_item": "Review sleep hygiene practices",
+          "sim": 0.599,
+          "ok": true
+         },
+         {
+          "action": "Melatonin could be considered, with the doctor's approval",
+          "menu_item": "Consider melatonin supplementation (physician approved)",
+          "sim": 0.849,
+          "ok": true
+         }
+        ],
+        "ok": true
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Adjust lighting to support circadian rhythm",
+    "Consider melatonin supplementation (physician approved)",
+    "Ensure 8-hour protected sleep period",
+    "Review sleep hygiene practices"
+   ],
+   "passages": [
+    "NASA HRR \u2014 Risk of Performance Decrements from Sleep Loss, Circadian Desynchronization, and Work Overload: NASA Official Risk: Risk of Performance Decrements from Sleep Loss, Circadian Desynchronization, and Work Overload. Category: sleep. Status: active. Effects: fatigue, performance",
+    "NASA/TM-20205006969 - ISS Crew Workload Contributing to Fatigue ### Radiation: 11. NASA/TM-20205006969 - ISS Crew Workload Contributing to Fatigue ### Radiation. NTRS title: Characterization of International Space Station Crew Members' Workload Contributing to Fatigue, Sleep Disruption and Circadian De-synchronization. Abstract: The focus of this paper is to characterize how the International Space Station (ISS) crewmembers\u2019 workload may be contributing to sleep loss, circadian misalignment and fatigue. Both sleep quantity and subjective sleep quality are reduced in ISS crewmembers (Barger, Flynn-Evans, Kubey, Walsh, Ronda, Wang, Wright, & Czeisler, 2014). Evidence indic",
+    "NASA/TM-20030068197 - Sleep, Circadian Rhythms, and Performance During Shuttle Missions: 8. NASA/TM-20030068197 - Sleep, Circadian Rhythms, and Performance During Shuttle Missions. NTRS title: Sleep, Circadian Rhythms, and Performance During Space Shuttle Missions. Abstract: Sleep and circadian rhythms may be disturbed during spaceflight, and these disturbances can affect crewmembers' performance during waking hours. The mechanisms underlying sleep and circadian rhythm disturbances in space are not well understood, and effective countermeasures are not yet available. We investigated sleep, circadian rhythms, cognitive performance, and light-dark cycles in five astronauts prior to,",
+    "NASA Fatigue Countermeasures Lab \u2014 Sleep and Circadian Disruption: Risk: Sleep and Circadian Disruption. Category: behavioral. Severity: moderate. Effects: reduced_sleep_quality, circadian_misalignment, fatigue. Countermeasures: lighting_countermeasures, melatonin, sleep_scheduling, sleep_hygiene. Monitoring: actigraphy, sleep_logs, alertness_testing"
+   ],
+   "facts": "Crew member eval-009 (role: flight_engineer), mission day 100, cumulative radiation 30 mSv. Monitored metrics: heart rate 72 bpm, SpO2 98.0%, sleep quality 58/100, radiation 0.30 mSv in last 24h, IL-6 4.9 pg/mL (modelled). Trends (last 2 min): all steady.\n[caution] Below-par sleep quality: 58/100\nSleep Quality Improvement. Poor sleep quality affecting crew performance and health.\nBelow-par sleep quality: 58/100",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Sleep Quality Improvement",
+   "scenario": 9,
+   "agent": "MIRROR",
+   "inputs": {
+    "sleep_quality": 58
+   }
+  },
+  {
+   "history": [
+    {
+     "data": {
+      "assessment": "The Medical Officer's sleep quality is low, at 38 out of 100, on mission day 100. Poor sleep like this can wear down performance and health [1][2], and it fits the known sleep disruption risk in spaceflight [4]. Worth watching for daytime tiredness and whether sleep picks up with the plan.",
+      "actions": [
+       "Give the Medical Officer a full eight hours of protected sleep, with no interruptions.",
+       "Dim the lights in the evening and keep them bright in the morning to help steady the body clock.",
+       "Go over the bedtime routine together and clear away anything that gets in the way of sleep.",
+       "Ask the physician whether a melatonin supplement would be worth trying."
+      ],
+      "sources": [
+       1,
+       2,
+       4
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": false,
+      "score": 0.75,
+      "problems": [
+       "not in approved menu: 'Go over the bedtime routine together and clear away anything that gets in the wa' (best 0.43)"
+      ],
+      "checks": {
+       "numbers": {
+        "claimed": 3,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 3,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.657,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 2,
+          "sim": 0.605,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 4,
+          "sim": 0.614,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [
+         "not in approved menu: 'Go over the bedtime routine together and clear away anything that gets in the wa' (best 0.43)"
+        ],
+        "detail": [
+         {
+          "action": "Give the Medical Officer a full eight hours of protected sleep, with no interruptions.",
+          "menu_item": "Ensure 8-hour protected sleep period",
+          "sim": 0.698,
+          "ok": true
+         },
+         {
+          "action": "Dim the lights in the evening and keep them bright in the morning to help steady the body clock.",
+          "menu_item": "Adjust lighting to support circadian rhythm",
+          "sim": 0.65,
+          "ok": true
+         },
+         {
+          "action": "Go over the bedtime routine together and clear away anything that gets in the way of sleep.",
+          "menu_item": "Review sleep hygiene practices",
+          "sim": 0.43,
+          "ok": false
+         },
+         {
+          "action": "Ask the physician whether a melatonin supplement would be worth trying.",
+          "menu_item": "Consider melatonin supplementation (physician approved)",
+          "sim": 0.875,
+          "ok": true
+         }
+        ],
+        "ok": false
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    },
+    {
+     "data": {
+      "assessment": "The Medical Officer's sleep quality is low at 38 out of 100 on mission day 100, while heart rate and oxygen look steady. Poor sleep wears down alertness and performance over time [1][2]. Watch whether sleep improves once the plan below is in place.",
+      "actions": [
+       "Protect a full eight hours for sleep with no interruptions",
+       "Adjust the lighting to help the body clock stay on schedule",
+       "Look over the bedtime routine together and clear away anything that gets in the way of sleep",
+       "Ask the physician about melatonin to help with sleep"
+      ],
+      "sources": [
+       1,
+       2,
+       4
+      ]
+     },
+     "raw": null,
+     "result": {
+      "ok": false,
+      "score": 0.75,
+      "problems": [
+       "not in approved menu: 'Look over the bedtime routine together and clear away anything that gets in the ' (best 0.44)"
+      ],
+      "checks": {
+       "numbers": {
+        "claimed": 3,
+        "unsupported": [],
+        "ok": true
+       },
+       "citations": {
+        "citations": 2,
+        "unsupported": [],
+        "detail": [
+         {
+          "ref": 1,
+          "sim": 0.575,
+          "ok": true,
+          "weak_source": false
+         },
+         {
+          "ref": 2,
+          "sim": 0.554,
+          "ok": true,
+          "weak_source": false
+         }
+        ],
+        "ok": true
+       },
+       "actions": {
+        "actions": 4,
+        "unsupported": [
+         "not in approved menu: 'Look over the bedtime routine together and clear away anything that gets in the ' (best 0.44)"
+        ],
+        "detail": [
+         {
+          "action": "Protect a full eight hours for sleep with no interruptions",
+          "menu_item": "Ensure 8-hour protected sleep period",
+          "sim": 0.845,
+          "ok": true
+         },
+         {
+          "action": "Adjust the lighting to help the body clock stay on schedule",
+          "menu_item": "Adjust lighting to support circadian rhythm",
+          "sim": 0.738,
+          "ok": true
+         },
+         {
+          "action": "Look over the bedtime routine together and clear away anything that gets in the way of sleep",
+          "menu_item": "Review sleep hygiene practices",
+          "sim": 0.441,
+          "ok": false
+         },
+         {
+          "action": "Ask the physician about melatonin to help with sleep",
+          "menu_item": "Consider melatonin supplementation (physician approved)",
+          "sim": 0.819,
+          "ok": true
+         }
+        ],
+        "ok": false
+       },
+       "medicine": {
+        "unsupported": [],
+        "ok": true
+       }
+      }
+     }
+    }
+   ],
+   "menu": [
+    "Adjust lighting to support circadian rhythm",
+    "Consider melatonin supplementation (physician approved)",
+    "Ensure 8-hour protected sleep period",
+    "Review sleep hygiene practices"
+   ],
+   "passages": [
+    "NASA HRR \u2014 Risk of Performance Decrements from Sleep Loss, Circadian Desynchronization, and Work Overload: NASA Official Risk: Risk of Performance Decrements from Sleep Loss, Circadian Desynchronization, and Work Overload. Category: sleep. Status: active. Effects: fatigue, performance",
+    "NASA/TM-20205006969 - ISS Crew Workload Contributing to Fatigue ### Radiation: 11. NASA/TM-20205006969 - ISS Crew Workload Contributing to Fatigue ### Radiation. NTRS title: Characterization of International Space Station Crew Members' Workload Contributing to Fatigue, Sleep Disruption and Circadian De-synchronization. Abstract: The focus of this paper is to characterize how the International Space Station (ISS) crewmembers\u2019 workload may be contributing to sleep loss, circadian misalignment and fatigue. Both sleep quantity and subjective sleep quality are reduced in ISS crewmembers (Barger, Flynn-Evans, Kubey, Walsh, Ronda, Wang, Wright, & Czeisler, 2014). Evidence indic",
+    "NASA/TM-20030068197 - Sleep, Circadian Rhythms, and Performance During Shuttle Missions: 8. NASA/TM-20030068197 - Sleep, Circadian Rhythms, and Performance During Shuttle Missions. NTRS title: Sleep, Circadian Rhythms, and Performance During Space Shuttle Missions. Abstract: Sleep and circadian rhythms may be disturbed during spaceflight, and these disturbances can affect crewmembers' performance during waking hours. The mechanisms underlying sleep and circadian rhythm disturbances in space are not well understood, and effective countermeasures are not yet available. We investigated sleep, circadian rhythms, cognitive performance, and light-dark cycles in five astronauts prior to,",
+    "NASA Fatigue Countermeasures Lab \u2014 Sleep and Circadian Disruption: Risk: Sleep and Circadian Disruption. Category: behavioral. Severity: moderate. Effects: reduced_sleep_quality, circadian_misalignment, fatigue. Countermeasures: lighting_countermeasures, melatonin, sleep_scheduling, sleep_hygiene. Monitoring: actigraphy, sleep_logs, alertness_testing"
+   ],
+   "facts": "Crew member eval-010 (role: medical_officer), mission day 100, cumulative radiation 30 mSv. Monitored metrics: heart rate 72 bpm, SpO2 98.0%, sleep quality 38/100, radiation 0.30 mSv in last 24h, IL-6 8.1 pg/mL (modelled). Trends (last 2 min): all steady.\n[warning] Poor sleep quality: 38/100\nSleep Quality Improvement. Poor sleep quality affecting crew performance and health.\nPoor sleep quality: 38/100",
+   "weak": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "title": "Sleep Quality Improvement",
+   "scenario": 10,
+   "agent": "MIRROR",
+   "inputs": {
+    "sleep_quality": 38,
+    "stress_index": 72
+   }
+  }
+ ],
+ "B_summary": {
+  "n": 10,
+  "first_attempt_fully_grounded": "5/10",
+  "after_retry_fully_grounded": "8/10",
+  "fell_back_to_rules": "2/10",
+  "per_check": {
+   "numbers": {
+    "first_attempt_pass": "8/10",
+    "final_pass": "9/10"
+   },
+   "citations": {
+    "first_attempt_pass": "7/10",
+    "final_pass": "10/10"
+   },
+   "actions": {
+    "first_attempt_pass": "7/10",
+    "final_pass": "8/10"
+   },
+   "medicine": {
+    "first_attempt_pass": "10/10",
+    "final_pass": "9/10"
+   }
+  },
+  "citations_checked": 22,
+  "citations_to_title_only_sources": 0
+ },
+ "C_checker_recall": {
+  "number": "8/8",
+  "citation": "8/8",
+  "action": "8/8",
+  "medicine": "8/8"
+ },
+ "D_qa": [
+  {
+   "agent": "AEGIS",
+   "question": "How is the commander doing right now?",
+   "answer": "The Commander's doing well right now. Heart rate, oxygen and sleep all look steady, no alerts, and the whole crew is nominal. One thing to keep an eye on: the projected yearly radiation dose is high, so we'll watch shielding. Nothing needed today.",
+   "source": "deepseek",
+   "first_attempt_numbers_ok": true,
+   "first_attempt_unsupported": [],
+   "final_numbers_verified": true
+  },
+  {
+   "agent": "PULSE",
+   "question": "What's the engineer's heart rate and oxygen?",
+   "answer": "I don't have the flight engineer's numbers in front of me right now, sorry. What I can see is the science officer: heart rate 82, oxygen just under 99 percent, steady, and the whole crew reads nominal. If you need the engineer's own figures, I'll pull them.",
+   "source": "deepseek",
+   "first_attempt_numbers_ok": true,
+   "first_attempt_unsupported": [],
+   "final_numbers_verified": true
+  },
+  {
+   "agent": "SOLARIS",
+   "question": "How much radiation has she had today, and is it safe?",
+   "answer": "She picked up 0.28 mSv in the last day, and 184 mSv total so far. Today that's small, and all her signals look steady, so nothing urgent. The bigger heads-up is the year-end projection, around 1240 mSv, if the pace holds. Worth watching shielding and planning.",
+   "source": "deepseek",
+   "first_attempt_numbers_ok": true,
+   "first_attempt_unsupported": [],
+   "final_numbers_verified": true
+  },
+  {
+   "agent": "GENE",
+   "question": "Any signs of inflammation?",
+   "answer": "Nothing that worries me. The medical officer's inflammation signal is 5.3, and all their readings are inside normal range \u2014 heart rate, oxygen, sleep, all steady. No alerts, and the last day's radiation dose was small. So no signs of inflammation right now. We'll keep watching.",
+   "source": "deepseek",
+   "first_attempt_numbers_ok": true,
+   "first_attempt_unsupported": [],
+   "final_numbers_verified": true
+  },
+  {
+   "agent": "MIRROR",
+   "question": "How did the commander sleep?",
+   "answer": "The Commander slept okay, not great. Sleep quality came in at 70 out of 100, and all their other readings look steady, with no alerts. Nothing concerning. If that number keeps sitting around there, we could talk about light timing or a wind-down routine to help.",
+   "source": "deepseek",
+   "first_attempt_numbers_ok": true,
+   "first_attempt_unsupported": [],
+   "final_numbers_verified": true
+  },
+  {
+   "agent": "AEGIS",
+   "question": "Who needs attention most right now?",
+   "answer": "Right now everyone's steady, no alerts. The flight engineer is the one I'd keep an eye on: the radiation forecast for the year is high, around 1,200 milligray-ish units. Nothing to act on today, just shielding and keeping an eye on the dose.",
+   "source": "deepseek",
+   "first_attempt_numbers_ok": true,
+   "first_attempt_unsupported": [],
+   "final_numbers_verified": true
+  },
+  {
+   "agent": "PULSE",
+   "question": "Is the heart rate trending up?",
+   "answer": "No, it's holding steady. The medical officer is at 72 beats a minute, and every reading over the last couple of minutes is flat. Oxygen's fine, sleep's fine, all four crew are nominal. Nothing trending up today. If that changes, I'll flag it right away.",
+   "source": "deepseek",
+   "first_attempt_numbers_ok": true,
+   "first_attempt_unsupported": [],
+   "final_numbers_verified": true
+  },
+  {
+   "agent": "AEGIS",
+   "question": "Tell me a quick space joke.",
+   "answer": "Here's one for you: why did the astronaut bring a broom to space? To sweep up the stardust. Okay, that was terrible, but the crew's all steady today, so I've got room for bad jokes. Anything else you need?",
+   "source": "deepseek",
+   "first_attempt_numbers_ok": true,
+   "first_attempt_unsupported": [],
+   "final_numbers_verified": true
+  }
+ ]
+}

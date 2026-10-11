@@ -101,6 +101,14 @@ const AEGIS_API = {
       body: JSON.stringify({ recommendation_id: id, action: 'dismissed' })
     });
   },
+
+  // A merged card covers the same recommendation for several crew members: act on all of them
+  async actOnGroup(kind, idsCsv) {
+    const fn = { accept: 'acceptRecommendation', defer: 'deferRecommendation', dismiss: 'dismissRecommendation' }[kind];
+    const ids = String(idsCsv || '').split(',').filter(Boolean);
+    await Promise.all(ids.map(id => this[fn](id).catch(() => null)));
+    return this.updateDashboard();
+  },
   
   // ─────────────────────────────────────────────────────────────────────────
   // Analysis Endpoints (AI Agents)
@@ -265,15 +273,18 @@ const AEGIS_API = {
     const recsList = document.querySelector('.recs-list');
     if (!recsList) return;
     
-    // Merge duplicates (same crew member + same recommendation) and show up to 8, most urgent first
+    // One card per recommendation type: the same advice for several crew members (e.g. the long-term radiation
+    // trend for all four) is merged into one card that lists who it applies to. Most urgent first, up to 8.
     const sevRank = { critical: 0, high: 1, moderate: 2, medium: 2, low: 3 };
-    const seen = new Set();
-    const unique = recs.filter(r => {
-      const k = `${r.crew_member_id}|${r.title}`;
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    }).sort((a, b) => (sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9));
+    const groups = new Map();
+    [...recs].sort((a, b) => (sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9)
+                            || new Date(b.created_at) - new Date(a.created_at))
+      .forEach(r => {
+        const g = groups.get(r.title);
+        if (!g) groups.set(r.title, { ...r, _all: [r] });
+        else if (!g._all.some(x => x.crew_member_id === r.crew_member_id)) g._all.push(r);
+      });
+    const unique = [...groups.values()];
     const MAX_SHOWN = 8;
     const countEl = document.getElementById('recs-count');
     if (countEl) {
@@ -297,9 +308,22 @@ const AEGIS_API = {
     // DeepSeek assessment (stored by the backend at the start of the rationale). Escaped: model output is untrusted.
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const aiHtml = rec => {
-      const m = (rec.rationale || '').match(/^🧠 DeepSeek\s*\(([^)]+)\):\s*([\s\S]*?)(?:\n\nRule basis:|$)/);
-      return m ? `<div class="rec-ai" title="${esc(m[2].trim())}"><span class="rec-ai-tag">🧠 DeepSeek · ${esc(m[1])}</span>${esc(m[2].trim())}</div>` : '';
+      const m = (rec.rationale || '').match(/^🧠 DeepSeek\s*\(([^)]+)\):\s*([\s\S]*?)(?:\n\nVerification:|\n\nRule basis:|$)/);
+      return m ? `<div class="rec-ai" title="${esc(m[2].trim())}"><span class="rec-ai-tag">🧠 DeepSeek · ${esc(m[1])}</span>${verifyHtml(rec)}${esc(m[2].trim())}</div>`
+               : '';
     };
+    // Grounding check result (aegis_verify.py): numbers, citations, actions and medicines checked against the sources
+    function verifyHtml(rec) {
+      const v = (rec.rationale || '').match(/\n?Verification: (\{[^\n]*\})/);
+      if (!v) return '';
+      let j; try { j = JSON.parse(v[1]); } catch (x) { return ''; }
+      if (j.ok) {
+        const tip = `Fact-checked automatically: numbers ${j.numbers}, citations ${j.citations}, actions ${j.actions}, no unapproved medicines`;
+        return `<span class="rec-verify ok" title="${esc(tip)}">✓ Fact-checked</span>`;
+      }
+      const tip = 'The AI wording failed the automatic fact check twice, so the rule-based advice is shown instead. ' + (j.problems || []).join('; ');
+      return `<span class="rec-verify rules" title="${esc(tip)}">Rules only</span>`;
+    }
     
     // RAG evidence: JSON strings {source, url, text, cited}; legacy entries are plain text snippets
     const parseEv = rec => (rec.evidence || []).map(e => {
@@ -308,7 +332,7 @@ const AEGIS_API = {
     });
     const safeUrl = u => (typeof u === 'string' && /^https?:\/\//i.test(u)) ? u : null;
     const stepsHtml = rec => {
-      const acts = (rec.actions || []).slice(0, 3);
+      const acts = rec.actions || [];   // all tailored actions (the backend keeps at most 4)
       return acts.length ? `<ul class="rec-steps">${acts.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
     };
     const sourcesHtml = rec => {
@@ -338,19 +362,19 @@ const AEGIS_API = {
             <span class="rec-arrow">→</span>
             <span class="rec-agent" style="background:rgba(200,136,136,.2);color:var(--pulse);">${rec.agent}</span>
           </div>
-          <div class="rec-target">👨‍🚀 ${crewNames[rec.crew_member_id] || rec.crew_member_id}</div>
+          <div class="rec-target" title="${esc(rec._all.map(r => crewNames[r.crew_member_id] || r.crew_member_id).join(', '))}">👨‍🚀 ${rec._all.length > 1 ? `${rec._all.length} crew` : (crewNames[rec.crew_member_id] || rec.crew_member_id)}</div>
         </div>
         <div class="rec-body">
-          <div class="rec-detection">"${rec.description}"</div>
-          <div class="rec-intervention">↳ ${rec.title}</div>
-          ${aiHtml(rec)}
+          <div class="rec-intervention" title="${esc(rec.description)}">↳ ${esc(rec.title)}</div>
+          ${rec._all.length > 1 ? `<div class="rec-crew-list">For ${esc(rec._all.map(r => crewNames[r.crew_member_id] || r.crew_member_id).join(', '))}. Shown for ${esc(crewNames[rec.crew_member_id] || rec.crew_member_id)}:</div>` : ''}
+          ${aiHtml(rec) || `<div class="rec-detection">${verifyHtml(rec)}"${esc(rec.description)}"</div>`}
           ${stepsHtml(rec)}
           ${sourcesHtml(rec)}
         </div>
         <div class="rec-actions">
-          <button class="rec-btn accept" onclick="AEGIS_API.acceptRecommendation('${rec.id}').then(() => AEGIS_API.updateDashboard())">✓ Accept</button>
-          <button class="rec-btn defer" onclick="AEGIS_API.deferRecommendation('${rec.id}').then(() => AEGIS_API.updateDashboard())">◷ Defer</button>
-          <button class="rec-btn dismiss" onclick="AEGIS_API.dismissRecommendation('${rec.id}').then(() => AEGIS_API.updateDashboard())">✕ Dismiss</button>
+          <button class="rec-btn accept" onclick="AEGIS_API.actOnGroup('accept', '${rec._all.map(r => r.id).join(',')}')">✓ Accept${rec._all.length > 1 ? ' all' : ''}</button>
+          <button class="rec-btn defer" onclick="AEGIS_API.actOnGroup('defer', '${rec._all.map(r => r.id).join(',')}')">◷ Defer</button>
+          <button class="rec-btn dismiss" onclick="AEGIS_API.actOnGroup('dismiss', '${rec._all.map(r => r.id).join(',')}')">✕ Dismiss</button>
         </div>
       </div>
     `).join('');

@@ -1,0 +1,277 @@
+[
+ {
+  "id": "REC-26B60550",
+  "crew": "crew-003",
+  "role": "flight_engineer",
+  "agent": "MIRROR",
+  "pillar": "PREVENT",
+  "severity": "medium",
+  "title": "Sleep Quality Improvement",
+  "created": "2026-10-11T09:34:23.925861",
+  "description": "Poor sleep quality affecting crew performance and health.",
+  "rule_basis": "Below-par sleep quality: 70/100",
+  "ai": "The Flight Engineer's sleep quality is below par, at 70 out of 100. Poor sleep can lead to fatigue and affect performance during waking hours [1][4]. It matters now because the next few nights in orbit are worth watching closely, and simple steps can help.",
+  "verification": {
+   "ok": true,
+   "numbers": "2/2",
+   "citations": "2/2",
+   "actions": "4/4",
+   "medicine_ok": true,
+   "problems": [],
+   "attempts": 2
+  },
+  "actions": [
+   "Make sure the Flight Engineer gets a protected eight-hour sleep period.",
+   "Adjust the lighting to help the Flight Engineer's body clock stay on track.",
+   "Review sleep hygiene practices with the Flight Engineer.",
+   "Consider melatonin for the Flight Engineer, with the doctor's approval."
+  ],
+  "sources": [
+   [
+    "NASA HRR — Risk of Performance Decrements from Sleep Loss, Circadian Desynchronization, and Work Overload",
+    true
+   ],
+   [
+    "NASA Fatigue Countermeasures Lab — Sleep and Circadian Disruption",
+    true
+   ],
+   [
+    "NASA/TM-20205006969 - ISS Crew Workload Contributing to Fatigue ### Radiation",
+    false
+   ],
+   [
+    "NASA/TM-20030068197 - Sleep, Circadian Rhythms, and Performance During Shuttle Missions",
+    false
+   ]
+  ],
+  "live_now": "HR 85 SpO2 98.0 sleep 70.8 rad24 0.31 cum 194.512711597378 day 54 IL6 5.02",
+  "ai_numbers_vs_live_now": {
+   "claimed": 2,
+   "unsupported": [],
+   "ok": true
+  },
+  "live_out_of_range": [],
+  "live_risk": "none"
+ },
+ {
+  "id": "REC-562455E4",
+  "crew": "crew-004",
+  "role": "medical_officer",
+  "agent": "SOLARIS",
+  "pillar": "PREDICT",
+  "severity": "low",
+  "title": "Long-term Radiation Exposure Trend",
+  "created": "2026-10-11T08:25:46.135918",
+  "description": "Cumulative radiation trending toward career limits.",
+  "rule_basis": "Projected dose at Day 365: 1047 mSv (based on 2.9 mSv/day avg)",
+  "ai": "At day 54 the Medical Officer has 171 mSv cumulative, tracking toward about 1159 mSv by day 365. That is a serious long-term radiation risk [1][2]. The inflammation signal is 4.7 and sleep is 76 of 100, both steady for now. Keep watching the daily dose and the absorbed-dose tests.",
+  "verification": {
+   "ok": true,
+   "numbers": "7/7",
+   "citations": "2/2",
+   "actions": "3/3",
+   "medicine_ok": true,
+   "problems": [],
+   "attempts": 2
+  },
+  "actions": [
+   "Arrange the test that shows how much radiation the body has actually absorbed",
+   "Check the mission's overall radiation budget",
+   "Plan the Medical Officer's work around the quieter, lower-radiation stretches"
+  ],
+  "sources": [
+   [
+    "NASA NTRS 20210009708 — Radiation Exposure",
+    true
+   ],
+   [
+    "NASA HRR — Risk of Radiation Carcinogenesis",
+    true
+   ],
+   [
+    "NASA HRR — Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission",
+    false
+   ],
+   [
+    "NASA/TM-20110007803 - Long Duration Space Missions Human Risks",
+    false
+   ]
+  ],
+  "live_now": "HR 76 SpO2 98.2 sleep 75.0 rad24 0.32 cum 186.61903090613143 day 54 IL6 4.87",
+  "ai_numbers_vs_live_now": {
+   "claimed": 7,
+   "unsupported": [
+    "171",
+    "1159",
+    "4.7",
+    "100"
+   ],
+   "ok": false
+  },
+  "live_out_of_range": [],
+  "live_risk": "none"
+ },
+ {
+  "id": "REC-D4C31685",
+  "crew": "crew-003",
+  "role": "flight_engineer",
+  "agent": "SOLARIS",
+  "pillar": "PREDICT",
+  "severity": "low",
+  "title": "Long-term Radiation Exposure Trend",
+  "created": "2026-10-11T08:25:45.949244",
+  "description": "Cumulative radiation trending toward career limits.",
+  "rule_basis": "Projected dose at Day 365: 1128 mSv (based on 3.1 mSv/day avg)",
+  "ai": null,
+  "verification": {
+   "ok": false,
+   "numbers": "4/4",
+   "citations": "2/3",
+   "actions": "3/3",
+   "medicine_ok": true,
+   "problems": [
+    "[1] does not support: 'That is a serious long-term health concern .' (sim 0.25)"
+   ],
+   "attempts": 2
+  },
+  "actions": [
+   "Book a blood test that shows how much radiation the body has taken in",
+   "Take a fresh look at the mission's radiation budget",
+   "Plan the Flight Engineer's work around the quieter, lower-radiation periods",
+   "Think about swapping crew around for the highest-exposure tasks"
+  ],
+  "sources": [
+   [
+    "NASA NTRS 20210009708 — Radiation Exposure",
+    false
+   ],
+   [
+    "NASA HRR — Risk of Radiation Carcinogenesis",
+    false
+   ],
+   [
+    "NASA HRR — Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission",
+    false
+   ],
+   [
+    "NASA/TM-19870011297 - Radiation Protection Guidelines for Space Missions",
+    false
+   ]
+  ],
+  "live_now": "HR 85 SpO2 98.0 sleep 70.8 rad24 0.31 cum 194.512711597378 day 54 IL6 5.02",
+  "ai_numbers_vs_live_now": null,
+  "live_out_of_range": [],
+  "live_risk": "none"
+ },
+ {
+  "id": "REC-573B4843",
+  "crew": "crew-002",
+  "role": "science_officer",
+  "agent": "SOLARIS",
+  "pillar": "PREDICT",
+  "severity": "low",
+  "title": "Long-term Radiation Exposure Trend",
+  "created": "2026-10-11T08:25:45.766708",
+  "description": "Cumulative radiation trending toward career limits.",
+  "rule_basis": "Projected dose at Day 365: 1059 mSv (based on 2.9 mSv/day avg)",
+  "ai": "The Science Officer's radiation dose is building faster than planned, on track to pass a safe career limit by day 365 [1][2]. Nothing looks wrong right now: heart rate, oxygen and sleep are steady, though sleep is a little low. Next, watch the dose trend and keep an eye on sleep.",
+  "verification": {
+   "ok": true,
+   "numbers": "1/1",
+   "citations": "2/2",
+   "actions": "4/4",
+   "medicine_ok": true,
+   "problems": [],
+   "attempts": 1
+  },
+  "actions": [
+   "Take a fresh look at the mission's radiation budget",
+   "Book a test that checks how the Science Officer's body is coping with radiation",
+   "Plan the Science Officer's work around the quieter radiation periods",
+   "Think about sharing the high-radiation tasks with other crew"
+  ],
+  "sources": [
+   [
+    "NASA NTRS 20210009708 — Radiation Exposure",
+    true
+   ],
+   [
+    "NASA HRR — Risk of Radiation Carcinogenesis",
+    true
+   ],
+   [
+    "NASA HRR — Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission",
+    true
+   ],
+   [
+    "NASA/TM-19870011297 - Radiation Protection Guidelines for Space Missions",
+    false
+   ]
+  ],
+  "live_now": "HR 68 SpO2 97.6 sleep 72.7 rad24 0.31 cum 186.48256381875134 day 54 IL6 4.89",
+  "ai_numbers_vs_live_now": {
+   "claimed": 1,
+   "unsupported": [],
+   "ok": true
+  },
+  "live_out_of_range": [],
+  "live_risk": "none"
+ },
+ {
+  "id": "REC-4707EABE",
+  "crew": "crew-001",
+  "role": "commander",
+  "agent": "SOLARIS",
+  "pillar": "PREDICT",
+  "severity": "low",
+  "title": "Long-term Radiation Exposure Trend",
+  "created": "2026-10-11T08:25:45.560511",
+  "description": "Cumulative radiation trending toward career limits.",
+  "rule_basis": "Projected dose at Day 365: 1089 mSv (based on 3.0 mSv/day avg)",
+  "ai": "The Commander's radiation dose is building faster than we'd like: 175 millisieverts by day 54, on track for about 1184 by day 365, close to career limits [1][4]. Sleep is a little low at 71 and there is a mild inflammation signal. Nothing alarming today, but this needs watching.",
+  "verification": {
+   "ok": true,
+   "numbers": "5/5",
+   "citations": "2/2",
+   "actions": "4/4",
+   "medicine_ok": true,
+   "problems": [],
+   "attempts": 1
+  },
+  "actions": [
+   "Take another look at the mission's radiation budget",
+   "Move the Commander's work to quieter, lower-radiation times where possible",
+   "Think about sharing out the high-radiation tasks with other crew",
+   "Book a blood test that checks radiation effects on the body"
+  ],
+  "sources": [
+   [
+    "NASA NTRS 20210009708 — Radiation Exposure",
+    true
+   ],
+   [
+    "NASA HRR — Risk of Radiation Carcinogenesis",
+    true
+   ],
+   [
+    "NASA/TM-19870011297 - Radiation Protection Guidelines for Space Missions",
+    true
+   ],
+   [
+    "NASA HRR — Risk of Adverse Health Outcomes and Decrements in Performance Due to Medical Conditions that occur in Mission",
+    false
+   ]
+  ],
+  "live_now": "HR 66 SpO2 96.8 sleep 70.3 rad24 0.31 cum 190.15714684189044 day 54 IL6 3.54",
+  "ai_numbers_vs_live_now": {
+   "claimed": 5,
+   "unsupported": [
+    "175",
+    "1184"
+   ],
+   "ok": false
+  },
+  "live_out_of_range": [],
+  "live_risk": "none"
+ }
+]

@@ -312,15 +312,20 @@ const PROTOCOLS = {
       { text: 'Set wake alarm', duration: 800 }
     ]
   },
-  medical: {
-    name: 'MEDIC-1: Medical Consult',
-    steps: [
-      { text: 'Alert medical officer', duration: 600 },
-      { text: 'Guide Nakamura to Medbay', duration: 2500, move: { crew: 'nakamura', to: 'medbay' } },
-      { text: 'Display vital history', duration: 800 },
-      { text: 'Queue ground consult', duration: 1000 },
-      { text: 'Begin monitoring', duration: 800 }
-    ]
+  // MEDIC-1 targets the crew member AEGIS flagged (PROTECT tier: a critical PULSE reading)
+  medical: (crew = 'nakamura') => {
+    const who = CREW[crew] ? CREW[crew].name : crew;
+    return {
+      name: `MEDIC-1: Medical Response · ${who}`,
+      crew,
+      steps: [
+        { text: 'Alert crew medical officer', duration: 600, action: 'flagCrew' },
+        { text: `Guide ${who} to Medbay`, duration: 2500, move: { crew, to: 'medbay' } },
+        { text: 'Supplemental O₂ + continuous pulse-ox', duration: 1000 },
+        { text: 'Display vital history · queue ground flight surgeon', duration: 1000 },
+        { text: 'Begin close monitoring', duration: 800, action: 'recovering' }
+      ]
+    };
   },
   eva: {
     name: 'GAMMA-1: EVA Halt',
@@ -331,6 +336,21 @@ const PROTOCOLS = {
       { text: 'Check suit integrity', duration: 1000 },
       { text: 'Log incident', duration: 800 }
     ]
+  },
+  // PREVENT-1: AEGIS PREDICT forecast a cascade; countermeasures start BEFORE it happens
+  prevent: (crew = 'chen') => {
+    const who = CREW[crew] ? CREW[crew].name : crew;
+    return {
+      name: `PREVENT-1: Pre-cascade Countermeasures · ${who}`,
+      crew,
+      steps: [
+        { text: `Flag ${who}: cascade forecast`, duration: 700, action: 'flagCrew' },
+        { text: 'Relocate work to shielded Habitat (SOLARIS)', duration: 2200, move: { crew, to: 'hab' } },
+        { text: 'Cut exertion · 500 mL fluids (PULSE / GENE)', duration: 1000 },
+        { text: 'Protected sleep window tonight (MIRROR)', duration: 2200, move: { crew, to: 'quarters' }, action: 'dimLights' },
+        { text: 'Trends reversing · keep monitoring', duration: 900, action: 'recovering' }
+      ]
+    };
   },
   // RECOVER-3 targets one crew member (the one flagged by the AEGIS cascade)
   recover: (crew = 'chen') => {
@@ -550,7 +570,7 @@ init();
 // Protocol names used by the AEGIS backend → sim protocol keys
 const PROTOCOL_KEYS = {
   'SHELTER-1': 'radiation', 'RECOVER-3': 'recover', 'CALM-1': 'stress',
-  'SLEEP-2': 'sleep', 'MEDIC-1': 'medical', 'GAMMA-1': 'eva', 'EMERGENCY-1': 'emergency'
+  'SLEEP-2': 'sleep', 'MEDIC-1': 'medical', 'GAMMA-1': 'eva', 'EMERGENCY-1': 'emergency', 'PREVENT-1': 'prevent'
 };
 function runAegisProtocol(protocolName, crew) {
   const key = PROTOCOL_KEYS[String(protocolName || '').toUpperCase()] || String(protocolName || '').toLowerCase();

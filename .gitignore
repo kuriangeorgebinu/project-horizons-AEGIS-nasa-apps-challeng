@@ -15,5 +15,13 @@ aegis.db.bak
 
 # Logs and local backups
 *.log
+*.err
 *.bak
 *.bak-*
+
+# Evaluation scratch (backups, dumps and one-off build helpers)
+eval/chroma_db_backup/
+eval/*.before-*.html
+eval/dump.txt
+eval/part_c.py.txt
+eval/splice.py

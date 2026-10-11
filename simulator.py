@@ -22,6 +22,10 @@ import database as db
 # Simulation State
 # ─────────────────────────────────────────────────────────────────────────────
 
+BUILDUP_SECONDS = 360   # buildup_demo: time for the metrics to drift from baseline to the cascade end state
+RECOVERY_SECONDS = 120  # prevent_recovery: time for the drift to reverse back to baseline after PREVENT-1
+
+
 class VitalsSimulator:
     """Real-time vitals simulator for AEGIS demo."""
     
@@ -30,6 +34,8 @@ class VitalsSimulator:
         self.config = SimulationConfig()
         self.mission_day = 54  # Day 54 matches the cascade story
         self.start_time = datetime.utcnow()
+        self.scenario_started_at = datetime.utcnow()   # for gradual scenarios (buildup_demo)
+        self.recovery_from_p = 0.0                     # build-up progress when PREVENT-1 started
         self._task: Optional[asyncio.Task] = None
         
         # M5: Track simulator health
@@ -209,6 +215,29 @@ class VitalsSimulator:
         
         return vitals
     
+    def buildup_progress(self) -> float:
+        """0..1 progress of the build-up toward the cascade end state (reverses during prevent_recovery)."""
+        elapsed = (datetime.utcnow() - self.scenario_started_at).total_seconds()
+        if self.config.scenario == "buildup_demo":
+            return min(1.0, elapsed / BUILDUP_SECONDS)
+        if self.config.scenario == "prevent_recovery":
+            return self.recovery_from_p * max(0.0, 1.0 - elapsed / RECOVERY_SECONDS)
+        return 0.0
+
+    def start_prevention(self, crew_id: str) -> bool:
+        """PREVENT-1 started for crew_id: in the demo scenarios the countermeasures take effect and the drift
+        reverses. Returns True if the simulator changed (a real telemetry feed would simply show the effect)."""
+        if self.config.scenario not in ("buildup_demo", "cascade_demo"):
+            return False
+        if crew_id != (self.config.inject_crew_id or "crew-001"):
+            return False
+        p = self.buildup_progress() if self.config.scenario == "buildup_demo" else 1.0
+        self.recovery_from_p = p
+        config = self.config.model_copy()
+        config.scenario = "prevent_recovery"
+        self.set_config(config)
+        return True
+
     def _bounded_random(self, center: float, spread: float, min_val: float, max_val: float) -> float:
         """Generate random value within bounds."""
         value = center + random.gauss(0, spread / 2)
@@ -246,9 +275,15 @@ class VitalsSimulator:
             mods["stress"] = 15
             
         elif self.config.scenario == "medical_emergency":
-            # General elevated stress
-            mods["stress"] = 25
-            mods["heart_rate"] = 10
+            # PROTECT (medical) demo: acute hypoxia in one crew member (e.g. a CO2-scrubber / mask fault).
+            # SpO2 falls below PULSE's critical 90 % within ~30 s, with a compensating heart-rate rise ->
+            # PULSE raises a critical PROTECT alert -> Protocol MEDIC-1. Everyone else stays nominal.
+            target = self.config.inject_crew_id or "crew-004"
+            if crew_id is None or crew_id == target:
+                spo2_base = self._crew_baselines.get(crew_id or target, {}).get("spo2", 98)
+                mods["spo2"] = 87.5 - spo2_base
+                mods["heart_rate"] = 22
+                mods["stress"] = 20
             
         elif self.config.scenario == "cascade_demo":
             # H2: Cascade demo - drives SOLARIS, GENE, PULSE, MIRROR to amber
@@ -271,6 +306,21 @@ class VitalsSimulator:
                 hr_base = self._crew_baselines.get(crew_id or target, {}).get("heart_rate", 68)
                 mods["heart_rate"] = max(15, 104 - hr_base)
                 mods["sleep"] = -25                             # MIRROR sleep warning (<70%)
+
+        elif self.config.scenario in ("buildup_demo", "prevent_recovery"):
+            # PREDICT demo: the same end state as cascade_demo, reached gradually over BUILDUP_SECONDS, so the
+            # trend engine can forecast the cascade minutes before 3 domains actually go out of range.
+            # Order the metrics cross: MIRROR sleep (~1.5 min), SOLARIS radiation (~2.5), GENE IL-6 (~4),
+            # PULSE heart rate (~4.5) -> AEGIS forecasts the cascade from ~1.5-2 min, it fires at ~4 min.
+            # prevent_recovery (PREVENT-1 started): the drift reverses back to baseline over RECOVERY_SECONDS.
+            target = self.config.inject_crew_id or "crew-001"
+            if crew_id is None or crew_id == target:
+                p = self.buildup_progress()
+                b = self._crew_baselines.get(crew_id or target, {})
+                mods["radiation"] = 0.45 * p
+                mods["stress"] = p * max(30, 76 - b.get("stress_base", 30))
+                mods["heart_rate"] = p * max(15, 104 - b.get("heart_rate", 68))
+                mods["sleep"] = -25 * p
         
         # M1: Only apply anomaly to target crew (or all if inject_crew_id is None)
         target_crew = getattr(self.config, 'inject_crew_id', None)
@@ -326,6 +376,12 @@ class VitalsSimulator:
     
     async def update_all_crew(self):
         """Update vitals for all crew members."""
+        # PREVENT-1 recovery finished: back to nominal operations
+        if self.config.scenario == "prevent_recovery" and \
+                (datetime.utcnow() - self.scenario_started_at).total_seconds() > RECOVERY_SECONDS + 60:
+            config = self.config.model_copy()
+            config.scenario = None
+            self.set_config(config)
         crew = db.get_all_crew()
         
         for member in crew:
@@ -376,6 +432,8 @@ class VitalsSimulator:
         """Update simulation configuration."""
         old_scenario = self.config.scenario
         self.config = config
+        if config.scenario != old_scenario:
+            self.scenario_started_at = datetime.utcnow()
         
         # M3: Add one-time radiation dose bump when SPE/radiation scenario starts
         if config.scenario in ["spe_event", "cascade_demo"] and old_scenario not in ["spe_event", "cascade_demo"]:

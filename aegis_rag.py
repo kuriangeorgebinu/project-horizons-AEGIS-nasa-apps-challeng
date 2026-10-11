@@ -268,7 +268,7 @@ def _source_label(collection: str, doc: str, meta: dict) -> tuple[str, Optional[
         m = re.match(r"NASA Official Risk:\s*([^.]+)", doc)
         label = "NASA HRR — " + (m.group(1).strip() if m else "Human Research Roadmap risk")
     elif collection == "citations":
-        label = re.sub(r"^\d+\.\s*", "", doc).strip()[:140]
+        label = re.sub(r"^\d+\.\s*", "", doc.split(". NTRS title:")[0]).strip()[:140]
     else:
         m = re.match(r"(?:Risk|Protocol|Medication):\s*([^.]+)", doc)
         label = f"{source or 'AEGIS Knowledge Base'} — {m.group(1).strip() if m else collection}"

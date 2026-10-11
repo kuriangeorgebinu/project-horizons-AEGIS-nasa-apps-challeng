@@ -57,9 +57,9 @@ class RecommendationPillar(str, Enum):
 class AgentType(str, Enum):
     # Canonical AEGIS agent names matching the pitch
     GENE = "GENE"          # Genomic/inflammatory markers (IL-6, CRP)
-    PULSE = "PULSE"        # Cardiovascular + physiological (HRV, HR, bone)
-    SOLARIS = "SOLARIS"    # Radiation monitoring
-    MIRROR = "MIRROR"      # Behavioral/cognitive (PVT, mood)
+    PULSE = "PULSE"        # Heart rate + SpO2
+    SOLARIS = "SOLARIS"    # Radiation monitoring (24 h dose + mission total)
+    MIRROR = "MIRROR"      # Sleep quality
     AEGIS = "AEGIS"        # Coordinator/orchestrator
     # Keep OsteoWatch for backward compatibility until fully migrated
     OSTEO = "OsteoWatch"

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -73,7 +73,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 /* DeepSeek assessment (alert panel + recommendation cards) */
 .alert-ai,.rec-ai{margin:.6rem 0;padding:.55rem .7rem;border-left:3px solid var(--gene);background:rgba(160,152,200,.08);border-radius:0 8px 8px 0;font-size:.82rem;line-height:1.45;color:var(--text);}
 .alert-ai-tag,.rec-ai-tag{display:block;font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gene);margin-bottom:.2rem;}
-.rec-ai{font-size:.78rem;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
+.rec-ai{font-size:.78rem;}   /* full DeepSeek assessment, no truncation */
+.rec-verify{display:inline-block;font-size:.62rem;font-weight:700;padding:.05rem .4rem;border-radius:3px;margin:0 .4rem .2rem 0;cursor:help;}
+.rec-verify.ok{background:rgba(80,170,110,.18);color:#2f8a4f;}
+.rec-verify.rules{background:rgba(200,160,60,.2);color:#9a6f10;}
+.rec-crew-list{font-size:.72rem;color:var(--muted);margin:-.2rem 0 .2rem;}
 /* RAG recommendations: tailored actions + cited sources */
 .rec-steps{margin:.4rem 0 .5rem 1.1rem;padding:0;font-size:.78rem;line-height:1.4;color:var(--text);}
 .rec-steps li{margin:.15rem 0;}
@@ -124,26 +128,87 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 .theme-toggle:hover{background:rgba(128,128,128,.25);}
 
 /* Agent Network Graph */
-.graph-panel{grid-area:graph;background:var(--card);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;transition:background .3s;}
-.graph-title{position:absolute;top:1rem;left:1.5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
+.graph-panel{grid-area:graph;background:var(--card);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;gap:.5rem;padding:1rem 1.25rem 1.1rem;position:relative;overflow:hidden;transition:background .3s;min-width:0;}
+.graph-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
 
-.network{position:relative;width:320px;height:320px;}
-.agent-node{position:absolute;width:70px;height:70px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;border:2px solid var(--border);background:var(--bg);}
-.agent-node.active{border-width:3px;box-shadow:0 0 30px var(--node-color);}
-.agent-node .icon{font-size:1.2rem;margin-bottom:2px;}
-.agent-node .name{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+/* CASCADE MAP: the four specialists around AEGIS, live. Gauge = how close each reading is to its agent's
+   threshold; links light up when strain spreads between systems; the centre counts down to a cascade. */
+.cm-head{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem;flex-wrap:wrap;}
+.cm-legend{display:flex;gap:.8rem;font-size:.68rem;color:var(--muted);}
+.cm-legend span{display:inline-flex;align-items:center;gap:.3rem;}
+.cm-legend i{width:.55rem;height:.55rem;border-radius:50%;display:inline-block;}
+.cm-svg{width:100%;height:auto;max-height:340px;display:block;overflow:visible;}
+.cm-caption{font-size:.86rem;line-height:1.45;color:var(--text);min-height:2.6em;text-align:center;max-width:52ch;margin:0 auto;}
+.cm-caption b{font-weight:600;}
+/* Map amber: a clearer warning tone than the panel's olive --yellow, tuned per theme */
+:root{--cm-amber:#d9a441;}
+[data-theme="light"]{--cm-amber:#c27c0e;}
+.cm-svg,.cm-legend,.crew-glance{--yellow:var(--cm-amber);}
+.agent-node{cursor:pointer;--state:var(--green);}
+.agent-node[data-state="watch"]{--state:var(--yellow);}
+.agent-node[data-state="out"]{--state:var(--red);}
+.agent-node:focus{outline:none;}
+.agent-node:focus-visible .cm-core{stroke:var(--aegis);stroke-width:3;}
+.cm-core{fill:var(--card);stroke:var(--border);stroke-width:1.5;transition:stroke .3s;}
+.agent-node.active .cm-core{stroke:var(--node-color);stroke-width:3;}
+.agent-node:hover .cm-core{stroke:var(--node-color);}
+.cm-track{fill:none;stroke:var(--border);stroke-width:5;opacity:.6;}
+.cm-gauge{fill:none;stroke:var(--state);stroke-width:5;stroke-linecap:round;transition:stroke-dasharray .9s ease,stroke .4s;}
+.cm-tick{stroke:var(--muted);stroke-width:2;}
+.cm-halo{fill:var(--state);opacity:0;transform-box:fill-box;transform-origin:center;}
+.agent-node[data-state="watch"] .cm-halo{animation:cm-breathe 2.6s ease-in-out infinite;}
+.agent-node[data-state="out"] .cm-halo{animation:cm-breathe 1.2s ease-in-out infinite;}
+@keyframes cm-breathe{0%,100%{opacity:.06;transform:scale(1);}50%{opacity:.26;transform:scale(1.14);}}
+.cm-icon{font-size:15px;}
+.cm-val{font-size:19px;font-weight:700;fill:var(--text);font-variant-numeric:tabular-nums;}
+.cm-unit{font-size:9px;fill:var(--muted);}
+.cm-name{font-size:10px;font-weight:700;letter-spacing:1.5px;fill:var(--node-color);}
+.cm-state{font-size:10px;font-weight:600;fill:var(--state);}
+.node-solaris{--node-color:var(--solaris);} .node-gene{--node-color:var(--gene);}
+.node-pulse{--node-color:var(--pulse);} .node-mirror{--node-color:var(--mirror);} .node-aegis{--node-color:var(--aegis);}
+/* Links between neighbouring systems: dotted when calm, flowing amber/red when strain is spreading */
+.cm-link{fill:none;stroke:var(--border);stroke-width:2;stroke-dasharray:2 7;stroke-linecap:round;transition:stroke .4s,stroke-width .4s;}
+.cm-link.warm{stroke:var(--yellow);stroke-width:2.5;stroke-dasharray:7 7;animation:cm-flow 1.4s linear infinite;}
+.cm-link.hot{stroke:var(--red);stroke-width:3.5;stroke-dasharray:12 7;animation:cm-flow .7s linear infinite;}
+@keyframes cm-flow{to{stroke-dashoffset:-28;}}
+/* Spokes to AEGIS (also used by the voice / protocol animations: .active, .flowing) */
+.conn-line{stroke:var(--border);stroke-width:2;fill:none;transition:stroke .4s;}
+.conn-line.s-watch{stroke:var(--yellow);}
+.conn-line.s-out{stroke:var(--red);}
+.conn-line.active{stroke:var(--aegis);stroke-width:3;}
+.cm-particle{display:none;}
+.cm-particle.on{display:inline;}
+/* AEGIS centre: three segments = the three strained systems that make a cascade */
+.cm-seg{fill:none;stroke:var(--border);stroke-width:7;stroke-linecap:round;transition:stroke .4s;}
+.cm-seg.watch{stroke:var(--yellow);} .cm-seg.out{stroke:var(--red);} .cm-seg.ok{stroke:var(--green);}
+.node-aegis .cm-core{stroke:var(--aegis);stroke-width:2;}
+.node-aegis[data-mode="cascade"] .cm-core{stroke:var(--yellow);stroke-width:3;}
+.node-aegis[data-mode="alert"] .cm-core{stroke:var(--red);stroke-width:3;}
+.node-aegis[data-mode="prevent"] .cm-core,.node-aegis[data-mode="averted"] .cm-core{stroke:var(--green);stroke-width:3;}
+.node-aegis[data-mode="alert"] .cm-big{animation:cm-blink 1s steps(2,start) infinite;}
+@keyframes cm-blink{50%{opacity:.35;}}
+.cm-big{font-size:20px;font-weight:800;fill:var(--text);font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+.cm-small{font-size:8.5px;font-weight:700;letter-spacing:1.6px;fill:var(--muted);}
+.cm-ripple{fill:none;stroke:var(--green);stroke-width:3;pointer-events:none;animation:cm-ripple 1.4s ease-out forwards;}
+@keyframes cm-ripple{from{r:52px;opacity:.9;}to{r:260px;opacity:0;}}
+.cm-burst{fill:none;stroke:var(--node-color);stroke-width:2;pointer-events:none;animation:cm-burst .6s ease-out forwards;}
+@keyframes cm-burst{from{r:40px;opacity:.9;}to{r:62px;opacity:0;}}
+@media (prefers-reduced-motion:reduce){.cm-link,.cm-halo,.cm-ripple,.cm-burst,.cm-big{animation:none!important;}.cm-particle.on{display:none;}}
 
-/* Node positions (star pattern) */
-.node-aegis{left:50%;top:50%;transform:translate(-50%,-50%);width:90px;height:90px;--node-color:var(--aegis);border-color:var(--aegis);}
-.node-solaris{left:50%;top:5%;transform:translate(-50%,0);--node-color:var(--solaris);}
-.node-gene{left:90%;top:35%;transform:translate(-100%,0);--node-color:var(--gene);}
-.node-pulse{left:75%;top:85%;transform:translate(-50%,-100%);--node-color:var(--pulse);}
-.node-mirror{left:25%;top:85%;transform:translate(-50%,-100%);--node-color:var(--mirror);}
-
-/* Connection lines (SVG) */
-.connections{position:absolute;inset:0;pointer-events:none;}
-.conn-line{stroke:var(--border);stroke-width:2;fill:none;transition:all .5s;}
-.conn-line.active{stroke:var(--aegis);stroke-width:3;filter:drop-shadow(0 0 8px var(--aegis));}
+/* Crew at a glance (alert panel, when everything is clear) */
+.crew-glance{display:grid;gap:.45rem;margin-top:.25rem;width:100%;}
+.alert-panel:has(.crew-glance) .alert-body{flex:0 0 auto;}
+.cg-head{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.cg-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.8rem;padding:.5rem .7rem;border:1px solid var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font:inherit;color:var(--text);text-align:left;}
+.cg-row:hover{border-color:var(--aegis);}
+.cg-row.sel{border-color:var(--aegis);box-shadow:inset 3px 0 0 var(--aegis);}
+.cg-name{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cg-name small{display:block;font-weight:400;font-size:.7rem;color:var(--muted);}
+.cg-dots{display:flex;gap:.35rem;}
+.cg-dot{width:.62rem;height:.62rem;border-radius:50%;background:var(--green);}
+.cg-dot.watch{background:var(--yellow);} .cg-dot.out{background:var(--red);}
+.cg-state{font-size:.72rem;color:var(--muted);min-width:5.5rem;text-align:right;}
+.cg-state.watch{color:var(--yellow);font-weight:600;} .cg-state.out{color:var(--red);font-weight:600;}
 
 /* Vitals Panel */
 .vitals-panel{grid-area:vitals;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;transition:background .3s;}
@@ -160,6 +225,20 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 .vital-bar{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
 .vital-fill{height:100%;border-radius:4px;transition:width .5s;}
 .vital-status{width:60px;font-size:.7rem;text-align:right;}
+/* PREDICT: trend chips appear only when a metric is trending; click a row for history + forecast */
+.vital-row[data-metric]{position:relative;cursor:pointer;border-radius:6px;}
+.vital-row[data-metric]:hover{background:rgba(255,255,255,.03);}
+.trend-chip{position:absolute;right:0;bottom:-13px;font-size:.6rem;white-space:nowrap;color:var(--muted);pointer-events:none;letter-spacing:.2px;}
+.trend-chip.inline{position:static;margin-left:.35rem;}
+.trend-chip.eta{color:var(--yellow);font-weight:700;}
+.trend-chip.out{color:var(--orange);}
+.alert-panel.predict .alert-badge.forecast{opacity:.65;border:1px dashed currentColor;}
+.confirm-btn.prevent-btn{border-color:var(--yellow);color:var(--yellow);background:rgba(200,180,90,.1);}
+.confirm-btn.prevent-btn:hover{background:rgba(200,180,90,.2);}
+.prevent-steps{margin:.25rem 0 .75rem;padding-left:1.1rem;font-size:.8rem;color:var(--text);line-height:1.5;}
+.chart-threshold{stroke:var(--orange);stroke-width:1;stroke-dasharray:4 4;opacity:.9;}
+.chart-forecast{fill:none;stroke:var(--aegis);stroke-width:2;stroke-dasharray:6 4;}
+.chart-now{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3;}
 
 .radiation-section{margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);}
 .rad-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;}
@@ -169,7 +248,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 
 /* Voice Terminal */
 .voice-panel{grid-area:voice;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;transition:background .3s;}
-.voice-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;}
+.voice-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
+.voice-select{font-size:.7rem;letter-spacing:0;text-transform:none;max-width:45%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:.15rem .4rem;cursor:pointer;}
 .voice-input{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;}
 .mic-btn{width:60px;height:60px;border-radius:50%;border:2px solid var(--aegis);background:transparent;color:var(--aegis);font-size:1.5rem;cursor:pointer;transition:all .3s;}
 .mic-btn:hover{background:rgba(90,159,215,.1);}
@@ -194,6 +274,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 .alert-badge{padding:.25rem .75rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;}
 .confirm-btn{padding:.75rem 1.5rem;border:1px solid var(--green);background:rgba(90,173,140,.1);color:var(--green);border-radius:8px;font-size:.9rem;cursor:pointer;transition:all .3s;}
 .confirm-btn:hover{background:rgba(90,173,140,.2);}
+.alert-call{font-size:.8rem;margin:-.4rem 0 .8rem;padding:.4rem .6rem;border-radius:8px;background:rgba(90,159,215,.1);color:var(--aegis);cursor:help;}
+.alert-call.failed{background:rgba(200,106,106,.12);color:var(--red);}
 
 /* Protocol Celebration */
 @keyframes celebration-pulse{0%{opacity:0;}50%{opacity:.3;}100%{opacity:0;}}
@@ -358,6 +440,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 .status-text strong{color:var(--text);}
 
 /* M6: Mobile responsive layout */
+@media (max-width: 900px) {
+  /* One column: the Cascade Map first, then vitals, alerts, voice, recommendations */
+  .shell { grid-template-columns: minmax(0, 1fr); padding: .6rem; gap: .75rem;
+           grid-template-areas: "header" "graph" "vitals" "alert" "voice" "recs"; }
+  .cm-legend { gap: .6rem; }
+}
 @media (max-width: 700px) {
   .dashboard { flex-direction: column; }
   .left-column, .right-column { width: 100%; max-width: 100%; }
@@ -409,77 +497,138 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
     <button class="whatif-btn" onclick="openWhatIf()" aria-label="Open What-If Scenario Simulator">
       <span class="icon">🔮</span> What-If
     </button>
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode">🌙</button>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode">☀️</button>
   </header>
 
   <!-- Mission Control Page -->
   <div class="page active" id="page-mission">
-  <!-- Agent Network Graph -->
-  <div class="graph-panel">
-    <div class="graph-title">Agent Network</div>
-    <div class="network">
-      <svg class="connections" viewBox="0 0 320 320">
-        <line class="conn-line" id="line-solaris" x1="160" y1="160" x2="160" y2="55"/>
-        <line class="conn-line" id="line-gene" x1="160" y1="160" x2="253" y2="112"/>
-        <line class="conn-line" id="line-pulse" x1="160" y1="160" x2="220" y2="240"/>
-        <line class="conn-line" id="line-mirror" x1="160" y1="160" x2="100" y2="240"/>
-      </svg>
-      <div class="agent-node node-aegis active" onclick="selectAgent('aegis')" tabindex="0" role="button" aria-label="AEGIS - Chief Medical Officer, currently selected" aria-pressed="true" onkeydown="if(event.key==='Enter')selectAgent('aegis')" style="border-color:var(--aegis);">
-        <div class="icon" aria-hidden="true">◈</div>
-        <div class="name" style="color:var(--aegis)">AEGIS</div>
-      </div>
-      <div class="agent-node node-solaris" onclick="selectAgent('solaris')" id="node-solaris" tabindex="0" role="button" aria-label="SOLARIS - Space Weather Analyst" aria-pressed="false" onkeydown="if(event.key==='Enter')selectAgent('solaris')">
-        <div class="icon" aria-hidden="true">☀</div>
-        <div class="name" style="color:var(--solaris)">SOLARIS</div>
-      </div>
-      <div class="agent-node node-gene" onclick="selectAgent('gene')" id="node-gene" tabindex="0" role="button" aria-label="GENE - Genomic Analyst" aria-pressed="false" onkeydown="if(event.key==='Enter')selectAgent('gene')">
-        <div class="icon" aria-hidden="true">🧬</div>
-        <div class="name" style="color:var(--gene)">GENE</div>
-      </div>
-      <div class="agent-node node-pulse" onclick="selectAgent('pulse')" id="node-pulse" tabindex="0" role="button" aria-label="PULSE - Physiological Monitor" aria-pressed="false" onkeydown="if(event.key==='Enter')selectAgent('pulse')">
-        <div class="icon" aria-hidden="true">💓</div>
-        <div class="name" style="color:var(--pulse)">PULSE</div>
-      </div>
-      <div class="agent-node node-mirror" onclick="selectAgent('mirror')" id="node-mirror" tabindex="0" role="button" aria-label="MIRROR - Behavioral Health" aria-pressed="false" onkeydown="if(event.key==='Enter')selectAgent('mirror')">
-        <div class="icon" aria-hidden="true">🪞</div>
-        <div class="name" style="color:var(--mirror)">MIRROR</div>
-      </div>
+  <!-- Cascade Map (hero): live state of the four specialists around AEGIS -->
+  <div class="graph-panel" aria-label="Cascade map">
+    <div class="cm-head">
+      <div class="graph-title">Cascade Map · <span id="cm-crew">Commander Chen</span></div>
+      <div class="cm-legend" aria-hidden="true"><span><i style="background:var(--green)"></i>Steady</span><span><i style="background:var(--yellow)"></i>Heading for its limit</span><span><i style="background:var(--red)"></i>Out of range</span></div>
     </div>
+    <svg class="cm-svg" id="cascade-map" viewBox="0 0 640 336" role="img" aria-labelledby="cm-caption">
+      <path class="cm-link" id="link-solaris-gene" d="M130,80 Q320,10 510,80"/>
+      <path class="cm-link" id="link-gene-pulse" d="M510,80 Q612,165 510,250"/>
+      <path class="cm-link" id="link-pulse-mirror" d="M510,250 Q320,322 130,250"/>
+      <path class="cm-link" id="link-mirror-solaris" d="M130,250 Q28,165 130,80"/>
+      <path class="conn-line" id="line-solaris" d="M130,80 L320,165"/>
+      <circle class="cm-particle" data-agent="solaris" r="3.5"><animateMotion dur="1.6s" begin="0s" repeatCount="indefinite" path="M130,80 L320,165"/></circle>
+      <circle class="cm-particle" data-agent="solaris" r="3.5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M130,80 L320,165"/></circle>
+      <path class="conn-line" id="line-gene" d="M510,80 L320,165"/>
+      <circle class="cm-particle" data-agent="gene" r="3.5"><animateMotion dur="1.6s" begin="0s" repeatCount="indefinite" path="M510,80 L320,165"/></circle>
+      <circle class="cm-particle" data-agent="gene" r="3.5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M510,80 L320,165"/></circle>
+      <path class="conn-line" id="line-pulse" d="M510,250 L320,165"/>
+      <circle class="cm-particle" data-agent="pulse" r="3.5"><animateMotion dur="1.6s" begin="0s" repeatCount="indefinite" path="M510,250 L320,165"/></circle>
+      <circle class="cm-particle" data-agent="pulse" r="3.5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M510,250 L320,165"/></circle>
+      <path class="conn-line" id="line-mirror" d="M130,250 L320,165"/>
+      <circle class="cm-particle" data-agent="mirror" r="3.5"><animateMotion dur="1.6s" begin="0s" repeatCount="indefinite" path="M130,250 L320,165"/></circle>
+      <circle class="cm-particle" data-agent="mirror" r="3.5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M130,250 L320,165"/></circle>
+      <g id="cm-fx"></g>
+      <g class="agent-node node-aegis active" id="node-aegis" data-mode="none" transform="translate(320,165)" tabindex="0" role="button" aria-label="AEGIS, the coordinator" aria-pressed="true" onclick="selectAgent('aegis')" onkeydown="if(event.key==='Enter')selectAgent('aegis')">
+        <title>AEGIS combines the four specialists. Three strained systems at once is a cascade.</title>
+        <path class="cm-seg ok" id="cm-seg-0" d="M8.35,-59.42 A60,60 0 0 1 55.63,22.48"/>
+        <path class="cm-seg ok" id="cm-seg-1" d="M47.28,36.94 A60,60 0 0 1 -47.28,36.94"/>
+        <path class="cm-seg ok" id="cm-seg-2" d="M-55.63,22.48 A60,60 0 0 1 -8.35,-59.42"/>
+        <circle class="cm-core" r="50"/>
+        <text class="cm-small" y="-20" text-anchor="middle" style="fill:var(--aegis)">◈ AEGIS</text>
+        <text class="cm-big" id="cm-big" y="6" text-anchor="middle">Steady</text>
+        <text class="cm-small" id="cm-sub" y="24" text-anchor="middle">ALL SYSTEMS</text>
+      </g>
+      <g class="agent-node node-solaris" id="node-solaris" data-state="ok" transform="translate(130,80)" tabindex="0" role="button" aria-label="SOLARIS, radiation" aria-pressed="false" onclick="selectAgent('solaris')" onkeydown="if(event.key==='Enter')selectAgent('solaris')">
+        <title id="cm-tip-solaris">SOLARIS</title>
+        <circle class="cm-halo" r="52"/>
+        <circle class="cm-track" r="44"/>
+        <circle class="cm-gauge" id="cm-gauge-solaris" r="44" transform="rotate(-90)" stroke-dasharray="0 276.5"/>
+        <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
+        <circle class="cm-core" r="37"/>
+        <text class="cm-icon" y="-13" text-anchor="middle">☀</text>
+        <text class="cm-val" id="cm-val-solaris" y="9" text-anchor="middle">--</text>
+        <text class="cm-unit" id="cm-unit-solaris" y="22" text-anchor="middle"></text>
+        <text class="cm-name" y="63" text-anchor="middle">SOLARIS</text>
+        <text class="cm-state" id="cm-state-solaris" y="77" text-anchor="middle">steady</text>
+      </g>
+      <g class="agent-node node-gene" id="node-gene" data-state="ok" transform="translate(510,80)" tabindex="0" role="button" aria-label="GENE, inflammation" aria-pressed="false" onclick="selectAgent('gene')" onkeydown="if(event.key==='Enter')selectAgent('gene')">
+        <title id="cm-tip-gene">GENE</title>
+        <circle class="cm-halo" r="52"/>
+        <circle class="cm-track" r="44"/>
+        <circle class="cm-gauge" id="cm-gauge-gene" r="44" transform="rotate(-90)" stroke-dasharray="0 276.5"/>
+        <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
+        <circle class="cm-core" r="37"/>
+        <text class="cm-icon" y="-13" text-anchor="middle">🧬</text>
+        <text class="cm-val" id="cm-val-gene" y="9" text-anchor="middle">--</text>
+        <text class="cm-unit" id="cm-unit-gene" y="22" text-anchor="middle"></text>
+        <text class="cm-name" y="63" text-anchor="middle">GENE</text>
+        <text class="cm-state" id="cm-state-gene" y="77" text-anchor="middle">steady</text>
+      </g>
+      <g class="agent-node node-pulse" id="node-pulse" data-state="ok" transform="translate(510,250)" tabindex="0" role="button" aria-label="PULSE, heart and oxygen" aria-pressed="false" onclick="selectAgent('pulse')" onkeydown="if(event.key==='Enter')selectAgent('pulse')">
+        <title id="cm-tip-pulse">PULSE</title>
+        <circle class="cm-halo" r="52"/>
+        <circle class="cm-track" r="44"/>
+        <circle class="cm-gauge" id="cm-gauge-pulse" r="44" transform="rotate(-90)" stroke-dasharray="0 276.5"/>
+        <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
+        <circle class="cm-core" r="37"/>
+        <text class="cm-icon" y="-13" text-anchor="middle">💓</text>
+        <text class="cm-val" id="cm-val-pulse" y="9" text-anchor="middle">--</text>
+        <text class="cm-unit" id="cm-unit-pulse" y="22" text-anchor="middle"></text>
+        <text class="cm-name" y="63" text-anchor="middle">PULSE</text>
+        <text class="cm-state" id="cm-state-pulse" y="77" text-anchor="middle">steady</text>
+      </g>
+      <g class="agent-node node-mirror" id="node-mirror" data-state="ok" transform="translate(130,250)" tabindex="0" role="button" aria-label="MIRROR, sleep" aria-pressed="false" onclick="selectAgent('mirror')" onkeydown="if(event.key==='Enter')selectAgent('mirror')">
+        <title id="cm-tip-mirror">MIRROR</title>
+        <circle class="cm-halo" r="52"/>
+        <circle class="cm-track" r="44"/>
+        <circle class="cm-gauge" id="cm-gauge-mirror" r="44" transform="rotate(-90)" stroke-dasharray="0 276.5"/>
+        <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
+        <circle class="cm-core" r="37"/>
+        <text class="cm-icon" y="-13" text-anchor="middle">🌙</text>
+        <text class="cm-val" id="cm-val-mirror" y="9" text-anchor="middle">--</text>
+        <text class="cm-unit" id="cm-unit-mirror" y="22" text-anchor="middle"></text>
+        <text class="cm-name" y="63" text-anchor="middle">MIRROR</text>
+        <text class="cm-state" id="cm-state-mirror" y="77" text-anchor="middle">steady</text>
+      </g>
+    </svg>
+    <p class="cm-caption" id="cm-caption" aria-live="polite">Reading the crew's live data…</p>
   </div>
 
   <!-- Vitals Panel -->
   <div class="vitals-panel">
     <div class="vitals-title">Live Vitals · Commander Chen</div>
     
-    <div class="vitals-legend">Each metric is monitored by one specialist agent · AEGIS combines them per crew member</div>
+    <div class="vitals-legend">Each metric is monitored by one specialist agent · AEGIS combines them per crew member · click a metric for its trend + forecast</div>
 
-    <div class="vital-row">
+    <div class="vital-row" data-metric="heart_rate" onclick="openTrend('heart_rate')">
       <div class="vital-label">Heart<span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span></div>
       <div class="vital-value" style="color:var(--yellow)" id="hr-value">68</div>
-      <svg id="hr-sparkline" width="50" height="24" style="margin:0 8px;cursor:pointer;" onclick="openHRGraph()" role="button" aria-label="Click to expand heart rate graph" tabindex="0" onkeydown="if(event.key==='Enter')openHRGraph()"><polyline id="spark-line" fill="none" stroke="var(--yellow)" stroke-width="1.5" points="0,12 10,14 20,10 30,16 40,12 50,8"/></svg>
+      <svg id="hr-sparkline" width="50" height="24" style="margin:0 8px;cursor:pointer;" onclick="event.stopPropagation();openHRGraph()" role="button" aria-label="Click to expand heart rate graph" tabindex="0" onkeydown="if(event.key==='Enter')openHRGraph()"><polyline id="spark-line" fill="none" stroke="var(--yellow)" stroke-width="1.5" points="0,12 10,14 20,10 30,16 40,12 50,8"/></svg>
       <div class="vital-bar"><div class="vital-fill" id="hr-fill" style="width:68%;background:var(--yellow)"></div></div>
       <div class="vital-status" style="color:var(--yellow)" id="hr-status">↑ Elevated</div>
+      <span class="trend-chip" id="trend-heart_rate" hidden></span>
     </div>
     
-    <div class="vital-row">
+    <div class="vital-row" data-metric="spo2" onclick="openTrend('spo2')">
       <div class="vital-label">SpO₂<span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span></div>
       <div class="vital-value" style="color:var(--green)" id="spo2-value">97</div>
       <div class="vital-bar"><div class="vital-fill" id="spo2-fill" style="width:97%;background:var(--green)"></div></div>
       <div class="vital-status" style="color:var(--green)" id="spo2-status">Normal</div>
+      <span class="trend-chip" id="trend-spo2" hidden></span>
     </div>
     
-    <div class="vital-row" id="il6-row" title="GENE · IL-6 inflammatory marker (pg/mL)">
+    <div class="vital-row" id="il6-row" data-metric="il6" onclick="openTrend('il6')" title="GENE · IL-6 inflammatory marker (pg/mL)">
       <div class="vital-label">IL-6<span class="agent-tag gene" title="Monitored by GENE">GENE</span></div>
       <div class="vital-value" style="color:var(--green)" id="il6-value">--</div>
       <div class="vital-bar"><div class="vital-fill" id="il6-fill" style="width:0%;background:var(--green)"></div></div>
       <div class="vital-status" style="color:var(--green)" id="il6-status">--</div>
+      <span class="trend-chip" id="trend-il6" hidden></span>
     </div>
     
-    <div class="vital-row">
+    <div class="vital-row" data-metric="sleep_quality" onclick="openTrend('sleep_quality')">
       <div class="vital-label">Sleep<span class="agent-tag mirror" title="Monitored by MIRROR">MIRROR</span></div>
       <div class="vital-value" style="color:var(--orange)" id="sleep-value">71</div>
       <div class="vital-bar"><div class="vital-fill" id="sleep-fill" style="width:71%;background:var(--orange)"></div></div>
       <div class="vital-status" style="color:var(--orange)" id="sleep-status">↓ Poor</div>
+      <span class="trend-chip" id="trend-sleep_quality" hidden></span>
     </div>
     
     <div class="radiation-section">
@@ -490,14 +639,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
       <div class="rad-bar"><div class="rad-fill" id="rad-fill"></div></div>
       <div class="rad-sub">
         <span>Mission total vs. career limit</span>
-        <span>Last 24 h: <strong id="rad24-value" style="color:var(--green)">--</strong> <span id="rad24-status"></span></span>
+        <span style="cursor:pointer" onclick="openTrend('radiation_dose_24h')" title="Click for the 24 h dose trend + forecast">Last 24 h: <strong id="rad24-value" style="color:var(--green)">--</strong> <span id="rad24-status"></span><span class="trend-chip inline" id="trend-radiation_dose_24h" hidden></span></span>
       </div>
     </div>
   </div>
 
   <!-- Voice Terminal -->
   <div class="voice-panel">
-    <div class="voice-title">Voice Terminal</div>
+    <div class="voice-title">Voice Terminal
+      <select id="voiceSelect" class="voice-select" onchange="chooseVoice(this.value)" aria-label="AEGIS voice" title="AEGIS voice (★ = most natural available)"></select>
+    </div>
     <div class="voice-input">
       <button class="mic-btn" id="micBtn" onclick="toggleListening()" aria-label="Activate voice input" aria-pressed="false">🎙️</button>
       <div class="voice-status" id="voiceStatus" role="status">Tap to speak with AEGIS</div>
@@ -528,7 +679,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
       <span class="alert-badge" style="background:rgba(200,136,136,.15);color:var(--pulse)">PULSE</span>
       <span class="alert-badge" style="background:rgba(122,173,154,.15);color:var(--mirror)">MIRROR</span>
     </div>
-    <button class="confirm-btn" id="confirm-btn" onclick="confirmProtocol()" aria-describedby="alert-desc">Confirm Protocol RECOVER-3</button>
+    <button class="confirm-btn" id="confirm-btn" onclick="confirmProtocol()" aria-describedby="alert-desc">Start recovery plan</button>
+    <button class="confirm-btn prevent-btn" id="prevent-btn" onclick="startPrevention()" aria-describedby="alert-desc" style="display:none">🛡️ Start prevention plan</button>
   </div>
 
   <!-- Recommendations Panel (PREVENT Tier) -->
@@ -727,7 +879,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
           <div class="insight-entry">
             <div class="insight-time">14:32:05 UTC</div>
             <div class="insight-action">Initiated CASCADE ALERT for Cmdr. Chen</div>
-            <div class="insight-reasoning">4-agent convergence detected: Elevated HR + Low HRV + Poor Sleep + Radiation Exposure pattern matches immune stress response profile</div>
+            <div class="insight-reasoning">4-agent convergence detected: Elevated HR + Rising IL-6 + Poor Sleep + Radiation Exposure pattern matches immune stress response profile</div>
           </div>
           <div class="insight-entry">
             <div class="insight-time">14:30:22 UTC</div>
@@ -754,8 +906,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
         <div class="insight-log">
           <div class="insight-entry">
             <div class="insight-time">14:31:45 UTC</div>
-            <div class="insight-action">Flagged HRV anomaly for Cmdr. Chen</div>
-            <div class="insight-reasoning">HRV dropped below 50ms threshold for 15+ minutes - indicates autonomic stress response</div>
+            <div class="insight-action">Heart-rate trend flagged for Cmdr. Chen</div>
+            <div class="insight-reasoning">Resting heart rate rising steadily for 15+ minutes while SpO₂ holds at 97% - forecast to cross the 100 BPM threshold if the trend continues</div>
           </div>
           <div class="insight-entry">
             <div class="insight-time">14:25:00 UTC</div>
@@ -881,7 +1033,7 @@ const DASH_API = {
 
 // Crew Selection
 const CREW_DATA = {
-  chen: { name: 'Commander Sarah Chen', firstName: 'Commander Chen', hr: 68, spo2: 97, stress: 34, sleep: 71, status: 'elevated', greeting: 'Commander Chen selected. Current status: ELEVATED. Heart rate at 68 BPM with reduced HRV. Cascade alert is active — 4 agents have converged on an immune stress pattern. Recommend Protocol RECOVER-3.' },
+  chen: { name: 'Commander Sarah Chen', firstName: 'Commander Chen', hr: 68, spo2: 97, stress: 34, sleep: 71, status: 'elevated', greeting: 'Commander Chen selected. Current status: ELEVATED. Heart rate at 68 BPM, SpO₂ 97%, IL-6 rising. Cascade alert is active — 4 agents have converged on an immune stress pattern. Recommend Protocol RECOVER-3.' },
   kowalski: { name: 'Dr. Anna Kowalski', firstName: 'Dr. Kowalski', hr: 62, spo2: 98, stress: 22, sleep: 89, status: 'nominal', greeting: 'Dr. Kowalski selected. Current status: NOMINAL. All vitals within optimal range. Sleep quality excellent at 89%. No active alerts. Cleared for EVA operations.' },
   nakamura: { name: 'Dr. Kenji Nakamura', firstName: 'Dr. Nakamura', hr: 88, spo2: 95, stress: 67, sleep: 48, status: 'alert', greeting: 'Dr. Nakamura selected. Current status: ALERT. Heart rate elevated to 88 BPM. Stress index at 67% — significantly above baseline. Sleep quality critically low at 48%. MIRROR recommends immediate wellness intervention.' },
   okonkwo: { name: 'Eng. David Okonkwo', firstName: 'Eng. Okonkwo', hr: 58, spo2: 99, stress: 18, sleep: 92, status: 'nominal', greeting: 'Engineer Okonkwo selected. Current status: NOMINAL. Exceptional vitals across all metrics. Lowest stress index among crew at 18%. Ideal candidate for high-focus tasks.' }
@@ -895,6 +1047,7 @@ function selectCrew(crewId) {
   
   // H4: Set API crew ID for live vitals fetch
   DASH_API.selectedCrewId = DASH_API.crewIdMap[crewId] || 'crew-001';
+  if (typeof refreshPredict === 'function') setTimeout(refreshPredict, 0);   // trend chips for the new crew member
   
   // Update card selection
   document.querySelectorAll('.crew-card').forEach(card => card.classList.remove('selected'));
@@ -970,8 +1123,10 @@ function playTone(freq, duration) {
 // analyses the selected crew member's CURRENT vitals and DeepSeek answers in that agent's voice
 // (rule-based answer if the model is unavailable; the canned line only if the backend is offline).
 let _askSeq = 0;
-async function askAgent(agentKey, question, fallbackText) {
+async function askAgent(agentKey, question, fallbackText, opts = {}) {
   const seq = ++_askSeq;                       // ignore answers to older questions
+  // opts.handBackTo: agent to return the conversation to once this answer has been spoken
+  const onDone = opts.handBackTo ? () => setTimeout(() => handBack(agentKey, opts.handBackTo, seq), 600) : null;
   const agent = AGENTS[agentKey] ? agentKey : 'aegis';
   const agentName = AGENTS[agent].name;
   const crewId = DASH_API.crewIdMap[selectedCrew] || 'crew-001';
@@ -998,13 +1153,28 @@ async function askAgent(agentKey, question, fallbackText) {
       tag.title = `Agents consulted: ${(data.agents_consulted || []).join(', ')} · ${data.latency_s}s`;
       label.appendChild(tag);
     }
-    typeResponse(data.answer || fallbackText || 'No answer available.', true);
+    VOICE.nextSpeaker = agent;                 // each agent answers in its own voice
+    typeResponse(withIntro(agent, data.answer || fallbackText || 'No answer available.'), true, onDone);
   } catch (e) {
     if (seq !== _askSeq) return;
-    typeResponse(fallbackText || `${agentName} could not reach the AEGIS backend.`);
+    VOICE.nextSpeaker = agent;
+    typeResponse(fallbackText || `${agentName} could not reach the AEGIS backend.`, false, onDone);
   } finally {
     if (seq === _askSeq && askBtn) askBtn.disabled = false;
   }
+}
+
+// Agents introduce themselves when they report: "SOLARIS here. …", "Hi, PULSE here! …"
+function withIntro(agentKey, text) {
+  const name = (AGENTS[agentKey] && AGENTS[agentKey].name) || 'AEGIS';
+  const t = String(text || '').trim();
+  if (!t || new RegExp(`\\b${name}\\b`, 'i').test(t.slice(0, 40))) return t;     // already says who it is
+  const greet = t.match(/^(hi|hey|hello|good (?:morning|afternoon|evening))(?:\s+there)?\s*[!,.]?\s*/i);
+  if (greet) {
+    const word = greet[1].charAt(0).toUpperCase() + greet[1].slice(1).toLowerCase();
+    return `${word}, ${name} here! ${t.slice(greet[0].length)}`.trim();
+  }
+  return `${name} here. ${t}`;
 }
 
 function submitTypedQuestion() {
@@ -1059,6 +1229,7 @@ function selectAgent(name, opts = {}) {
   playTone(400 + Math.random() * 200, 0.15);
   announce(AGENTS[name].name + ' selected');
   document.getElementById('voiceStatus').textContent = 'Tap to speak with ' + AGENTS[name].name;
+  if (typeof refreshVoicePicker === 'function') refreshVoicePicker();   // picker shows this agent's voice
   if (!opts.silent) {
     const q = name === 'aegis'
       ? 'Give a brief overall status report for this crew member and flag anything that needs attention.'
@@ -1069,6 +1240,14 @@ function selectAgent(name, opts = {}) {
 
 // WOW: Particle burst animation
 function createParticleBurst(node) {
+  if (!node) return;
+  if (node instanceof SVGElement) {          // Cascade Map node: a ring that expands from the node
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('class', 'cm-burst');
+    node.appendChild(c);
+    setTimeout(() => c.remove(), 650);
+    return;
+  }
   const ring = document.createElement('div');
   ring.className = 'particle-ring';
   node.appendChild(ring);
@@ -1092,54 +1271,274 @@ function bootSequence() {
   });
 }
 
-// Typewriter effect for response
+// ============================================
+// VOICE: natural speech, in sync with the on-screen text
+// The response is spoken sentence by sentence while the words appear as they are said
+// (word-boundary events when the voice provides them, otherwise paced to the speaking rate).
+// The best available voice is picked automatically (Edge "Natural"/neural and Chrome "Google"
+// voices first, robotic SAPI voices like David/Zira last) and can be changed in the Voice Terminal.
+// ============================================
 let typingTimer = null;
+const VOICE = { voice: null, rate: 1.0, pitch: 1.0, run: 0, byAgent: {}, userChoice: {}, nextSpeaker: null };
+const _VOICE_PREF = [/natural/i, /neural/i, /online/i, /google us english/i, /google uk english/i, /google/i,
+                     /samantha|ava|allison|serena|karen|daniel|moira|tessa|evan|nathan/i,
+                     /\bmark\b|zira/i];   // best of the built-in Windows voices (David sounds the most robotic)
 
-function typeResponse(text, isLiveAnswer = false) {
+function _voiceScore(v) {
+  let s = 0;
+  _VOICE_PREF.forEach((re, i) => { if (re.test(v.name)) s = Math.max(s, 100 - i * 10); });
+  if (/en-US/i.test(v.lang)) s += 3; else if (/en-(GB|CA|AU|IE|NZ)/i.test(v.lang)) s += 2;
+  if (/aria|jenny|ava|emma|sonia|libby|michelle|female/i.test(v.name)) s += 1;
+  return s;
+}
+
+function englishVoices() {
+  if (!('speechSynthesis' in window)) return [];
+  return speechSynthesis.getVoices().filter(v => /^en([-_]|$)/i.test(v.lang))
+    .sort((a, b) => _voiceScore(b) - _voiceScore(a));
+}
+
+// ── A different voice for every agent ─────────────────────────────────────────────────
+// Each agent prefers voices that fit its personality (names cover Edge "Natural", Chrome "Google" and the
+// built-in Windows voices). Voices are handed out so no two agents share one when the browser has enough;
+// a small pitch/speed difference keeps them distinct even when voices run out.
+const AGENT_VOICE = {
+  aegis:   { pref: /aria|jenny|ava\b|google us english|samantha|zira/i,                     rate: 1.0,  pitch: 1.0  }, // steady lead
+  solaris: { pref: /guy|davis|christopher|andrew|brian|eric|google uk english male|\bmark\b|daniel|david/i, rate: 0.95, pitch: 0.9 }, // calm, dry wit
+  gene:    { pref: /sonia|libby|maisie|natasha|clara|google uk english female|linda|hazel|susan|karen/i,  rate: 0.98, pitch: 1.08 }, // gentle
+  pulse:   { pref: /ryan|tony|jason|brandon|roger|steffan|richard|thomas|george|\bmark\b|david/i,        rate: 1.08, pitch: 1.05 }, // upbeat coach
+  mirror:  { pref: /emma|michelle|ana\b|jane|nancy|sara|moira|tessa|linda|zira/i,                     rate: 0.94, pitch: 1.0  }, // warm
+};
+const _shortVoiceName = v => v ? v.name.replace(/^Microsoft\s+/, '').replace(/\s*Online.*$/, '').replace(/\s*-\s*English.*$/, '') : 'Default';
+
+function assignAgentVoices() {
+  const vs = englishVoices();
+  const used = new Set(Object.values(VOICE.userChoice || {}));
+  VOICE.byAgent = {};
+  ['aegis', 'solaris', 'gene', 'pulse', 'mirror'].forEach(a => {
+    const chosen = VOICE.userChoice && VOICE.userChoice[a] && vs.find(v => v.name === VOICE.userChoice[a]);
+    if (chosen) { VOICE.byAgent[a] = chosen; return; }
+    const ranked = vs.map(v => ({ v, s: _voiceScore(v) + (AGENT_VOICE[a].pref.test(v.name) ? 60 : 0) }))
+                     .sort((x, y) => y.s - x.s);
+    const pick = (ranked.find(r => !used.has(r.v.name)) || ranked[0] || {}).v || null;
+    if (pick) used.add(pick.name);
+    VOICE.byAgent[a] = pick;
+  });
+  VOICE.voice = VOICE.byAgent.aegis;
+}
+
+// The voice picker shows (and changes) the voice of the agent currently selected
+function refreshVoicePicker() {
+  const sel = document.getElementById('voiceSelect');
+  if (!sel) return;
+  const vs = englishVoices();
+  const agent = (typeof currentAgent !== 'undefined' && AGENT_VOICE[currentAgent]) ? currentAgent : 'aegis';
+  const mine = VOICE.byAgent && VOICE.byAgent[agent];
+  sel.innerHTML = vs.map((v, i) => `<option value="${i}">${_shortVoiceName(v)}${v === mine ? ' ★' : ''}</option>`).join('')
+    || '<option>Default voice</option>';
+  const i = vs.indexOf(mine);
+  if (i >= 0) sel.value = String(i);
+  sel.title = `Voice for ${agent.toUpperCase()} (each agent has its own)`;
+}
+
+function pickVoice() {
+  assignAgentVoices();
+  refreshVoicePicker();
+  return VOICE.voice;
+}
+if ('speechSynthesis' in window) {
+  pickVoice();
+  // Chrome fills the voice list a few seconds after load and does not always fire 'voiceschanged':
+  // listen for the event AND poll until the list stops changing, so agents always get their voices.
+  speechSynthesis.addEventListener('voiceschanged', pickVoice);
+  let _vCount = speechSynthesis.getVoices().length, _vTries = 0;
+  const _vPoll = setInterval(() => {
+    const n = speechSynthesis.getVoices().length;
+    if (n !== _vCount) { _vCount = n; pickVoice(); }
+    if (++_vTries > 50 || (n > 0 && _vTries > 12)) clearInterval(_vPoll);   // ~15 s max
+  }, 300);
+}
+
+// Browsers only allow speech after the user has interacted with the page. Until then answers are typed,
+// and the Voice Terminal says how to turn the voice on; the first click / key press unlocks it.
+VOICE.unlocked = false;
+function _voiceHint(show) {
+  const st = document.getElementById('voiceStatus');
+  if (!st) return;
+  if (show && !VOICE.unlocked) { st.textContent = '🔈 Click anywhere on the page to turn on the voice'; st.classList.add('voice-hint'); }
+  else if (!show && st.classList.contains('voice-hint')) {
+    st.classList.remove('voice-hint');
+    st.textContent = 'Tap to speak with ' + ((typeof AGENTS !== 'undefined' && AGENTS[currentAgent]) ? AGENTS[currentAgent].name : 'AEGIS');
+  }
+}
+function _unlockVoice() {
+  if (VOICE.unlocked || !('speechSynthesis' in window)) return;
+  VOICE.unlocked = true;
+  try {
+    speechSynthesis.resume();
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    speechSynthesis.speak(u);                     // a silent utterance inside the gesture unlocks audio
+  } catch (e) { /* ignore */ }
+  if (!englishVoices().length) pickVoice();
+  _voiceHint(false);
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.removeEventListener(ev, _unlockVoice, true));
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, _unlockVoice, true));
+
+function chooseVoice(i) {
+  const v = englishVoices()[Number(i)];
+  if (!v) return;
+  const agent = AGENT_VOICE[currentAgent] ? currentAgent : 'aegis';
+  VOICE.userChoice = { ...(VOICE.userChoice || {}), [agent]: v.name };
+  assignAgentVoices();
+  refreshVoicePicker();
+  VOICE.nextSpeaker = agent;
+  typeResponse(`Hi, this is ${agent === 'aegis' ? 'AEGIS' : agent.toUpperCase()}. This is my new voice.`);
+}
+
+// Rewrite dashboard text the way a person would say it (the screen keeps the original text)
+const _SAY_AS_WORD_KEEP = new Set(['NASA', 'NOAA', 'GOES', 'UTC', 'DONKI', 'OSDR']);
+function speechify(t) {
+  let s = ' ' + String(t || '') + ' ';
+  const rules = [
+    [/\[\d+(?:\s*,\s*\d+)*\]/g, ''],                                   // citation markers [1], [2, 3]
+    [/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{23F0}-\u{23FF}]/gu, ''],  // emoji, ⏱ ✓ ☢
+    [/SpO₂|SpO2/g, 'oxygen saturation'],
+    [/\bIL-6\b/g, 'I L 6'], [/\bCRP\b/g, 'C R P'], [/\bHRV\b/g, 'H R V'], [/\bEVA\b/g, 'E V A'],
+    [/(\d)\s*mSv\b/g, '$1 millisieverts'], [/\bmSv\b/g, 'millisieverts'], [/µGy/g, 'micrograys'],
+    [/(\d)\s*(?:bpm|BPM)\b/g, '$1 beats per minute'], [/pg\/mL/g, 'picograms per millilitre'], [/mg\/L/g, 'milligrams per litre'],
+    [/\/100\b/g, ' out of 100'], [/(\d)\s*%/g, '$1 percent'],
+    [/<\s*1\s*min\b/g, 'under a minute'], [/[~≈]\s*/g, 'about '],
+    [/\b1\s*min\b/g, '1 minute'], [/(\d)\s*min\b/g, '$1 minutes'], [/(\d)\s*h\b/g, '$1 hours'], [/(\d)s\b/g, '$1 seconds'],
+    [/≥\s*/g, 'at least '], [/≤\s*/g, 'at most '], [/\s*(?:→|->)\s*/g, ' to '],
+    [/\s*[·•|]\s*/g, ', '], [/\s*[—–]\s*/g, ', '], [/(\d)\s*\/\s*(\d)/g, '$1 of $2'], [/\s*\/\s*/g, ' or '],
+    [/\bCmdr\.\s*/g, 'Commander '], [/\bEng\.\s*/g, 'Engineer '], [/\bDr\.\s*/g, 'Doctor '],
+    [/\bvs\.?\s/g, 'versus '], [/\be\.g\.\s*/g, 'for example '], [/\bi\.e\.\s*/g, 'that is '],
+    [/\b([A-Z]{3,})-(\d)\b/g, (m, w, d) => w[0] + w.slice(1).toLowerCase() + ' ' + d],   // RECOVER-3 -> Recover 3
+    [/\bcrew-0*(\d+)\b/g, 'crew member $1'],
+  ];
+  rules.forEach(([re, to]) => { s = s.replace(re, to); });
+  // ALL-CAPS names (AEGIS, SOLARIS, CASCADE, PREDICT…) are read as words instead of being spelled out
+  s = s.replace(/\b[A-Z]{4,}\b/g, w => _SAY_AS_WORD_KEEP.has(w) ? w : w[0] + w.slice(1).toLowerCase());
+  return s.replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').replace(/,(\s*,)+/g, ',').replace(/^[\s,]+/, '').trim();
+}
+
+function splitSentences(text) {
+  return String(text || '').trim()
+    .split(/(?<!\b(?:Dr|Cmdr|Eng|Mr|Ms|Mrs|St|vs|e\.g|i\.e)\.)(?<=[.!?])\s+(?=\S)/)
+    .map(s => s.trim()).filter(Boolean);
+}
+
+function stopVoice() {
+  VOICE.run++;
+  if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+}
+
+function typeResponse(text, isLiveAnswer = false, onDone = null) {
   // Scripted messages (protocol confirmations, alert read-outs) must not carry the previous "LIVE" tag
   if (!isLiveAnswer) {
     const label = document.querySelector('.response-label');
     if (label && label.querySelector('.response-source')) label.textContent = 'AEGIS Response';
   }
-  // Cancel any existing typing animation
-  if (typingTimer) {
-    clearTimeout(typingTimer);
-    typingTimer = null;
-  }
-  // Stop any ongoing speech
-  if ('speechSynthesis' in window) {
-    speechSynthesis.cancel();
-  }
-  
+  stopVoice();
+  const run = VOICE.run;
+  // Who is talking: set by askAgent / alerts via VOICE.nextSpeaker (AEGIS by default)
+  const speaker = AGENT_VOICE[VOICE.nextSpeaker] ? VOICE.nextSpeaker : 'aegis';
+  VOICE.nextSpeaker = null;
+  const sVoice = (VOICE.byAgent && VOICE.byAgent[speaker]) || VOICE.voice;
+  const sRate = VOICE.rate * AGENT_VOICE[speaker].rate, sPitch = VOICE.pitch * AGENT_VOICE[speaker].pitch;
   const el = document.getElementById('responseText');
   el.innerHTML = '';
-  let i = 0;
   const cursor = document.createElement('span');
   cursor.className = 'typing-cursor';
-  
-  function type() {
-    if (i < text.length) {
-      el.textContent = text.substring(0, i + 1);
-      el.appendChild(cursor);
-      i++;
-      typingTimer = setTimeout(type, 30);
-    } else {
-      cursor.remove();
-      typingTimer = null;
-      speak(text);
-    }
-  }
-  type();
+  const sentences = splitSentences(text);
+  let shown = '';                                   // sentences already spoken in full
+  const render = partial => { el.textContent = shown + partial; el.appendChild(cursor); };
+  // onDone runs once the whole answer has been shown and spoken (not if it was interrupted)
+  const done = () => { if (typeof onDone === 'function') { const f = onDone; onDone = null; f(); } };
+  const finish = () => { if (run !== VOICE.run) return; el.textContent = sentences.join(' '); cursor.remove(); done(); };
+
+  // No speech available (or blocked): type the remaining text at reading speed
+  const typeRest = () => {
+    if (run !== VOICE.run) return;
+    const rest = sentences.join(' ').slice(shown.length);
+    let i = 0;
+    const step = () => {
+      if (run !== VOICE.run) return;
+      if (i < rest.length) { render(rest.slice(0, ++i)); typingTimer = setTimeout(step, 22); }
+      else finish();
+    };
+    step();
+  };
+  if (!('speechSynthesis' in window) || !sentences.length) { typeRest(); return; }
+
+  let idx = 0;
+  const next = () => {
+    if (run !== VOICE.run) return;
+    if (idx >= sentences.length) { finish(); return; }
+    const disp = sentences[idx];
+    const words = disp.split(/\s+/).filter(Boolean);
+    const spoken = speechify(disp);
+    const spokenWords = Math.max(1, spoken.split(/\s+/).filter(Boolean).length);
+    const showFrac = f => render(words.slice(0, Math.min(words.length, Math.ceil(f * words.length))).join(' '));
+    const advance = () => { shown += disp + ' '; idx++; render(''); next(); };
+    if (!spoken) { advance(); return; }
+
+    const u = new SpeechSynthesisUtterance(spoken);
+    if (sVoice) { u.voice = sVoice; u.lang = sVoice.lang; }
+    u.rate = sRate; u.pitch = sPitch;
+    let started = false, gotBoundary = false, pacer = null;
+    u.onstart = () => {
+      started = true;
+      // Pace the words to the speaking rate until (unless) the voice reports word boundaries
+      const est = spokenWords * 60000 / (165 * sRate) + 200, t0 = performance.now();
+      pacer = setInterval(() => {
+        if (run !== VOICE.run) { clearInterval(pacer); return; }
+        if (!gotBoundary) showFrac(Math.min(0.96, (performance.now() - t0) / est));
+      }, 60);
+    };
+    u.onboundary = e => {
+      if (run !== VOICE.run || (e.name && e.name !== 'word')) return;
+      gotBoundary = true;
+      const done = spoken.slice(0, e.charIndex + (e.charLength || 1)).split(/\s+/).filter(Boolean).length;
+      showFrac(done / spokenWords);
+    };
+    u.onend = () => { clearInterval(pacer); if (run === VOICE.run) advance(); };
+    u.onerror = () => {
+      clearInterval(pacer);
+      if (run !== VOICE.run) return;
+      if (started) advance(); else typeRest();      // e.g. browser blocks audio before the first click
+    };
+    speechSynthesis.speak(u);
+    const myIdx = idx;
+    setTimeout(() => {                               // speech never started: fall back to typing
+      if (run === VOICE.run && idx === myIdx && !started) { speechSynthesis.cancel(); VOICE.run++; const r = VOICE.run; typeRestFrom(r); }
+    }, 2500);
+  };
+  // typeRest bound to a fresh run id after a silent speech failure
+  const typeRestFrom = r => {
+    const rest = sentences.join(' ').slice(shown.length);
+    let i = 0;
+    const step = () => {
+      if (r !== VOICE.run) return;
+      if (i < rest.length) { el.textContent = shown + rest.slice(0, ++i); el.appendChild(cursor); typingTimer = setTimeout(step, 22); }
+      else { el.textContent = sentences.join(' '); cursor.remove(); done(); }
+    };
+    step();
+  };
+  // Chrome drops an utterance queued right after cancel(); give it a moment
+  setTimeout(next, 60);
 }
 
-// Speech synthesis
+// Speak without changing the response text (kept for callers that only want audio)
 function speak(text) {
-  if ('speechSynthesis' in window) {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1;
-    utter.pitch = 1;
-    speechSynthesis.speak(utter);
-  }
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(speechify(text));
+  if (VOICE.voice) { u.voice = VOICE.voice; u.lang = VOICE.voice.lang; }
+  u.rate = VOICE.rate; u.pitch = VOICE.pitch;
+  speechSynthesis.speak(u);
 }
 
 // Voice recognition
@@ -1219,8 +1618,22 @@ function processCommand(cmd) {
     else if (/heart|pulse|blood pressure|spo2|oxygen|bone|muscle/.test(cmd)) agent = 'pulse';
     else if (/stress|sleep|mood|mental|behavio|isolation|fatigue/.test(cmd)) agent = 'mirror';
   }
-  if (agent !== currentAgent) selectAgent(agent, { silent: true });
+  if (agent !== currentAgent) {
+    // AEGIS hands the question to the specialist, and takes the conversation back once it has answered
+    selectAgent(agent, { silent: true });
+    askAgent(agent, cmd, undefined, { handBackTo: 'aegis' });
+    return;
+  }
   askAgent(agent, cmd);
+}
+
+// After a routed answer has been spoken, return the conversation to AEGIS
+// (only if nothing else happened meanwhile: no newer question, no manual agent change)
+function handBack(fromAgent, toAgent, seq) {
+  if (seq !== _askSeq || currentAgent !== fromAgent || fromAgent === toAgent) return;
+  selectAgent(toAgent, { silent: true });
+  const status = document.getElementById('voiceStatus');
+  if (status) status.textContent = `${AGENTS[fromAgent].name} handed back to ${AGENTS[toAgent].name} · tap to speak`;
 }
 
 // Cascade animation
@@ -1244,6 +1657,8 @@ function confirmProtocol() {
   const ackCrew = LIVE_ALERT.crewName || 'Commander Chen';
   const ackCrewKey = LIVE_ALERT.crewKey || 'chen';
   LIVE_ALERT.pauseUntil = Date.now() + 6000;  // keep the success state visible briefly
+  // PREDICT: the crew member is now recovering under the protocol; don't re-forecast from the trend tail
+  if (typeof PREDICT_STATE !== 'undefined') PREDICT_STATE.suppress[DASH_API.crewIdMap[ackCrewKey] || 'crew-001'] = Date.now() + 90000;
   // Show the protocol being carried out on board (spacecraft sim pop-up)
   setTimeout(() => openSimForProtocol(ackProtocol, ackCrewKey), 1700);
   if (ackId) {
@@ -1253,16 +1668,22 @@ function confirmProtocol() {
       await ack(ackId);
       // RECOVER-3 resolves the cascade (story: Day 61 "all indicators normalized");
       // SHELTER-1 rides out the SPE, and the sim ends on "Await all-clear". Both return the simulator to nominal.
-      if (ackProtocol.startsWith('RECOVER') || ackProtocol.startsWith('SHELTER')) {
+      if (ackProtocol.startsWith('RECOVER') || ackProtocol.startsWith('SHELTER') || ackProtocol.startsWith('MEDIC')) {
         await fetch(`${B}/api/simulation/scenario/nominal`, { method: 'POST' }).catch(() => {});
       }
-      if (ackProtocol.startsWith('RECOVER')) {
-        // RECOVER-3 covers every domain for that crew member (e.g. MIRROR's stress alert raised during the cascade)
-        try {
-          const crewId = DASH_API.crewIdMap[ackCrewKey];
-          const open = await (await fetch(`${B}/api/alerts?unacknowledged_only=true&limit=200`)).json();
-          await Promise.all(open.filter(a => a.crew_member_id === crewId && !/SHELTER/i.test(a.title || '')).map(a => ack(a.id)));
-        } catch (e) {}
+      if (ackProtocol.startsWith('RECOVER') || ackProtocol.startsWith('MEDIC')) {
+        // RECOVER-3 / MEDIC-1 cover every domain for that crew member (e.g. MIRROR's alert raised during the cascade)
+        const crewSweep = async () => {
+          try {
+            const crewId = DASH_API.crewIdMap[ackCrewKey];
+            const open = await (await fetch(`${B}/api/alerts?unacknowledged_only=true&limit=200`)).json();
+            await Promise.all(open.filter(a => a.crew_member_id === crewId && !/SHELTER/i.test(a.title || '')).map(a => ack(a.id)));
+          } catch (e) {}
+        };
+        await crewSweep();
+        // Second sweep catches an alert from an analysis pass that was already in flight when we confirmed
+        await new Promise(r => setTimeout(r, 4000));
+        await crewSweep();
       }
       if (ackProtocol.startsWith('SHELTER')) {
         // SHELTER-1 is crew-wide: one confirmation covers every open SHELTER alert (SPE raises one per crew member)
@@ -1294,18 +1715,9 @@ function confirmProtocol() {
       const line = document.getElementById('line-' + agent);
       const node = document.getElementById('node-' + agent);
       if (line) { line.classList.add('active'); setTimeout(() => line.classList.remove('active'), 800); }
-      if (node) { 
-        node.classList.add('active'); 
-        // Add checkmark
-        let check = node.querySelector('.checkmark');
-        if (!check) {
-          check = document.createElement('span');
-          check.className = 'checkmark';
-          check.textContent = '✓';
-          check.style.color = 'var(--green)';
-          node.appendChild(check);
-        }
-        check.classList.add('show');
+      if (node) {
+        node.classList.add('active');
+        createParticleBurst(node);           // Cascade Map: each specialist confirms in turn
         setTimeout(() => node.classList.remove('active'), 800);
       }
       playTone(400 + i * 100, 0.15);
@@ -1321,11 +1733,13 @@ function confirmProtocol() {
   
   setTimeout(() => {
     if (ackProtocol.startsWith('SHELTER')) {
-      typeResponse(`Protocol ${ackProtocol} confirmed. All crew proceeding to the storm shelter. SOLARIS will announce the all-clear when proton flux drops.`);
+      typeResponse(`Done. Everyone is heading to the storm shelter now. SOLARIS will give the all-clear once the solar storm passes.`);
+    } else if (ackProtocol.startsWith('MEDIC')) {
+      typeResponse(`Done. ${ackCrew} is on the way to the medical bay with extra oxygen, and a crewmate is staying with them. I've also asked the flight surgeon back on Earth to take a look.`);
     } else {
-      typeResponse(`Protocol ${ackProtocol} confirmed for ${ackCrew}. Initiating countermeasures: increased hydration, reduced exertion, antioxidant supplements, daily biomarker check-ins. All agents synchronized.`);
+      typeResponse(`Done. ${ackCrew}'s recovery plan has started: more fluids, lighter work, a bit of extra rest, and a quick check-in every day. I'll keep watching how they're doing.`);
     }
-    document.querySelector('.confirm-btn').textContent = '✓ Protocol Active';
+    document.querySelector('.confirm-btn').textContent = '✓ Plan started';
     document.querySelector('.confirm-btn').style.background = 'rgba(90,173,140,.3)';
     document.querySelector('.confirm-btn').disabled = true;
   }, 1500);
@@ -1345,7 +1759,7 @@ function acceptRec(id) {
   playTone(523, 0.1);
   setTimeout(() => playTone(659, 0.15), 100);
   
-  typeResponse('Recommendation accepted. AEGIS is coordinating with habitat systems to implement the intervention. Crew member will be notified via personal display.');
+  typeResponse("Got it. I'll get that started and let the crew member know on their display.");
 }
 
 function deferRec(id) {
@@ -1470,11 +1884,12 @@ async function fetchAndUpdateVitals() {
     const sleepFill = document.getElementById('sleep-fill');
     const sleepStatus = document.getElementById('sleep-status');
     if (sleepEl && vitals.sleep_quality !== undefined) {
-      const sleep = Math.round(vitals.sleep_quality);
+      const raw = vitals.sleep_quality;           // classify the raw value, exactly as MIRROR does (69.6 is below 70)
+      const sleep = Math.round(raw) === 70 && raw < 70 ? raw.toFixed(1) : Math.round(raw);
       sleepEl.textContent = sleep + '%';
-      if (sleepFill) sleepFill.style.width = sleep + '%';
-      const sleepColor = sleep < 50 ? 'var(--red)' : sleep < 70 ? 'var(--orange)' : 'var(--green)';
-      const sleepLabel = sleep < 50 ? '↓ Poor' : sleep < 70 ? '↓ Fair' : 'Good';
+      if (sleepFill) sleepFill.style.width = raw + '%';
+      const sleepColor = raw < 50 ? 'var(--red)' : raw < 70 ? 'var(--orange)' : 'var(--green)';
+      const sleepLabel = raw < 50 ? '↓ Poor' : raw < 70 ? '↓ Fair' : 'Good';
       sleepEl.style.color = sleepColor;
       if (sleepFill) sleepFill.style.background = sleepColor;
       if (sleepStatus) { sleepStatus.textContent = sleepLabel; sleepStatus.style.color = sleepColor; }
@@ -1511,6 +1926,19 @@ setTimeout(fetchAndUpdateVitals, 2000);
 // E2E WIRING: live alerts, roster status, demo controls (Claude, Sep 28)
 // ============================================
 const LIVE_ALERT = { id: null, protocol: 'RECOVER-3', crewName: null, crewKey: 'chen', pauseUntil: 0 };
+
+// Plain-language wording for the panel and the voice (protocol codes stay in tooltips and the on-board sim)
+const PLAIN_PROTOCOL = { 'RECOVER-3': 'recovery plan', 'SHELTER-1': 'storm-shelter plan', 'MEDIC-1': 'medical response', 'PREVENT-1': 'prevention plan' };
+const PLAIN_BUTTON = { 'RECOVER-3': 'Start recovery plan', 'SHELTER-1': 'Send everyone to the storm shelter',
+                       'MEDIC-1': 'Start medical response', 'PREVENT-1': 'Start prevention plan' };
+const PLAIN_DOMAIN = { PULSE: 'heart', GENE: 'inflammation', MIRROR: 'sleep', SOLARIS: 'radiation' };
+const PLAIN_TREND = { heart_rate: 'heart rate is climbing', spo2: 'oxygen level is dropping', il6: 'inflammation is rising',
+                      sleep_quality: 'sleep is getting worse', radiation_dose_24h: 'radiation dose is going up' };
+function plainList(a) {
+  a = (a || []).filter(Boolean);
+  return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+}
+function plainDomains(agents) { return plainList([...new Set((agents || []).map(a => PLAIN_DOMAIN[a] || a.toLowerCase()))]); }
 const CREW_KEY_BY_ID = Object.fromEntries(Object.entries(DASH_API.crewIdMap).map(([k, v]) => [v, k]));
 const AGENT_BADGE_STYLE = {
   SOLARIS: 'background:rgba(200,176,112,.15);color:var(--solaris)',
@@ -1570,51 +1998,77 @@ function renderLiveAlert(a) {
   if (!panel || !btn) return;
 
   if (!a) {
-    // All clear
+    // No live alert: show the PREDICT forecast if AEGIS sees a cascade coming, otherwise all clear
     LIVE_ALERT.id = null;
-    panel.style.borderColor = 'var(--green)';
-    icon.textContent = '✓';
-    title.textContent = 'ALL CLEAR · No active alerts';
-    title.style.color = 'var(--green)';
-    desc.textContent = 'AEGIS is monitoring all crew. Cascade and Protect alerts will appear here the moment ≥3 agents converge or a hazard is detected.';
-    agentsEl.innerHTML = '';
-    btn.style.display = 'none';
-    _renderAiNote('');
+    if (PREDICT_STATE.prevented) renderPreventedPanel(PREDICT_STATE.preventedEntry);
+    else renderPredictPanel(PREDICT_STATE.top);
     return;
   }
 
+  panel.classList.remove('predict');
+  PREDICT_STATE.lastCrew = null;
+  if (typeof _showPreventBtn === 'function') _showPreventBtn(false);
+  // A live alert for the crew member under PREVENT-1 supersedes it (the countermeasures weren't enough)
+  if (PREDICT_STATE.prevented && PREDICT_STATE.prevented.crew === a.crew_member_id) {
+    PREDICT_STATE.prevented = null; PREDICT_STATE.preventedEntry = null;
+  }
   const isNew = a.id !== LIVE_ALERT.id;
-  const isShelter = _alertRank(a) === 2;
+  // PROTECT tier: radiation (SOLARIS / SHELTER) -> SHELTER-1; any other critical reading -> MEDIC-1
+  const isProtect = _alertRank(a) === 2;
+  const isShelter = isProtect && (/SHELTER|RADIATION/i.test(a.title || '') || String(a.source || '').toUpperCase() === 'SOLARIS');
+  const isMedic = isProtect && !isShelter;
   const protoMatch = (a.message || '').match(/(RECOVER-\d|SHELTER-\d|CALM-\d|SLEEP-\d|MEDIC-\d)/);
   LIVE_ALERT.id = a.id;
-  LIVE_ALERT.protocol = protoMatch ? protoMatch[1] : (isShelter ? 'SHELTER-1' : 'RECOVER-3');
+  LIVE_ALERT.protocol = protoMatch ? protoMatch[1] : (isShelter ? 'SHELTER-1' : isMedic ? 'MEDIC-1' : 'RECOVER-3');
   LIVE_ALERT.crewName = _crewDisplayName(a.crew_member_id);
   LIVE_ALERT.crewKey = CREW_KEY_BY_ID[a.crew_member_id] || 'chen';
 
   panel.style.borderColor = 'var(--red)';
-  icon.textContent = isShelter ? '☢' : '⚡';
+  icon.textContent = isShelter ? '☢' : isMedic ? '⚕' : '⚡';
   title.style.color = '';
-  const cleanTitle = (a.title || 'ALERT').replace(/^🔺\s*/, '');
-  title.textContent = `${cleanTitle} · ${LIVE_ALERT.crewName}`;
-  // Rule-based text vs. DeepSeek assessment (appended by the backend a few seconds after the alert)
-  const [ruleMsg, aiMsg] = _splitAi(a.message || '');
-  desc.textContent = ruleMsg;
-  _renderAiNote(aiMsg);
-
+  const cleanTitle = (a.title || 'ALERT').replace(/^🔺\s*/, '').replace(/^Immediate Action:\s*/i, '');
   const agentsMatch = (a.message || '').match(/Agents reporting:\s*([^.]*)/);
   const agents = agentsMatch ? agentsMatch[1].split(',').map(s => s.trim()).filter(Boolean)
                              : [String(a.source || 'AEGIS').toUpperCase()];
+  // Rule-based text vs. DeepSeek assessment (appended by the backend a few seconds after the alert)
+  const [ruleMsg, aiMsg] = _splitAi(a.message || '');
+  const name = LIVE_ALERT.crewName;
+  // Plain-language headline, explanation and spoken line for each kind of alert
+  let headline, plain, spoken;
+  if (isShelter) {
+    headline = `Radiation storm: take shelter now · ${name}`;
+    plain = 'A solar storm is pushing radiation up fast. The storm shelter is the best-protected spot on the ship, so the crew should head there now.';
+    spoken = 'Radiation storm. Everyone needs to get to the storm shelter now.';
+  } else if (isMedic) {
+    const pct = (ruleMsg.match(/(\d+(?:\.\d+)?)\s*%/) || [])[1];
+    const bpm = (ruleMsg.match(/(\d+)\s*BPM/i) || [])[1];
+    plain = /oxygen|spo2|hypox/i.test(cleanTitle + ruleMsg) && pct
+      ? `${name}'s oxygen level is ${Math.round(pct) === 90 && Number(pct) < 90 ? Number(pct).toFixed(1) : Math.round(pct)}%, below the safe line of 90%. They need extra oxygen and a check-up right away.`
+      : bpm ? `${name}'s heart rate is ${bpm} beats per minute, which is in the danger zone. They should stop what they're doing and get checked now.`
+            : `${name} has a reading in the danger zone. They need to be checked right away.`;
+    headline = `${cleanTitle.charAt(0) + cleanTitle.slice(1).toLowerCase()} · ${name}`;
+    spoken = plain + ' I recommend starting a medical response.';
+  } else {
+    headline = `Health cascade: ${agents.length} problems at once · ${name}`;
+    plain = `${name}'s ${plainDomains(agents)} are all out of range at the same time, and they tend to make each other worse. Tackling them together works better than one at a time.`;
+    spoken = `${name} needs attention: ${plainDomains(agents)} are all out of range at once. I recommend starting the recovery plan.`;
+  }
+  title.textContent = headline;
+  title.title = cleanTitle + (LIVE_ALERT.protocol ? ` · Protocol ${LIVE_ALERT.protocol}` : '');
+  desc.textContent = plain;
+  _renderAiNote(aiMsg);
   agentsEl.innerHTML = agents.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('');
 
   btn.style.display = '';
   if (isNew) {
     btn.disabled = false;
     btn.style.background = '';
-    btn.textContent = `Confirm Protocol ${LIVE_ALERT.protocol}`;
+    btn.textContent = PLAIN_BUTTON[LIVE_ALERT.protocol] || `Confirm ${LIVE_ALERT.protocol}`;
+    btn.title = `Protocol ${LIVE_ALERT.protocol}`;
     if (typeof playTone === 'function') { playTone(880, 0.12); setTimeout(() => playTone(660, 0.12), 150); }
-    if (typeof typeResponse === 'function') {
-      typeResponse(`${cleanTitle} for ${LIVE_ALERT.crewName}. ${agents.length} agent${agents.length > 1 ? 's' : ''} reporting: ${agents.join(', ')}. Recommend Protocol ${LIVE_ALERT.protocol}.`);
-    }
+    // The agent that owns the hazard speaks: SOLARIS for radiation, PULSE for a medical emergency, AEGIS for a cascade
+    VOICE.nextSpeaker = isShelter ? 'solaris' : isMedic ? 'pulse' : 'aegis';
+    if (typeof typeResponse === 'function') typeResponse(withIntro(VOICE.nextSpeaker, spoken));
   }
 }
 
@@ -1628,7 +2082,35 @@ async function refreshLiveAlerts() {
       .filter(a => _alertRank(a) > 0)
       .sort((x, y) => _alertRank(y) - _alertRank(x) || new Date(y.timestamp) - new Date(x.timestamp))[0];
     renderLiveAlert(top);
+    _renderCallLine(top);
   } catch (e) { /* backend offline: keep static demo content */ }
+}
+
+// Phone alarm: show whether AEGIS called the on-call flight surgeon about the alert on screen
+async function _renderCallLine(a) {
+  let el = document.getElementById('alert-call');
+  if (!a) { if (el) el.remove(); return; }
+  try {
+    const s = await (await fetch(`${DASH_API.baseUrl}/api/notify/status`)).json();
+    const since = new Date(a.timestamp + (/[zZ]|[+-]\d\d:?\d\d$/.test(a.timestamp) ? '' : 'Z')).getTime() - 5000;
+    const rec = (s.history || []).find(h => h.key.startsWith(a.crew_member_id + ':') &&
+                                            new Date(h.at + 'Z').getTime() >= since);
+    if (!rec) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'alert-call';
+      el.className = 'alert-call';
+      document.getElementById('alert-agents').insertAdjacentElement('afterend', el);
+    }
+    const t = new Date(rec.at + 'Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const who = rec.source === 'AEGIS tool call' ? 'AEGIS' : 'AEGIS (rules)';
+    el.className = 'alert-call ' + rec.status;
+    el.textContent = rec.status === 'called' ? `📞 ${who} phoned the flight surgeon at ${t}`
+      : rec.status === 'logged' ? `📞 ${who} would phone the flight surgeon now (phone not set up yet)`
+      : rec.status === 'skipped' ? `📞 Flight surgeon already called about this`
+      : `📞 Call to the flight surgeon failed: ${rec.detail}`;
+    el.title = `What the call says: "${rec.message}"`;
+  } catch (e) { /* notify endpoint unavailable */ }
 }
 
 const STATUS_BADGE = {
@@ -1655,14 +2137,22 @@ async function refreshRosterStatus() {
   } catch (e) { /* offline: keep static badges */ }
 }
 
-// Demo controls: Shift+D starts the cascade demo, Shift+S a solar particle event, Shift+N returns to nominal
+// Demo controls: Shift+B slow build-up (PREDICT -> PREVENT), Shift+D the cascade demo, Shift+S a solar particle
+// event (SHELTER-1), Shift+M a medical emergency (MEDIC-1), Shift+N returns to nominal
 async function setDemoScenario(name) {
   try {
-    const r = await fetch(`${DASH_API.baseUrl}/api/simulation/scenario/${name}`, { method: 'POST' });
+    // Single-person demos happen to the crew member selected on the dashboard; the solar storm hits everyone
+    const perPerson = ['cascade_demo', 'buildup_demo', 'medical_emergency'].includes(name);
+    const crewId = DASH_API.selectedCrewId || 'crew-001';
+    const who = _crewDisplayName(crewId);
+    const qs = perPerson ? `?crew_id=${encodeURIComponent(crewId)}` : '';
+    const r = await fetch(`${DASH_API.baseUrl}/api/simulation/scenario/${name}${qs}`, { method: 'POST' });
     if (!r.ok) throw new Error(r.status);
-    const label = { cascade_demo: 'Cascade demo started: agents will converge within ~30 seconds.',
-                    spe_event: 'Solar particle event scenario started.',
-                    nominal: 'Returned to nominal operations.' }[name] || `Scenario ${name} set.`;
+    const label = { cascade_demo: `Demo: several of ${who}'s readings are about to go wrong at once. Watch what happens.`,
+                    buildup_demo: `Demo: ${who}'s readings will slowly drift over the next few minutes. Let's see if I can spot it before it becomes a problem.`,
+                    medical_emergency: `Demo: ${who}'s oxygen level is about to drop. I'll flag it the moment it gets dangerous.`,
+                    spe_event: 'Demo: a solar storm is on its way.',
+                    nominal: "Back to normal. Everyone's readings are settling down." }[name] || `Scenario ${name} set.`;
     if (typeof typeResponse === 'function') typeResponse(label);
   } catch (e) {
     if (typeof typeResponse === 'function') typeResponse('Could not reach the AEGIS backend to change the scenario.');
@@ -1674,6 +2164,8 @@ document.addEventListener('keydown', (e) => {
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if (e.key === 'D') setDemoScenario('cascade_demo');
   else if (e.key === 'S') setDemoScenario('spe_event');
+  else if (e.key === 'B') setDemoScenario('buildup_demo');
+  else if (e.key === 'M') setDemoScenario('medical_emergency');
   else if (e.key === 'N') setDemoScenario('nominal');
 });
 // Also allow ?demo=cascade in the URL
@@ -1686,20 +2178,484 @@ setTimeout(() => { refreshLiveAlerts(); refreshRosterStatus(); }, 1500);
 // Init
 bootSequence();
 setTimeout(() => {
-  typeResponse('Good morning. AEGIS online. Please select a crew member to begin health monitoring.');
+  typeResponse("Good morning, I'm AEGIS. Pick a crew member and I'll tell you how they're doing, or just ask me anything.");
 }, 1200);
 
 // Expanded HR Graph Modal
-function openHRGraph() {
-  document.getElementById('hrModal').classList.add('open');
-  updateExpandedChart();
-  announce('Heart rate graph expanded');
-}
+function openHRGraph() { openTrend('heart_rate'); }
 
 function closeHRGraph() {
+  TREND_OPEN = null;
   document.getElementById('hrModal').classList.remove('open');
   announce('Graph closed');
 }
+
+// ============================================
+// PREDICT: trend chips, click-to-expand trend + forecast chart, predicted-cascade line in the alert panel
+// Backend: GET /api/predict (all crew) and GET /api/crew/{id}/trends (series for the chart)
+// ============================================
+const TREND_META = {
+  heart_rate:         { icon: '❤️', label: 'Heart rate',      unit: 'bpm',   agent: 'PULSE',   dp: 0 },
+  spo2:               { icon: '🫁', label: 'SpO₂',            unit: '%',     agent: 'PULSE',   dp: 1 },
+  il6:                { icon: '🧬', label: 'IL-6',            unit: 'pg/mL', agent: 'GENE',    dp: 1 },
+  sleep_quality:      { icon: '🌙', label: 'Sleep',           unit: '/100',  agent: 'MIRROR',  dp: 0 },
+  radiation_dose_24h: { icon: '☢',  label: 'Radiation (24 h)', unit: 'mSv',  agent: 'SOLARIS', dp: 2 }
+};
+let TREND_OPEN = null;
+const PREDICT_STATE = { top: null, announcedKey: null, lastCrew: null, suppress: {}, prevented: null, preventedEntry: null };
+
+function fmtEta(min) {
+  if (min === null || min === undefined) return '';
+  if (min < 1) return '<1 min';
+  if (min < 60) return `~${Math.round(min)} min`;
+  return `~${(min / 60).toFixed(1)} h`;
+}
+
+function renderTrendChips(fc) {
+  Object.keys(TREND_META).forEach(m => {
+    const el = document.getElementById('trend-' + m);
+    if (!el) return;
+    const t = fc && fc.metrics ? fc.metrics[m] : null;
+    if (!t || (t.direction === 'steady' && t.eta_min === null)) { el.hidden = true; el.textContent = ''; return; }
+    const arrow = t.direction === 'rising' ? '↗' : t.direction === 'falling' ? '↘' : '→';
+    const meta = TREND_META[m];
+    el.className = 'trend-chip' + (m === 'radiation_dose_24h' ? ' inline' : '') +
+                   (t.eta_min !== null ? ' eta' : t.out_of_range ? ' out' : '');
+    el.textContent = t.eta_min !== null ? `${arrow} ⏱ ${fmtEta(t.eta_min)}` : arrow;
+    el.title = `${meta.agent} · ${meta.label} ${t.direction}` +
+      (t.slope_per_min !== null ? ` (${t.slope_per_min > 0 ? '+' : ''}${Number(t.slope_per_min).toFixed(meta.dp + 1)} ${meta.unit}/min)` : '') +
+      (t.eta_min !== null ? ` · forecast to cross ${t.threshold} ${meta.unit} in ${fmtEta(t.eta_min)}` : '');
+    el.hidden = false;
+  });
+}
+
+function renderAllClear() {
+  const panel = document.getElementById('alert-panel');
+  const icon = document.getElementById('alert-icon');
+  const title = document.getElementById('alert-title');
+  const desc = document.getElementById('alert-desc');
+  const agentsEl = document.getElementById('alert-agents');
+  const btn = document.getElementById('confirm-btn');
+  if (!panel || !btn) return;
+  panel.classList.remove('predict');
+  panel.style.borderColor = 'var(--green)';
+  icon.textContent = '✓';
+  title.textContent = 'All clear · no alerts';
+  title.style.color = 'var(--green)';
+  desc.textContent = "Nothing needs action right now. If anyone starts heading the wrong way, you'll see an early warning here first.";
+  agentsEl.innerHTML = '';
+  btn.style.display = 'none';
+  _showPreventBtn(false);
+  _renderAiNote('');
+  renderCrewGlance();
+}
+
+function _showPreventBtn(show) {
+  const pb = document.getElementById('prevent-btn');
+  if (pb) { pb.style.display = show ? '' : 'none'; if (show) pb.disabled = false; }
+}
+
+// PREVENT-1: act on the forecast. Records the plan in the backend, runs it on board (sim), and the panel
+// tracks the outcome until the trends are back in range ("cascade averted").
+async function startPrevention() {
+  const crewId = PREDICT_STATE.lastCrew;
+  if (!crewId) return;
+  const pb = document.getElementById('prevent-btn');
+  if (pb) { pb.disabled = true; pb.textContent = '🛡️ Starting the prevention plan…'; }
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/crew/${crewId}/prevent`, { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok || !d.started) throw new Error(d.reason || r.status);
+    const now = Date.now();
+    PREDICT_STATE.prevented = { crew: crewId, at: now, actions: d.actions || [], domains: d.domains || [], avertedAt: null };
+    PREDICT_STATE.suppress[crewId] = now + 10 * 60000;
+    PREDICT_STATE.lastCrew = null;
+    if (typeof playTone === 'function') { playTone(523, 0.12); setTimeout(() => playTone(784, 0.15), 150); }
+    const crewKey = CREW_KEY_BY_ID[crewId] || 'chen';
+    setTimeout(() => openSimForProtocol('PREVENT-1', crewKey), 900);
+    if (typeof typeResponse === 'function') {
+      typeResponse(`Prevention plan started for ${_crewDisplayName(crewId)}. We're fixing their ${plainDomains(d.domains)} early, before anything piles up. I'll keep an eye on how it goes.`);
+    }
+    renderPreventedPanel(null);
+  } catch (e) {
+    if (pb) { pb.disabled = false; pb.textContent = '🛡️ Start prevention plan'; }
+    if (typeof typeResponse === 'function') typeResponse("Sorry, I couldn't start the prevention plan just now: " + e.message);
+  }
+}
+
+function renderPreventedPanel(entry) {
+  const pv = PREDICT_STATE.prevented;
+  if (!pv) return;
+  const panel = document.getElementById('alert-panel');
+  const icon = document.getElementById('alert-icon');
+  const title = document.getElementById('alert-title');
+  const desc = document.getElementById('alert-desc');
+  const agentsEl = document.getElementById('alert-agents');
+  const btn = document.getElementById('confirm-btn');
+  if (!panel) return;
+  const name = _crewDisplayName(pv.crew);
+  const averted = !!pv.avertedAt;
+  panel.classList.remove('predict');
+  panel.style.borderColor = 'var(--green)';
+  icon.textContent = averted ? '✓' : '🛡️';
+  title.style.color = 'var(--green)';
+  title.textContent = averted ? `Cascade avoided · ${name}` : `Prevention plan running · ${name}`;
+  title.title = 'Protocol PREVENT-1';
+  const outNow = entry && entry.out_now ? entry.out_now : [];
+  desc.textContent = averted
+    ? `Everything is back in a healthy range. We spotted it early, acted, and it never turned into a cascade.`
+    : `Small fixes started early.${outNow.length ? ` ${name}'s ${plainDomains(outNow)} ${outNow.length > 1 ? 'are' : 'is'} still out of range, so` : ''} I'll keep watching until everything is back to normal.`;
+  agentsEl.innerHTML = `<ol class="prevent-steps">${pv.actions.map(a => `<li>${String(a).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</li>`).join('')}</ol>` +
+    pv.domains.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}${outNow.includes(n) ? '' : ' ✓'}</span>`).join('');
+  if (btn) btn.style.display = 'none';
+  _showPreventBtn(false);
+  _renderAiNote('');
+}
+
+// Shown only when there is no live alert: a predicted cascade (≥3 domains out of range or forecast to cross soon)
+function renderPredictPanel(p) {
+  if (!p) { PREDICT_STATE.announcedKey = null; PREDICT_STATE.lastCrew = null; renderAllClear(); return; }
+  PREDICT_STATE.lastCrew = p.crew_member_id;
+  const panel = document.getElementById('alert-panel');
+  const icon = document.getElementById('alert-icon');
+  const title = document.getElementById('alert-title');
+  const desc = document.getElementById('alert-desc');
+  const agentsEl = document.getElementById('alert-agents');
+  const btn = document.getElementById('confirm-btn');
+  if (!panel || !btn) return;
+  const name = _crewDisplayName(p.crew_member_id);
+  panel.classList.add('predict');
+  panel.style.borderColor = 'var(--yellow)';
+  icon.textContent = '🔮';
+  title.style.color = 'var(--yellow)';
+  const forming = p.risk === 'converged';
+  title.textContent = forming ? `Early warning: it's happening now · ${name}` : `Early warning: trouble likely in ${fmtEta(p.cascade_eta_min)} · ${name}`;
+  title.title = 'PREDICT: forecast from the last few minutes of readings';
+  // Plain sentence: what's already off + what's heading the wrong way
+  const parts = [];
+  if (p.out_now.length) parts.push(`${plainDomains(p.out_now)} ${p.out_now.length > 1 ? 'are' : 'is'} already off`);
+  p.upcoming.forEach(u => parts.push(PLAIN_TREND[u.metric] || `${u.label.toLowerCase()} is drifting`));
+  const upTxt = plainList(parts);
+  desc.textContent = forming
+    ? `The warning came true: ${name}'s ${plainDomains(p.out_now)} are now out of range. I'm raising the alert.`
+    : `${name}'s ${upTxt}. If nothing changes, these will pile up into a bigger problem in ${fmtEta(p.cascade_eta_min)}. Acting now can stop it.`;
+  agentsEl.innerHTML =
+    p.out_now.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('') +
+    p.upcoming.map(u => `<span class="alert-badge forecast" title="Forecast to cross in ${fmtEta(u.eta_min)}" style="${AGENT_BADGE_STYLE[u.agent] || AGENT_BADGE_STYLE.AEGIS}">${u.agent} ⏱</span>`).join('');
+  btn.style.display = 'none';
+  // PREVENT: act on the forecast before the cascade (not once it is already forming)
+  const pb = document.getElementById('prevent-btn');
+  if (pb && pb.style.display === 'none') pb.textContent = '🛡️ Start prevention plan';
+  _showPreventBtn(!forming);
+  _renderAiNote(p.note && p.note.text ? `${AI_MARKER} (AEGIS): ${p.note.text}` : '');
+  const key = p.crew_member_id;
+  if (PREDICT_STATE.announcedKey !== key) {
+    PREDICT_STATE.announcedKey = key;
+    if (typeof playTone === 'function') { playTone(520, 0.1); setTimeout(() => playTone(620, 0.1), 140); }
+    if (typeof typeResponse === 'function') {
+      typeResponse(`AEGIS here, heads up. ${name}'s ${upTxt}. At this rate it could turn into a bigger problem in ${fmtEta(p.cascade_eta_min).replace('~', 'about ')}. Starting the prevention plan now should head it off.`);
+    }
+  }
+}
+
+// ============================================
+// CASCADE MAP: live view of the selected crew member's four systems around AEGIS (data: /api/predict)
+// Ring = how far a reading has moved from a healthy value toward its agent's limit (full ring = at the limit).
+// ============================================
+const CM = { last: null, mode: null, etaEnd: null, prevMode: null, tick: null };
+const CM_AGENTS = { solaris: ['radiation_dose_24h'], gene: ['il6'], pulse: ['heart_rate', 'spo2'], mirror: ['sleep_quality'] };
+const CM_HEALTHY = { heart_rate: 60, spo2: 99, il6: 3, sleep_quality: 90, radiation_dose_24h: 0.2 };   // ring = 0 here
+const CM_FMT = {
+  heart_rate: v => [Math.round(v), 'bpm'], spo2: v => [v.toFixed(1), '% SpO₂'], il6: v => [v.toFixed(1), 'pg/mL IL-6'],
+  sleep_quality: v => [Math.round(v), '/100 sleep'], radiation_dose_24h: v => [v.toFixed(2), 'mSv / 24 h']
+};
+const CM_CIRC = 276.46;
+const CM_PAIRS = [['solaris', 'gene'], ['gene', 'pulse'], ['pulse', 'mirror'], ['mirror', 'solaris']];
+
+function _cmStrain(t) {
+  const h = CM_HEALTHY[t.metric], thr = t.threshold;
+  const s = (t.value - h) / (thr - h);              // works for both directions (thr < h for SpO2 / sleep)
+  return Math.max(0, Math.min(1.15, s));
+}
+function _cmToward(t) { return t.risk_direction === 'up' ? t.direction === 'rising' : t.direction === 'falling'; }
+
+function renderCascadeMap(fc) {
+  const svg = document.getElementById('cascade-map');
+  if (!svg || !fc || !fc.metrics) return;
+  const name = _crewDisplayName(fc.crew_member_id);
+  const crewEl = document.getElementById('cm-crew'); if (crewEl) crewEl.textContent = name;
+  const states = {};
+  Object.entries(CM_AGENTS).forEach(([agent, metrics]) => {
+    const ts = metrics.map(m => fc.metrics[m]).filter(Boolean);
+    if (!ts.length) return;
+    const strain = Math.max(...ts.map(_cmStrain));
+    const out = ts.find(t => t.out_of_range);
+    const eta = ts.filter(t => t.eta_min !== null).sort((a, b) => a.eta_min - b.eta_min)[0];
+    const drift = ts.find(t => _cmToward(t) && _cmStrain(t) > 0.6);
+    const state = out ? 'out' : (eta || drift) ? 'watch' : 'ok';
+    states[agent] = state;
+    const node = document.getElementById('node-' + agent);
+    node.dataset.state = state;
+    const main = ts[0];
+    let [val, unit] = CM_FMT[main.metric](main.value);
+    // 69.6 shown as "70" next to "out of range" (limit 70) reads as a contradiction: show the decimal at the line
+    if (Number(val) === main.threshold && main.value !== main.threshold) val = main.value.toFixed(1);
+    document.getElementById('cm-val-' + agent).textContent = val;
+    document.getElementById('cm-unit-' + agent).textContent =
+      agent === 'pulse' && ts[1] ? `bpm · ${ts[1].value.toFixed(0)}% O₂` : unit;
+    document.getElementById('cm-gauge-' + agent).setAttribute('stroke-dasharray',
+      `${(Math.min(strain, 1) * CM_CIRC).toFixed(1)} ${CM_CIRC}`);
+    const word = out ? 'out of range' : eta ? `limit in ${fmtEta(eta.eta_min)}` :
+                 drift ? (main.risk_direction === 'up' ? 'climbing ↗' : 'dropping ↘') : 'steady';
+    document.getElementById('cm-state-' + agent).textContent = word;
+    const tip = document.getElementById('cm-tip-' + agent);
+    if (tip) tip.textContent = ts.map(t => `${t.label}: ${t.value} ${t.unit} (limit ${t.threshold})`).join(' · ') +
+      ` · ${Math.round(strain * 100)}% of the way to the limit · ${word}`;
+    const line = document.getElementById('line-' + agent);
+    if (line) { line.classList.toggle('s-watch', state === 'watch'); line.classList.toggle('s-out', state === 'out'); }
+    svg.querySelectorAll(`.cm-particle[data-agent="${agent}"]`).forEach(p => {
+      p.classList.toggle('on', state !== 'ok');
+      p.style.fill = state === 'out' ? 'var(--red)' : 'var(--yellow)';
+    });
+  });
+  // Strain spreading between neighbouring systems
+  CM_PAIRS.forEach(([a, b]) => {
+    const l = document.getElementById(`link-${a}-${b}`); if (!l) return;
+    const sa = states[a], sb = states[b];
+    l.classList.toggle('hot', sa === 'out' && sb === 'out');
+    l.classList.toggle('warm', sa !== 'ok' && sb !== 'ok' && !(sa === 'out' && sb === 'out'));
+  });
+  // AEGIS centre: three segments = three strained systems make a cascade
+  const strained = Object.values(states).filter(s => s !== 'ok').sort((x, y) => (y === 'out') - (x === 'out'));
+  for (let i = 0; i < 3; i++) {
+    const seg = document.getElementById('cm-seg-' + i);
+    if (seg) seg.setAttribute('class', 'cm-seg ' + (strained.length ? (strained[i] || '') : 'ok'));
+  }
+  // Mode, in priority order: live alert for this person > prevention plan > forecast cascade > watching > steady
+  const key = CREW_KEY_BY_ID[fc.crew_member_id];
+  const pv = PREDICT_STATE.prevented && PREDICT_STATE.prevented.crew === fc.crew_member_id ? PREDICT_STATE.prevented : null;
+  let mode, big, sub, cap;
+  const outDom = Object.keys(states).filter(a => states[a] === 'out').map(a => a.toUpperCase());
+  const watchDom = Object.keys(states).filter(a => states[a] === 'watch').map(a => a.toUpperCase());
+  if (LIVE_ALERT.id && LIVE_ALERT.crewKey === key) {
+    const p = LIVE_ALERT.protocol || '';
+    mode = 'alert';
+    big = p.startsWith('SHELTER') ? 'SHELTER' : p.startsWith('MEDIC') ? 'MEDICAL' : 'CASCADE';
+    sub = 'ACT NOW';
+    cap = p.startsWith('SHELTER') ? `<b>Radiation storm.</b> ${name} and the crew should be in the storm shelter.`
+        : p.startsWith('MEDIC') ? `<b>${name} needs medical attention now.</b> See the alert panel.`
+        : `<b>Cascade:</b> ${name}'s ${plainDomains(outDom)} are out of range together and feeding each other.`;
+  } else if (pv) {
+    mode = pv.avertedAt ? 'averted' : 'prevent';
+    big = pv.avertedAt ? 'Avoided' : 'Fixing';
+    sub = pv.avertedAt ? 'CASCADE ✓' : 'PREVENTION ON';
+    cap = pv.avertedAt ? `<b>Cascade avoided.</b> ${name} is back in a healthy range. We acted before it happened.`
+                       : `<b>Prevention plan running for ${name}.</b> Watch the rings come back down.`;
+  } else if (fc.risk === 'cascade' && fc.cascade_eta_min !== null &&
+             !((PREDICT_STATE.suppress[fc.crew_member_id] || 0) > Date.now())) {
+    mode = 'cascade';
+    const end = Date.now() + fc.cascade_eta_min * 60000;
+    if (!CM.etaEnd || Math.abs(CM.etaEnd - end) > 15000 || CM.mode !== 'cascade') CM.etaEnd = end;
+    big = _cmClock(); sub = 'TO CASCADE';
+    const parts = fc.upcoming.map(u => PLAIN_TREND[u.metric]).filter(Boolean);
+    cap = `<b>Early warning:</b> ${name}'s ${plainList(parts) || plainDomains(watchDom) + ' are drifting'}. ` +
+          `Three systems will be strained in ${fmtEta(fc.cascade_eta_min).replace('~', 'about ')} unless we act.`;
+  } else if (fc.risk === 'converged') {
+    mode = 'alert'; big = 'NOW'; sub = 'CASCADE FORMING';
+    cap = `<b>It's happening:</b> ${name}'s ${plainDomains(outDom)} are out of range together. AEGIS is raising the alert.`;
+  } else if (strained.length) {
+    mode = 'watch'; big = `${strained.length} of 3`; sub = 'STRAINED';
+    cap = `Keeping an eye on ${name}'s ${plainDomains([...outDom, ...watchDom])}. ` +
+          (strained.length >= 2 ? 'One more strained system would make a cascade.' : 'Nothing needs action yet.');
+  } else {
+    mode = 'none'; big = 'Steady'; sub = 'ALL SYSTEMS';
+    cap = `All four systems are steady for ${name}. Each ring shows how close a reading is to its limit.`;
+  }
+  const centre = document.getElementById('node-aegis');
+  centre.dataset.mode = mode;
+  const bigEl = document.getElementById('cm-big');
+  bigEl.textContent = big;
+  bigEl.style.fontSize = big.length > 6 ? '15px' : '';     // CASCADE / SHELTER / MEDICAL fit inside the ring
+  document.getElementById('cm-sub').textContent = sub;
+  document.getElementById('cm-caption').innerHTML = cap;
+  if (mode === 'averted' && CM.prevMode !== 'averted') _cmRipple();
+  CM.prevMode = CM.mode = mode;
+}
+
+function _cmClock() {
+  const s = Math.max(0, Math.round((CM.etaEnd - Date.now()) / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+function _cmRipple() {
+  const fx = document.getElementById('cm-fx'); if (!fx) return;
+  [0, 350].forEach(delay => setTimeout(() => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('class', 'cm-ripple'); c.setAttribute('cx', 320); c.setAttribute('cy', 165);
+    fx.appendChild(c); setTimeout(() => c.remove(), 1500);
+  }, delay));
+}
+// Countdown ticks every second between data refreshes
+setInterval(() => {
+  if (CM.mode === 'cascade' && CM.etaEnd) { const b = document.getElementById('cm-big'); if (b) b.textContent = _cmClock(); }
+}, 1000);
+
+// Crew at a glance: one row per crew member, a dot per system (shown in the alert panel when all is clear)
+function renderCrewGlance() {
+  const host = document.getElementById('alert-agents');
+  if (!host || !CM.last) return;
+  const order = ['solaris', 'gene', 'pulse', 'mirror'];
+  const rows = (CM.last.crew || []).map(c => {
+    const key = CREW_KEY_BY_ID[c.crew_member_id];
+    const st = {};
+    order.forEach(a => {
+      const ts = CM_AGENTS[a].map(m => c.metrics[m]).filter(Boolean);
+      st[a] = ts.some(t => t.out_of_range) ? 'out' : ts.some(t => t.eta_min !== null) ? 'watch' : 'ok';
+    });
+    const worst = Object.values(st).includes('out') ? 'out' : Object.values(st).includes('watch') ? 'watch' : 'ok';
+    const off = order.filter(a => st[a] === 'out').map(a => a.toUpperCase());
+    const word = c.risk === 'cascade' ? `cascade ${fmtEta(c.cascade_eta_min)}` :
+                 worst === 'out' ? `${plainDomains(off)} off` : worst === 'watch' ? 'drifting' : 'steady';
+    const role = String(c.role || '').replace(/_/g, ' ');
+    return `<button type="button" class="cg-row${c.crew_member_id === DASH_API.selectedCrewId ? ' sel' : ''}" data-key="${key || ''}"
+      title="Show ${_crewDisplayName(c.crew_member_id)} on the dashboard">
+      <span class="cg-name">${_crewDisplayName(c.crew_member_id)}<small>${role}</small></span>
+      <span class="cg-dots">${order.map(a => `<i class="cg-dot ${st[a]}" title="${a.toUpperCase()}: ${st[a] === 'ok' ? 'steady' : st[a] === 'out' ? 'out of range' : 'heading for its limit'}"></i>`).join('')}</span>
+      <span class="cg-state ${worst}">${word}</span></button>`;
+  }).join('');
+  host.innerHTML = `<div class="crew-glance"><div class="cg-head">Crew at a glance · radiation · inflammation · heart · sleep</div>${rows}</div>`;
+  host.querySelectorAll('.cg-row').forEach(b => b.addEventListener('click', () => {
+    const card = document.querySelector(`.crew-card[onclick*="'${b.dataset.key}'"]`);
+    if (card) card.click();
+  }));
+}
+
+async function refreshPredict() {
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/predict`);
+    if (!r.ok) return;
+    const d = await r.json();
+    CM.last = d;
+    const now = Date.now();
+    let top = (d.crew || [])
+      .filter(c => c.risk === 'cascade' && !((PREDICT_STATE.suppress[c.crew_member_id] || 0) > now))
+      .sort((a, b) => a.cascade_eta_min - b.cascade_eta_min)[0] || null;
+    // The forecast came true (≥3 domains now out of range) but AEGIS hasn't raised the cascade yet
+    // (next analysis pass, ≤10 s): keep the PREDICT card up as "cascade forming" instead of flashing ALL CLEAR.
+    if (!top && PREDICT_STATE.lastCrew) {
+      const c = (d.crew || []).find(x => x.crew_member_id === PREDICT_STATE.lastCrew && x.risk === 'converged');
+      if (c) top = c;
+    }
+    PREDICT_STATE.top = top;
+    const mine = (d.crew || []).find(c => c.crew_member_id === DASH_API.selectedCrewId);
+    renderTrendChips(mine);
+    // PREVENT-1 in progress: track the outcome until every domain is back in range (cascade averted)
+    const pv = PREDICT_STATE.prevented;
+    if (pv) {
+      const e = (d.crew || []).find(c => c.crew_member_id === pv.crew);
+      PREDICT_STATE.preventedEntry = e || null;
+      const inRange = e && e.out_now.length === 0 && !e.upcoming.length && Date.now() - pv.at > 20000;
+      if (inRange && !pv.avertedAt) {
+        pv.avertedAt = Date.now();
+        if (typeof playTone === 'function') { playTone(523, 0.12); setTimeout(() => playTone(659, 0.12), 150); setTimeout(() => playTone(784, 0.2), 300); }
+        if (typeof typeResponse === 'function') typeResponse(`Good news: ${_crewDisplayName(pv.crew)} is back in a healthy range across the board. The prevention plan worked, and we avoided a bigger problem.`);
+      }
+      // Keep the outcome on screen for 45 s, then return to normal monitoring (failsafe: 8 min)
+      if ((pv.avertedAt && Date.now() - pv.avertedAt > 45000) || Date.now() - pv.at > 8 * 60000) {
+        PREDICT_STATE.prevented = null;
+        PREDICT_STATE.preventedEntry = null;
+        PREDICT_STATE.suppress[pv.crew] = Date.now() + 60000;
+      }
+    }
+    if (!LIVE_ALERT.id && Date.now() >= LIVE_ALERT.pauseUntil) {
+      if (PREDICT_STATE.prevented) renderPreventedPanel(PREDICT_STATE.preventedEntry);
+      else renderPredictPanel(PREDICT_STATE.top);
+    }
+    renderCascadeMap(mine);
+    if (TREND_OPEN) drawTrend();
+  } catch (e) { /* backend offline: keep current display */ }
+}
+
+async function openTrend(metric) {
+  if (!TREND_META[metric]) return;
+  TREND_OPEN = metric;
+  document.getElementById('hrModal').classList.add('open');
+  await drawTrend();
+  announce(`${TREND_META[metric].label} trend expanded`);
+}
+
+async function drawTrend() {
+  const m = TREND_OPEN;
+  const svg = document.getElementById('expanded-svg');
+  if (!m || !svg) return;
+  const meta = TREND_META[m];
+  let t;
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/crew/${DASH_API.selectedCrewId}/trends?series=true`);
+    if (!r.ok) return;
+    t = (await r.json()).metrics[m];
+  } catch (e) { return; }
+  if (!t || !t.series || t.series.length < 2 || TREND_OPEN !== m) return;
+  const crewName = (typeof CREW_DATA !== 'undefined' && CREW_DATA[selectedCrew]) ? CREW_DATA[selectedCrew].firstName : '';
+  document.getElementById('modal-title').textContent = `${meta.icon} ${meta.label} — ${crewName} · ${meta.agent}`;
+
+  const W = 520, H = 160, P = 34;
+  const ser = t.series;                          // [[minutes (0 = now), value], ...]
+  const hasFc = t.slope_per_min !== null && t.fitted_now !== null && t.direction !== 'steady';
+  const fcEnd = hasFc ? Math.min(t.eta_min !== null ? Math.max(t.eta_min * 1.2, 1) : 3, 20) : 0;
+  const x0 = ser[0][0], x1 = Math.max(0.01, fcEnd);
+  const fcVal = hasFc ? t.fitted_now + t.slope_per_min * fcEnd : null;
+  const vals = ser.map(p => p[1]).concat([t.threshold]).concat(hasFc ? [fcVal] : []);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad;
+  const X = v => P + (W - 2 * P) * (v - x0) / (x1 - x0);
+  const Y = v => P / 2 + (H - 1.5 * P) * (1 - (v - lo) / (hi - lo));
+  const f = v => Number(v).toFixed(meta.dp);
+  let html = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = hi - (hi - lo) * i / 4, y = Y(v);
+    html += `<line class="chart-grid" x1="${P}" y1="${y}" x2="${W - P}" y2="${y}"/>`;
+    html += `<text class="chart-label" x="${P - 5}" y="${y + 4}" text-anchor="end">${f(v)}</text>`;
+  }
+  // Agent threshold, "now" marker, history, forecast
+  html += `<line class="chart-threshold" x1="${P}" y1="${Y(t.threshold)}" x2="${W - P}" y2="${Y(t.threshold)}"/>`;
+  html += `<text class="chart-label" x="${P + 4}" y="${Y(t.threshold) - 4}" text-anchor="start" style="fill:var(--orange)">${meta.agent} threshold ${t.threshold}</text>`;
+  html += `<line class="chart-now" x1="${X(0)}" y1="${P / 2}" x2="${X(0)}" y2="${H - P}"/>`;
+  html += `<polyline class="chart-line" points="${ser.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ')}"/>`;
+  if (hasFc) {
+    html += `<polyline class="chart-forecast" points="${X(0)},${Y(t.fitted_now)} ${X(fcEnd)},${Y(fcVal)}"/>`;
+    if (t.eta_min !== null) html += `<circle cx="${X(t.eta_min)}" cy="${Y(t.threshold)}" r="4" style="fill:var(--yellow)"/>`;
+  }
+  const last = ser[ser.length - 1];
+  html += `<circle class="chart-dot" cx="${X(last[0])}" cy="${Y(last[1])}" r="4"/>`;
+  html += `<text class="chart-value" x="${X(last[0])}" y="${Y(last[1]) - 10}" text-anchor="middle">${f(last[1])}</text>`;
+  const tickVals = [x0, x0 * 2 / 3, x0 / 3, 0].concat(x1 > 0.5 ? [x1] : []);
+  tickVals.forEach(v => {
+    html += `<text class="chart-label" x="${X(v)}" y="${H - 6}" text-anchor="middle">${Math.abs(v) < 0.05 ? 'now' : (v > 0 ? '+' : '') + v.toFixed(1) + ' min'}</text>`;
+  });
+  svg.innerHTML = html;
+
+  const ys = ser.map(p => p[1]);
+  document.getElementById('hr-avg').textContent = f(ys.reduce((a, b) => a + b, 0) / ys.length);
+  document.getElementById('hr-min').textContent = f(Math.min(...ys));
+  document.getElementById('hr-max').textContent = f(Math.max(...ys));
+  document.getElementById('hr-avg-label').textContent = `Average ${meta.unit}`;
+  document.getElementById('hr-min-label').textContent = `Min ${meta.unit}`;
+  document.getElementById('hr-max-label').textContent = `Max ${meta.unit}`;
+  const fcEl = document.getElementById('trend-forecast');
+  if (t.eta_min !== null) { fcEl.textContent = `${fmtEta(t.eta_min)}`; fcEl.style.color = 'var(--yellow)'; }
+  else if (t.out_of_range) { fcEl.textContent = 'Out of range'; fcEl.style.color = 'var(--orange)'; }
+  else { fcEl.textContent = t.direction === 'steady' ? 'Steady' : (t.direction === 'rising' ? '↗ Rising' : '↘ Falling'); fcEl.style.color = 'var(--green)'; }
+  const mins = Math.round(-x0);
+  document.getElementById('trend-note').textContent =
+    `Last ${mins} min of telemetry. Trend fitted on the last 2 min` +
+    (t.slope_per_min !== null ? ` (${t.slope_per_min > 0 ? '+' : ''}${Number(t.slope_per_min).toFixed(meta.dp + 1)} ${meta.unit}/min, R² ${t.r2})` : '') +
+    (t.eta_min !== null ? `. ${meta.agent} forecasts it crosses ${t.threshold} ${meta.unit} in ${fmtEta(t.eta_min)} if the trend continues.`
+                        : t.out_of_range ? `. Already beyond the ${meta.agent} threshold (${t.threshold} ${meta.unit}).`
+                        : `. No threshold crossing forecast within ${20} min.`);
+}
+
+setInterval(refreshPredict, 5000);
+setTimeout(refreshPredict, 2500);
 
 // Extended history for expanded view (last 20 readings)
 let hrHistoryExtended = [68, 67, 69, 66, 68, 70, 69, 71, 68, 67, 65, 68, 70, 72, 69, 67, 68, 66, 69, 68];
@@ -1766,7 +2722,7 @@ animateVitalsLocal = function() {
   const newHR = parseInt(document.getElementById('hr-value').textContent);
   hrHistoryExtended.push(newHR);
   if (hrHistoryExtended.length > 20) hrHistoryExtended.shift();
-  if (document.getElementById('hrModal').classList.contains('open')) {
+  if (document.getElementById('hrModal').classList.contains('open') && !TREND_OPEN) {
     updateExpandedChart();
   }
 };
@@ -1932,7 +2888,11 @@ async function evaluateWhatIf() {
   if (rank >= 2 && rank > _whatifLastRank) {
     playTone(880, 0.12); setTimeout(() => playTone(660, 0.12), 150); setTimeout(() => playTone(880, 0.18), 300);
     if (typeof typeResponse === 'function') {
-      typeResponse(`What-if ${data.verdict.toLowerCase()}: ${data.summary}${data.protocol ? ' Recommended protocol ' + data.protocol + '.' : ''}`);
+      const plainVerdict = data.protocol === 'SHELTER-1' ? "that would be a radiation emergency, and everyone should head to the storm shelter."
+        : data.protocol === 'MEDIC-1' ? "that would be a medical emergency, so I'd start a medical response right away."
+        : data.verdict === 'CASCADE' ? "several problems would be stacking up at once, so I'd start the recovery plan."
+        : "that would need someone to take a closer look.";
+      typeResponse(data.explanation ? `If that happened: ${data.explanation}` : `If that happened, ${plainVerdict}`);
     }
   }
   _whatifLastRank = rank;
@@ -1941,7 +2901,7 @@ async function evaluateWhatIf() {
   const recBox = document.getElementById('aegis-rec');
   if (data.verdict === 'NOMINAL') { recBox.style.display = 'none'; return; }
   document.getElementById('rec-title').textContent =
-    (data.protocol ? `AEGIS Recommendation · Protocol ${data.protocol}`
+    (data.protocol ? `AEGIS suggests: ${PLAIN_PROTOCOL[data.protocol] || data.protocol} (${data.protocol})`
                    : data.verdict === 'ALERT' ? 'Agent Alert' : 'AEGIS Assessment') +
     (data.source === 'deepseek' ? ' · 🧠 DeepSeek' : '');
   document.getElementById('rec-message').textContent = data.explanation || data.summary;
@@ -2004,17 +2964,22 @@ async function resetSliders() {
     <div class="chart-stats">
       <div class="stat-item">
         <div class="stat-value" id="hr-avg">68</div>
-        <div class="stat-label">Average BPM</div>
+        <div class="stat-label" id="hr-avg-label">Average BPM</div>
       </div>
       <div class="stat-item">
         <div class="stat-value" id="hr-min">65</div>
-        <div class="stat-label">Min BPM</div>
+        <div class="stat-label" id="hr-min-label">Min BPM</div>
       </div>
       <div class="stat-item">
         <div class="stat-value" id="hr-max">72</div>
-        <div class="stat-label">Max BPM</div>
+        <div class="stat-label" id="hr-max-label">Max BPM</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="trend-forecast" style="color:var(--muted)">--</div>
+        <div class="stat-label">🔮 Forecast</div>
       </div>
     </div>
+    <div id="trend-note" style="font-size:.75rem;color:var(--muted);margin-top:.75rem;line-height:1.4"></div>
   </div>
 </div>
 
@@ -2108,7 +3073,7 @@ document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.tar
 </script>
 
 <!-- AEGIS API Client - connects frontend to backend -->
-<script src="aegis-api-client.js?v=5"></script>
+<script src="aegis-api-client.js?v=9"></script>
 
 </body>
 </html>

@@ -37,7 +37,9 @@ import database as db
 from aegis_rag import get_knowledge_base
 from agents import get_coordinator, analyze_crew_member, analyze_all_crew
 from simulator import get_simulator
+import aegis_trends
 import aegis_llm
+import aegis_notify
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -183,6 +185,22 @@ async def health_check():
     }
 
 
+@app.get("/api/notify/status")
+async def notify_status():
+    """Phone alarm: configured or not (number masked), limits, and the recent call log."""
+    return aegis_notify.status()
+
+
+@app.post("/api/notify/test")
+async def notify_test():
+    """Place one test call to the on-call phone (or log it, if Twilio isn't configured yet)."""
+    rec = await asyncio.to_thread(
+        aegis_notify.call,
+        "This is a test of the AEGIS phone alarm. If you can hear this, critical crew alerts will reach this phone.",
+        f"test:{datetime.utcnow().strftime('%H%M%S')}", "test", "manual test")
+    return rec
+
+
 @app.get("/api/llm/status")
 async def llm_status():
     """DeepSeek reasoning layer: enabled?, model, call counts, last latency / error (never the key)."""
@@ -241,9 +259,9 @@ async def what_if(req: WhatIfRequest):
 
 
 @app.post("/api/llm/backfill")
-async def llm_backfill(limit: int = 40):
-    """Queue DeepSeek assessments for pending recommendations that don't have one yet."""
-    queued = await asyncio.to_thread(get_coordinator().backfill_recommendation_assessments, limit)
+async def llm_backfill(limit: int = 40, force: bool = False):
+    """Queue DeepSeek assessments for pending recommendations that don't have one yet (force=true: rewrite all)."""
+    queued = await asyncio.to_thread(get_coordinator().backfill_recommendation_assessments, limit, force)
     return {"queued": queued, "status": aegis_llm.status()}
 
 
@@ -326,6 +344,35 @@ async def get_crew_biomarkers(crew_id: str):
     if markers is None:
         raise HTTPException(status_code=404, detail="No vitals yet for this crew member")
     return {"crew_member_id": crew_id, **markers}
+
+
+@app.get("/api/crew/{crew_id}/trends")
+async def get_crew_trends(crew_id: str, series: bool = True):
+    """PREDICT: per-metric trend (rising/falling/steady), slope, time-to-threshold forecast and
+    ~10 min of history (series) for the dashboard's click-to-expand chart."""
+    if not db.get_crew_member(crew_id):
+        raise HTTPException(status_code=404, detail=f"Crew member {crew_id} not found")
+    return await asyncio.to_thread(aegis_trends.crew_forecast, crew_id, series)
+
+
+@app.post("/api/crew/{crew_id}/prevent")
+async def start_prevention(crew_id: str):
+    """PREDICT -> PREVENT: act on a forecast before the cascade. Records an accepted PREVENT-1 plan
+    (one countermeasure per affected domain, RAG-grounded) and resets the crew member's cascade window."""
+    member = db.get_crew_member(crew_id)
+    if not member:
+        raise HTTPException(status_code=404, detail=f"Crew member {crew_id} not found")
+    result = await asyncio.to_thread(get_coordinator().start_prevention, member)
+    if result.get("started"):
+        # Demo telemetry: the countermeasures take effect and the drift reverses
+        result["simulator_recovering"] = get_simulator().start_prevention(crew_id)
+    return result
+
+
+@app.get("/api/predict")
+async def get_predictions():
+    """PREDICT: forecasts for every crew member, and the most urgent predicted cascade ('top')."""
+    return await asyncio.to_thread(aegis_trends.predict_all)
 
 
 @app.put("/api/crew/{crew_id}/vitals")
@@ -630,7 +677,7 @@ async def clear_anomaly():
 
 
 @app.post("/api/simulation/scenario/{scenario}")
-async def set_scenario(scenario: str):
+async def set_scenario(scenario: str, crew_id: Optional[str] = None):
     """
     Set simulation scenario.
     
@@ -638,8 +685,10 @@ async def set_scenario(scenario: str):
     - nominal: Normal operations
     - spe_event: Solar Particle Event
     - medical_emergency: General medical emergency
+    - cascade_demo: one crew member converges to a cascade within seconds
+    - buildup_demo: the same cascade built up gradually (~6 min) so PREDICT forecasts it first
     """
-    valid_scenarios = ["nominal", "spe_event", "medical_emergency", "cascade_demo"]
+    valid_scenarios = ["nominal", "spe_event", "medical_emergency", "cascade_demo", "buildup_demo"]
     if scenario not in valid_scenarios:
         raise HTTPException(
             status_code=400,
@@ -649,6 +698,14 @@ async def set_scenario(scenario: str):
     simulator = get_simulator()
     config = simulator.config.model_copy()  # Copy to preserve old scenario for set_config comparison
     config.scenario = scenario if scenario != "nominal" else None
+    # Single-person scenarios (cascade, build-up, medical) target the crew member selected on the dashboard;
+    # the solar storm hits everyone. Without crew_id each scenario keeps its default crew member.
+    if scenario in ("cascade_demo", "buildup_demo", "medical_emergency"):
+        if crew_id and not db.get_crew_member(crew_id):
+            raise HTTPException(status_code=404, detail=f"Crew member {crew_id} not found")
+        config.inject_crew_id = crew_id
+    else:
+        config.inject_crew_id = None
     simulator.set_config(config)
     # Any scenario change starts a fresh cascade window: re-arms one cascade per crew member and
     # drops warnings the previous scenario left in the cascade history (so an SPE can't add up to a cascade later).
@@ -657,7 +714,7 @@ async def set_scenario(scenario: str):
     # gets one clear instruction (SHELTER-1) instead of a SHELTER + cascade mix while the dose is still rising.
     get_coordinator().protect_mode = (scenario == "spe_event")
     
-    return {"status": "set", "scenario": scenario}
+    return {"status": "set", "scenario": scenario, "crew_id": config.inject_crew_id}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
