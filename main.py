@@ -40,6 +40,7 @@ from simulator import get_simulator
 import aegis_trends
 import aegis_llm
 import aegis_notify
+import aegis_mission
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -185,6 +186,28 @@ async def health_check():
     }
 
 
+@app.get("/api/mission")
+async def mission():
+    """Mission profile: normal radiation background, SOLARIS thresholds, NASA limits, data source."""
+    return aegis_mission.mission_info()
+
+
+@app.post("/api/demo/reset")
+async def demo_reset():
+    """
+    Clean, repeatable demo start (Step 0): nominal scenario, fixed crew baselines, re-seeded simulator,
+    no alerts / recommendations / events / vitals history, agents' cascade and forecast memory cleared,
+    phone-alarm log cleared. Use before every rehearsal or recording (dashboard: Shift+R).
+    """
+    simulator = get_simulator()
+    simulator.reset_demo()
+    removed = db.reset_demo_data()
+    get_coordinator().reset_state()
+    aegis_notify.reset_log()
+    db.log_event(EventType.SYSTEM, "Demo reset: clean start", details={"removed": removed})
+    return {"reset": True, "removed": removed, "mission_day": simulator.mission_day}
+
+
 @app.get("/api/notify/status")
 async def notify_status():
     """Phone alarm: configured or not (number masked), limits, and the recent call log."""
@@ -213,7 +236,7 @@ async def llm_test():
     import asyncio as _asyncio
     text = await _asyncio.to_thread(
         aegis_llm.chat,
-        "Crew member crew-001 (role: commander), mission day 54, radiation_dose_24h=0.8 mSv (high), "
+        "Crew member crew-001 (role: commander), mission day 54, radiation_dose_24h=4.2 mSv (2.3x the 1.84 mSv background), "
         "stress_index=72, sleep_quality=48. In one sentence, state the main combined risk.",
         "AEGIS", 30)
     return {"success": text is not None, "answer": text, "status": aegis_llm.status()}
@@ -246,7 +269,7 @@ class WhatIfRequest(_BaseModel):
     spo2: float = _Field(..., ge=80, le=100)
     il6: float = _Field(..., ge=0, le=50)
     sleep_quality: float = _Field(..., ge=0, le=100)
-    radiation_dose_24h: float = _Field(..., ge=0, le=10)
+    radiation_dose_24h: float = _Field(..., ge=0, le=100)     # up to solar-particle-event levels
     crew_id: Optional[str] = None
     explain: bool = True
 
@@ -335,7 +358,7 @@ async def get_crew_member(crew_id: str):
 
 @app.get("/api/crew/{crew_id}/biomarkers")
 async def get_crew_biomarkers(crew_id: str):
-    """GENE's inflammatory markers (IL-6, CRP) for a crew member: the same values the GENE agent evaluates."""
+    """GENE's modelled IL-6 (with personal baseline) for a crew member: the same values the GENE agent evaluates."""
     from agents import GENEAgent
     member = db.get_crew_member(crew_id)
     if not member:

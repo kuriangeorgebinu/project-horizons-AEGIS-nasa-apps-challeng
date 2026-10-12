@@ -308,6 +308,15 @@
 </style>
 </head>
 <body>
+<div style="max-width:1100px;margin:12px auto;padding:14px 18px;border:2px solid #d97706;border-radius:10px;background:#fff7e6;color:#3b2a06;font:14px/1.5 system-ui,Segoe UI,Arial,sans-serif;" role="note"><b>Status note (October 2026).</b> This is the early research and strategy report. Some parts describe the original concept, not the software as built. Where they differ, this box is correct:<ul style="margin:.4rem 0 0 1.1rem;padding:0">
+<li><b>Built and running:</b> AEGIS coordinator + 4 specialist agents (PULSE heart rate/SpO&#8322;, GENE IL-6, MIRROR sleep, SOLARIS radiation), rule-based detection, trend forecasts, cascade detection, PREVENT/PROTECT protocols, DeepSeek explanations with an automatic fact check, phone alert to the on-call flight surgeon.</li>
+<li><b>Data:</b> vitals are <b>simulated</b> (no wearable hardware). IL-6 is <b>modelled</b> from stress and radiation, not measured. Radiation is judged against the Mars-transit background measured by Curiosity RAD (1.84 mSv/day). Real NASA data (Inspiration4 / OSDR OSD-575, NTRS abstracts) is used to <b>check the rules</b> and as the RAG knowledge base; nothing is &ldquo;trained&rdquo; on it.</li>
+<li><b>Prediction scope:</b> in the demo AEGIS forecasts a cascade about 2&ndash;3 minutes before the third domain crosses its limit (the demo runs a compressed 6-minute build-up). On a mission the same trend method would work on hours-to-days data; that has <b>not</b> been validated.</li>
+<li><b>Not built (concept only):</b> HRV, CRP, cognitive tests (PVT/n-back), live DSCOVR/GOES feeds, RadLab dose model, z-score/EWMA baselines, genomic (TP53) analysis, a 30-second auto-execute override. PROTECT protocols are raised for a human to confirm.</li>
+<li><b>Category strategy now:</b> Best Mission Concept (primary), Best Use of Technology (secondary).</li>
+</ul>
+<div style="margin-top:.4rem">Current numbers and test results: <b>README.md</b> and <b>AEGIS-Accuracy-Report.html</b>.</div></div>
+
 
 <nav>
   <span class="nav-brand">🚀 Project Horizons</span>
@@ -673,7 +682,7 @@
         <div class="rec-num">3</div>
         <div>
           <div class="rec-title">Use the Inspiration4 dataset as your primary data source</div>
-          <div class="rec-body">12 datasets from 4 civilian astronauts covering omics, metabolomics, and cytokines. Public, underutilized by hackathon teams, directly relevant. Claim: "trained on real human spaceflight data."</div>
+          <div class="rec-body">12 datasets from 4 civilian astronauts covering omics, metabolomics, and cytokines. Public, underutilized by hackathon teams, directly relevant. Claim (corrected): "rules checked against real human spaceflight data" &mdash; nothing is trained on it.</div>
           <div class="rec-tags"><span class="tag tag-impact-high">High Impact</span><span class="tag tag-effort-low">Low Effort</span></div>
         </div>
       </div>

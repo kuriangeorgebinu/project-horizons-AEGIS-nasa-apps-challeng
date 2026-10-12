@@ -300,7 +300,7 @@ const AEGIS_API = {
     // M7: Map crew IDs to display names
     const crewNames = {
       'crew-001': 'Cmdr. Chen',
-      'crew-002': 'D. Okonkwo',
+      'crew-002': 'Dr. Okonkwo',
       'crew-003': 'Dr. Kowalski',
       'crew-004': 'Dr. Nakamura'
     };
@@ -332,8 +332,8 @@ const AEGIS_API = {
     });
     const safeUrl = u => (typeof u === 'string' && /^https?:\/\//i.test(u)) ? u : null;
     const stepsHtml = rec => {
-      const acts = rec.actions || [];   // all tailored actions (the backend keeps at most 4)
-      return acts.length ? `<ul class="rec-steps">${acts.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
+      const acts = rec.actions || [];   // approved protocol steps, verbatim (the AI only picks and orders them)
+      return acts.length ? `<ul class="rec-steps" title="Steps copied word for word from the approved protocol menu; the AI chooses and orders them but cannot write new ones">${acts.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
     };
     const sourcesHtml = rec => {
       const ev = parseEv(rec);

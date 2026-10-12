@@ -16,6 +16,7 @@ from models import (
     CrewMember, Vitals, HealthStatus, SimulationConfig, SimulationState
 )
 import database as db
+import aegis_mission
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -24,6 +25,24 @@ import database as db
 
 BUILDUP_SECONDS = 360   # buildup_demo: time for the metrics to drift from baseline to the cascade end state
 RECOVERY_SECONDS = 120  # prevent_recovery: time for the drift to reverse back to baseline after PREVENT-1
+
+# Repeatable demos: every random draw in the simulator comes from this seeded generator, and each crew
+# member has FIXED baseline vitals (no hardware is connected; these stand in for a wearable's readings).
+SIM_SEED = 54
+_rng = random.Random(SIM_SEED)
+FIXED_BASELINES = {
+    # sleep sits well above MIRROR's 70 limit so it does not flicker in and out of range at rest
+    "crew-001": {"heart_rate": 66, "bp_systolic": 118, "bp_diastolic": 76, "spo2": 98.2,
+                 "temperature": 36.6, "respiratory_rate": 14, "stress_base": 28, "sleep_quality": 80},
+    "crew-002": {"heart_rate": 70, "bp_systolic": 122, "bp_diastolic": 78, "spo2": 97.8,
+                 "temperature": 36.7, "respiratory_rate": 15, "stress_base": 32, "sleep_quality": 78},
+    "crew-003": {"heart_rate": 72, "bp_systolic": 120, "bp_diastolic": 79, "spo2": 97.6,
+                 "temperature": 36.6, "respiratory_rate": 15, "stress_base": 36, "sleep_quality": 76},
+    "crew-004": {"heart_rate": 64, "bp_systolic": 116, "bp_diastolic": 74, "spo2": 98.4,
+                 "temperature": 36.5, "respiratory_rate": 14, "stress_base": 24, "sleep_quality": 82},
+}
+DEFAULT_BASELINE = {"heart_rate": 68, "bp_systolic": 118, "bp_diastolic": 76, "spo2": 98.0,
+                    "temperature": 36.6, "respiratory_rate": 15, "stress_base": 30, "sleep_quality": 78}
 
 
 class VitalsSimulator:
@@ -50,17 +69,8 @@ class VitalsSimulator:
     def _get_baseline(self, crew_id: str) -> dict:
         """Get or create baseline vitals for a crew member."""
         if crew_id not in self._crew_baselines:
-            # Create individual baseline with some variation
-            self._crew_baselines[crew_id] = {
-                "heart_rate": random.randint(60, 75),
-                "bp_systolic": random.randint(110, 125),
-                "bp_diastolic": random.randint(70, 80),
-                "spo2": random.uniform(97, 99),
-                "temperature": random.uniform(36.4, 36.8),
-                "respiratory_rate": random.randint(14, 16),
-                "stress_base": random.uniform(20, 40),
-                "sleep_quality": random.uniform(70, 85)
-            }
+            # Fixed, repeatable baseline per crew member (see FIXED_BASELINES)
+            self._crew_baselines[crew_id] = dict(FIXED_BASELINES.get(crew_id, DEFAULT_BASELINE))
         return self._crew_baselines[crew_id]
     
     def generate_vitals(self, crew_member: CrewMember) -> Vitals:
@@ -110,7 +120,7 @@ class VitalsSimulator:
             "stress_index": (0, 100),
             "sleep_quality": (0, 100),
             "hydration_level": (0, 100),
-            "radiation_dose_24h": (0, 5),
+            "radiation_dose_24h": (0, 60),
         }
         
         def smooth(key: str, new_val: float, bypass: bool = False) -> float:
@@ -121,7 +131,7 @@ class VitalsSimulator:
                 smoothed = alpha * new_val + (1 - alpha) * prev[key]
                 # H1: Use per-vital noise scale
                 ns = noise_scale.get(key, 0)
-                noise = random.uniform(-ns, ns) if ns > 0 else 0
+                noise = _rng.uniform(-ns, ns) if ns > 0 else 0
                 result = smoothed + noise
             
             # H1: Clamp to valid range
@@ -175,9 +185,11 @@ class VitalsSimulator:
             5, 0, 100
         )
         
+        # Daily dose centred on the mission's normal background (aegis_mission: 1.84 mSv/day in Mars
+        # transit, Curiosity RAD) plus any scenario enhancement.
         radiation_raw = self._bounded_random(
-            0.3 + scenario_mods.get("radiation", 0),
-            0.05, 0, 5  # Reduced spread
+            aegis_mission.background() + scenario_mods.get("radiation", 0),
+            0.1, 0, 60
         )
         
         # Apply smoothing (R3: bypass for affected vitals during anomaly/scenario)
@@ -215,6 +227,17 @@ class VitalsSimulator:
         
         return vitals
     
+    def reset_demo(self):
+        """Clean demo start: nominal scenario, fixed baselines, no smoothing history, re-seeded randomness."""
+        _rng.seed(SIM_SEED)
+        self.config = SimulationConfig()
+        self.mission_day = 54
+        self.start_time = datetime.utcnow()
+        self.scenario_started_at = datetime.utcnow()
+        self.recovery_from_p = 0.0
+        self._crew_baselines = {}
+        self._previous_vitals = {}
+
     def buildup_progress(self) -> float:
         """0..1 progress of the build-up toward the cascade end state (reverses during prevent_recovery)."""
         elapsed = (datetime.utcnow() - self.scenario_started_at).total_seconds()
@@ -240,7 +263,7 @@ class VitalsSimulator:
 
     def _bounded_random(self, center: float, spread: float, min_val: float, max_val: float) -> float:
         """Generate random value within bounds."""
-        value = center + random.gauss(0, spread / 2)
+        value = center + _rng.gauss(0, spread / 2)
         return max(min_val, min(max_val, value))
     
     def _get_activity_factor(self, activity: Optional[str]) -> float:
@@ -270,8 +293,9 @@ class VitalsSimulator:
         mods = {}
         
         if self.config.scenario == "spe_event":
-            # Solar Particle Event - elevated radiation
-            mods["radiation"] = random.uniform(0.5, 2.0)
+            # Solar Particle Event: daily dose jumps well above the shelter level (5 x background,
+            # >= background + 5 mSv): ~20-32 mSv/day, the order of a moderate SPE behind spacecraft shielding.
+            mods["radiation"] = _rng.uniform(18.0, 30.0)
             mods["stress"] = 15
             
         elif self.config.scenario == "medical_emergency":
@@ -292,10 +316,10 @@ class VitalsSimulator:
             # inject_crew_id target); everyone else stays nominal so the demo is readable.
             target = self.config.inject_crew_id or "crew-001"
             if crew_id is None or crew_id == target:
-                # Keep radiation amber (baseline ~0.3 + 0.3-0.55 = 0.6-0.85 mSv/24h): above SOLARIS
-                # "high" (0.5) but below "critical_high" (1.0), so it builds a cascade (RECOVER-3)
-                # rather than triggering an acute SHELTER alert.
-                mods["radiation"] = random.uniform(0.3, 0.55)   # SOLARIS warning
+                # Keep radiation amber: background 1.84 + 2.2-2.8 = ~4.0-4.6 mSv/24h, above the SOLARIS
+                # warning (2 x background = 3.68) but well below shelter (9.2), so it builds a cascade
+                # (RECOVER-3) rather than an acute SHELTER alert.
+                mods["radiation"] = _rng.uniform(2.2, 2.8)   # SOLARIS warning
                 # MIRROR warning is >70, critical >85. Aim for ~76 (+ activity load ~3) relative to THIS
                 # crew member's random baseline, so the demo is amber on every restart instead of
                 # sometimes tipping into a critical stress alert.
@@ -310,14 +334,15 @@ class VitalsSimulator:
         elif self.config.scenario in ("buildup_demo", "prevent_recovery"):
             # PREDICT demo: the same end state as cascade_demo, reached gradually over BUILDUP_SECONDS, so the
             # trend engine can forecast the cascade minutes before 3 domains actually go out of range.
-            # Order the metrics cross: MIRROR sleep (~1.5 min), SOLARIS radiation (~2.5), GENE IL-6 (~4),
-            # PULSE heart rate (~4.5) -> AEGIS forecasts the cascade from ~1.5-2 min, it fires at ~4 min.
+            # Order the metrics cross (360 s build-up): MIRROR sleep (~2.4 min), GENE modelled IL-6 (~3.1),
+            # SOLARIS radiation (~3.7), PULSE heart rate (~4.7) -> AEGIS forecasts the cascade before the
+            # third domain crosses at ~3.7 min.
             # prevent_recovery (PREVENT-1 started): the drift reverses back to baseline over RECOVERY_SECONDS.
             target = self.config.inject_crew_id or "crew-001"
             if crew_id is None or crew_id == target:
                 p = self.buildup_progress()
                 b = self._crew_baselines.get(crew_id or target, {})
-                mods["radiation"] = 0.45 * p
+                mods["radiation"] = 3.0 * p     # 1.84 -> ~4.8 mSv/24h (amber, below shelter)
                 mods["stress"] = p * max(30, 76 - b.get("stress_base", 30))
                 mods["heart_rate"] = p * max(15, 104 - b.get("heart_rate", 68))
                 mods["sleep"] = -25 * p
@@ -330,18 +355,18 @@ class VitalsSimulator:
             
         # Handle specific anomaly injections
         if self.config.inject_anomaly == "cardiac":
-            mods["heart_rate"] = random.choice([30, -20])  # Tachy or brady
+            mods["heart_rate"] = _rng.choice([30, -20])  # Tachy or brady
             mods["bp_systolic"] = 20
             
         elif self.config.inject_anomaly == "radiation":
-            mods["radiation"] = random.uniform(1.0, 3.0)
+            mods["radiation"] = _rng.uniform(10.0, 20.0)   # above shelter level
             
         elif self.config.inject_anomaly == "hypoxia":
             mods["spo2"] = -5
             mods["respiratory_rate"] = 8
             
         elif self.config.inject_anomaly == "fever":
-            mods["temperature"] = random.uniform(1.0, 2.5)
+            mods["temperature"] = _rng.uniform(1.0, 2.5)
             mods["heart_rate"] = 15
             
         elif self.config.inject_anomaly == "dehydration":
@@ -355,11 +380,12 @@ class VitalsSimulator:
         """Determine health status from the dashboard metrics only (Heart, SpO2, Sleep, Radiation).
         IL-6 and open alerts raise the status further in the API layer (_apply_alert_status)."""
         rad = vitals.radiation_dose_24h or 0
+        rt = aegis_mission.radiation_thresholds()
         sleep = vitals.sleep_quality if vitals.sleep_quality is not None else 100
 
         # Critical conditions
         if (vitals.heart_rate > 150 or vitals.heart_rate < 40 or
-                vitals.spo2 < 90 or rad > 1.0):
+                vitals.spo2 < 90 or rad >= rt["shelter"]):
             return HealthStatus.CRITICAL
         
         # Warning conditions
@@ -369,7 +395,7 @@ class VitalsSimulator:
         
         # Caution conditions
         if (vitals.heart_rate > 100 or vitals.heart_rate < 55 or
-                vitals.spo2 < 96 or sleep < 70 or rad > 0.5):
+                vitals.spo2 < 96 or sleep < 70 or rad >= rt["warning"]):
             return HealthStatus.CAUTION
         
         return HealthStatus.NOMINAL
@@ -435,14 +461,12 @@ class VitalsSimulator:
         if config.scenario != old_scenario:
             self.scenario_started_at = datetime.utcnow()
         
-        # M3: Add one-time radiation dose bump when SPE/radiation scenario starts
-        if config.scenario in ["spe_event", "cascade_demo"] and old_scenario not in ["spe_event", "cascade_demo"]:
-            import database as db
+        # SPE onset: the hours before the crew reaches the shelter add a one-time dose (fixed 3 mSv so the
+        # demo is repeatable; the demo reset restores the seeded cumulative dose).
+        if config.scenario == "spe_event" and old_scenario != "spe_event":
             crew = db.get_all_crew()
             for member in crew:
-                # Add 5-10 mSv one-time dose bump for SPE event start
-                bump = random.uniform(5.0, 10.0)
-                db.update_cumulative_radiation(member.id, bump)
+                db.update_cumulative_radiation(member.id, 3.0)
     
     def get_state(self) -> SimulationState:
         """Get current simulation state."""

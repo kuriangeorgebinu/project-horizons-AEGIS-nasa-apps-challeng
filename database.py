@@ -546,6 +546,20 @@ def get_vitals_history(crew_id: str, hours: int = 24) -> list[dict]:
 # Initialize Default Crew
 # ─────────────────────────────────────────────────────────────────────────────
 
+def reset_demo_data() -> dict:
+    """Clean demo start: clear alerts, recommendations, events and vitals history, then reseed the crew.
+    Returns how many rows were removed per table."""
+    removed = {}
+    with get_db() as conn:
+        cur = conn.cursor()
+        for table in ("alerts", "recommendations", "event_log", "vitals_history"):
+            cur.execute(f"SELECT COUNT(*) FROM {table}")
+            removed[table] = cur.fetchone()[0]
+            cur.execute(f"DELETE FROM {table}")
+    init_default_crew()                     # back to the canonical crew, day 54, starting radiation dose
+    return removed
+
+
 def init_default_crew():
     """Initialize default crew for demo."""
     # Canonical crew roster: Chen, Okonkwo, Kowalski, Nakamura
@@ -559,7 +573,7 @@ def init_default_crew():
             status=HealthStatus.NOMINAL,
             current_activity="Command Station",
             mission_day=54,
-            cumulative_radiation=142.0  # 24% of 600 mSv career limit
+            cumulative_radiation=97.0  # day 54 x ~1.84 mSv/day Mars-transit background; 600 mSv career limit
         ),
         CrewMember(
             id="crew-002", 
@@ -569,7 +583,7 @@ def init_default_crew():
             status=HealthStatus.NOMINAL,
             current_activity="Lab Work",
             mission_day=54,
-            cumulative_radiation=138.0
+            cumulative_radiation=101.0
         ),
         CrewMember(
             id="crew-003",
@@ -579,7 +593,7 @@ def init_default_crew():
             status=HealthStatus.CAUTION,
             current_activity="EVA Prep",
             mission_day=54,
-            cumulative_radiation=145.0,
+            cumulative_radiation=103.0,
             active_conditions=["elevated_stress"]
         ),
         CrewMember(
@@ -590,7 +604,7 @@ def init_default_crew():
             status=HealthStatus.NOMINAL,
             current_activity="Medical Bay",
             mission_day=54,
-            cumulative_radiation=135.0
+            cumulative_radiation=95.0
         )
     ]
     

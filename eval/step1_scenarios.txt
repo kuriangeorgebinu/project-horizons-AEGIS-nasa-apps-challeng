@@ -1,0 +1,42 @@
+MISSION {'profile': 'mars_transit', 'label': 'Mars transit (deep-space cruise)', 'background': 1.84, 'phase_days': 180, 'source': 'Curiosity RAD, cruise to Mars (Zeitlin et al. 2013): 1.84 mSv/day', 'warning': 3.68, 'shelter': 9.2, 'career_limit_msv': 600.0, 'spe_event_limit_msv': 250.0}
+NOMINAL:
+  crew-001 nominal  rad24=1.87 cum=97.0
+  crew-002 nominal  rad24=1.86 cum=101.0
+  crew-003 nominal  rad24=1.8 cum=103.0
+  crew-004 nominal  rad24=1.82 cum=95.0
+  alerts: []
+  biomarkers crew-001 {'il6': 3.9, 'baseline': 3.85, 'personal_limit': 5.78, 'status': 'normal'}
+  biomarkers crew-003 {'il6': 4.5, 'baseline': 4.48, 'personal_limit': 6.72, 'status': 'normal'}
+  predict crew-001 none {'il6': (3.88, 5.78, 3.85), 'radiation_dose_24h': (1.87, 3.68, 1.84)}
+  predict crew-002 none {'il6': (3.96, 6.2, 4.13), 'radiation_dose_24h': (1.86, 3.68, 1.84)}
+  predict crew-003 none {'il6': (4.47, 6.72, 4.48), 'radiation_dose_24h': (1.8, 3.68, 1.84)}
+  predict crew-004 none {'il6': (3.61, 5.47, 3.65), 'radiation_dose_24h': (1.82, 3.68, 1.84)}
+
+WHAT-IF
+  dose  1.84: verdict=NOMINAL protocol=None solaris=ok
+  dose   2.5: verdict=NOMINAL protocol=None solaris=ok
+  dose   4.0: verdict=WATCH protocol=None solaris=watch
+  dose   9.5: verdict=PROTECT protocol=SHELTER-1 solaris=critical
+  dose    25: verdict=PROTECT protocol=SHELTER-1 solaris=critical
+  il6   4.0: verdict=NOMINAL gene=ok []
+  il6   5.5: verdict=NOMINAL gene=ok []
+  il6   6.0: verdict=ALERT gene=alert ["Inflammation signal up: IL-6 6.0 pg/mL, 1.6x this crew member's pre-flight baseline of 3.9 pg/mL (modelled)"]
+  il6    13: verdict=ALERT gene=alert ["Inflammation signal up: IL-6 13.0 pg/mL, 3.4x this crew member's pre-flight baseline of 3.9 pg/mL (modelled)"]
+
+CASCADE_DEMO after 40s:
+  crew-001 warning  rad24=4.28 cum=97.0
+  crew-002 nominal  rad24=1.9 cum=101.0
+  crew-003 nominal  rad24=1.83 cum=103.0
+  crew-004 nominal  rad24=1.81 cum=95.0
+  alerts: ['high 🔺 CASCADE ALERT: 4 Domains Converging']
+
+SPE_EVENT after 30s:
+  crew-001 critical rad24=28.21 cum=100.0
+  crew-002 critical rad24=22.37 cum=104.0
+  crew-003 critical rad24=26.98 cum=106.0
+  crew-004 critical rad24=21.19 cum=98.0
+  alerts: ['critical SHELTER IMMEDIATELY: Solar Particle Event', 'critical SHELTER IMMEDIATELY: Solar Particle Event', 'critical SHELTER IMMEDIATELY: Solar Particle Event', 'critical SHELTER IMMEDIATELY: Solar Particle Event']
+
+BUILDUP: first cascade forecast at (min, eta): (1.0, 5.2) | domains crossed (min): {'MIRROR': 2.51, 'GENE': 3.1, 'SOLARIS': 3.6}
+  lead time = 2.6 min before the 3rd domain crossed
+  alerts: []

@@ -149,9 +149,11 @@ def _action_text(a) -> tuple[str, Optional[int]]:
     return str(a).strip(), None
 
 
-def check_actions(actions: list, menu: list[str]) -> dict:
+def check_actions(actions: list, menu: list[str], verbatim: bool = False) -> dict:
     """Each action must be a rewrite of an approved menu item. With a declared step, the text is compared to
-    THAT item (a model can't claim step 2 and write something else); otherwise to the best-matching item."""
+    THAT item (a model can't claim step 2 and write something else); otherwise to the best-matching item.
+    verbatim=True (production): the dashboard shows the APPROVED step text, never the model's rewording, so an
+    action only needs a valid step number; the similarity is still recorded for the audit trail."""
     bad, detail = [], []
     for a in actions:
         text, step = _action_text(a)
@@ -164,10 +166,11 @@ def check_actions(actions: list, menu: list[str]) -> dict:
         else:
             sim = max(sims) if sims else 0.0
             mapped = menu[sims.index(sim)] if sims else None
-        ok = sim >= ACTION_MIN_SIM
+        ok = (mapped is not None and step is not None) if verbatim else sim >= ACTION_MIN_SIM
         detail.append({"action": text, "step": step, "menu_item": mapped, "sim": round(sim, 3), "ok": ok})
         if not ok:
-            bad.append(f"not a rewrite of an approved step: '{text[:80]}'"
+            bad.append((f"no valid approved step number for: '{text[:80]}'" if verbatim else
+                        f"not a rewrite of an approved step: '{text[:80]}'")
                        + (f" (claimed step {step}, sim {sim:.2f})" if step is not None else f" (best {sim:.2f})"))
     return {"actions": len(actions), "unsupported": bad, "detail": detail, "ok": not bad}
 
@@ -181,15 +184,32 @@ def check_medicine(text: str, allowed_text: str) -> dict:
     return {"unsupported": bad, "ok": not bad}
 
 
+# Units a spoken answer may attach to a number: those of the dashboard metrics (mSv, pg/mL, bpm, %, /100,
+# mmHg, °C) plus time and counts. Any other measurement unit (doses, Gy/Sv/rem, lab units) is rejected.
+ALLOWED_UNITS = {"msv", "millisievert", "millisieverts", "pg/ml", "bpm", "%", "mmhg"}
+UNIT_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)?\s*(%|[a-zA-Zµμ][a-zA-Z/µμ]*)\b", re.I)
+_UNIT_LIKE = {"mg", "mcg", "µg", "μg", "ug", "g", "kg", "ml", "l", "cc", "iu", "units", "unit", "tablets", "tablet",
+              "pills", "pill", "capsules", "doses", "gy", "mgy", "cgy", "sv", "usv", "µsv", "μsv", "rem", "mrem",
+              "rad", "rads", "mmol", "mmol/l", "mg/dl", "mg/l", "ng/ml", "µg/ml", "nmol/l", "u/l", "meq", "mbq",
+              "bq", "ppm", "kpa", "mph", "km", "m/s", "w", "kcal", "cal", "psi"}
+
+
+def check_units(text: str) -> dict:
+    """Numbers in a spoken answer may only carry whitelisted units (no invented doses, Gy/Sv, lab units...)."""
+    bad = [m.group(0) for m in UNIT_RE.finditer(_clean(text))
+           if m.group(1).lower() in _UNIT_LIKE and m.group(1).lower() not in ALLOWED_UNITS]
+    return {"unsupported": bad, "ok": not bad}
+
+
 def verify(text: str, actions: list[str], menu: list[str], passages: list[str], context: str,
-           weak: Optional[list[bool]] = None) -> dict:
+           weak: Optional[list[bool]] = None, verbatim_actions: bool = False) -> dict:
     """Run all four checks. `context` = everything numeric the model was given (readings, thresholds)."""
     sources = "\n".join([context, *menu, *passages])
     act_text = " ".join(_action_text(a)[0] for a in actions)
     checks = {
         "numbers": check_numbers(text + " " + act_text, sources),
         "citations": check_citations(text, passages, weak),
-        "actions": check_actions(actions, menu),
+        "actions": check_actions(actions, menu, verbatim_actions),
         "medicine": check_medicine(text + " " + act_text, "\n".join([*menu, *passages])),
     }
     problems = [p for c in checks.values() for p in c["unsupported"]]

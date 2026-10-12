@@ -13,6 +13,7 @@ import json
 from datetime import datetime
 from typing import Optional
 
+import aegis_mission
 import database as db
 
 WINDOW_POINTS = 24      # ~2 min at the 5 s simulator tick: the window the trend is fitted on
@@ -23,14 +24,17 @@ HORIZON_MIN = 20.0      # forecast only crossings expected within this many minu
 MIN_R2 = 0.5            # trend must be consistent, not noise
 CASCADE_DOMAINS = 3     # same rule as the AEGIS cascade detector
 
-# Same amber cut-offs the agents use (agents.py): PULSE HR > 100 / SpO2 < 95, GENE IL-6 > 8,
-# MIRROR sleep < 70, SOLARIS 24 h dose > 0.5 mSv. "tol" = change over the window treated as noise.
+# Same amber cut-offs the agents use (agents.py): PULSE HR > 100 / SpO2 < 95, MIRROR sleep < 70.
+# GENE IL-6 and SOLARIS radiation thresholds are per crew member / per mission (aegis_mission):
+#   IL-6      -> the crew member's personal-baseline limit (filled in by _thresholds)
+#   radiation -> 2 x the mission's background dose (warning level)
+# The numbers below are fallbacks only. "tol" = change over the window treated as noise.
 METRICS = {
     "heart_rate":         {"agent": "PULSE",   "label": "Heart rate", "unit": "bpm",   "dir": "up",   "threshold": 100.0, "tol": 6.0},
     "spo2":               {"agent": "PULSE",   "label": "SpO2",       "unit": "%",     "dir": "down", "threshold": 95.0,  "tol": 0.8},
-    "il6":                {"agent": "GENE",    "label": "IL-6",       "unit": "pg/mL", "dir": "up",   "threshold": 8.0,   "tol": 0.8},
+    "il6":                {"agent": "GENE",    "label": "IL-6 (modelled)", "unit": "pg/mL", "dir": "up", "threshold": 8.0, "tol": 0.4},
     "sleep_quality":      {"agent": "MIRROR",  "label": "Sleep",      "unit": "/100",  "dir": "down", "threshold": 70.0,  "tol": 5.0},
-    "radiation_dose_24h": {"agent": "SOLARIS", "label": "Radiation",  "unit": "mSv",   "dir": "up",   "threshold": 0.5,   "tol": 0.1},
+    "radiation_dose_24h": {"agent": "SOLARIS", "label": "Radiation",  "unit": "mSv",   "dir": "up",   "threshold": 3.68,  "tol": 0.3},
 }
 
 # DeepSeek PREDICT notes per crew member (written by the coordinator in the background)
@@ -38,10 +42,14 @@ NOTES: dict = {}
 
 
 def _il6(v: dict) -> float:
-    """IL-6 as GENE models it (GENEAgent.estimate_markers): stress/10 + 24 h dose x 3."""
-    stress = v.get("stress_index") or 50
-    rad = v.get("radiation_dose_24h") or 0.3
-    return stress / 10 + rad * 3
+    """IL-6 as GENE models it (aegis_mission.il6_model): modelled from stress and dose vs background."""
+    return aegis_mission.il6_model(v.get("stress_index"), v.get("radiation_dose_24h"))
+
+
+def _thresholds(crew_id: str) -> dict:
+    """Per-crew / per-mission amber thresholds that override the METRICS fallbacks."""
+    return {"il6": aegis_mission.il6_personal_limit(aegis_mission.il6_baseline(crew_id)),
+            "radiation_dose_24h": aegis_mission.radiation_thresholds()["warning"]}
 
 
 def _parse_ts(s: str) -> datetime:
@@ -84,8 +92,10 @@ def _fit(ts: list[float], ys: list[float]):
     return slope, my - slope * mx, r2
 
 
-def _trend(metric: str, pts: list[tuple[datetime, dict]]) -> Optional[dict]:
-    meta = METRICS[metric]
+def _trend(metric: str, pts: list[tuple[datetime, dict]], threshold: Optional[float] = None) -> Optional[dict]:
+    meta = dict(METRICS[metric])
+    if threshold is not None:
+        meta["threshold"] = threshold
     pts = [(t, v[metric]) for t, v in pts if v.get(metric) is not None]
     if not pts:
         return None
@@ -129,10 +139,14 @@ def crew_forecast(crew_id: str, series: bool = False) -> dict:
     pts = _recent(crew_id, SERIES_POINTS if series else WINDOW_POINTS)
     window = pts[-WINDOW_POINTS:]
     metrics = {}
+    thr = _thresholds(crew_id)
+    base = {"il6": aegis_mission.il6_baseline(crew_id), "radiation_dose_24h": aegis_mission.background()}
     for m in METRICS:
-        t = _trend(m, window)
+        t = _trend(m, window, thr.get(m))
         if t is None:
             continue
+        if m in base:
+            t["baseline"] = base[m]          # personal / mission normal value (Cascade Map ring = 0 here)
         if series:
             t_end = pts[-1][0]
             t["series"] = [[round((ts - t_end).total_seconds() / 60, 2), round(float(v[m]), 2)]

@@ -45,18 +45,31 @@ are out of range together.
 |---|---|---|
 | **AEGIS** | Combines the four specialists for each crew member | Predicted cascade (3+ systems heading out of range), cascade alert, protocol choice |
 | **PULSE** | Heart rate, blood oxygen (SpO₂) | Fast/slow heart rate, low oxygen → medical response (MEDIC-1) |
-| **GENE** | Inflammation signal (IL-6, modelled) | Raised inflammation |
+| **GENE** | Inflammation signal (IL-6, **modelled** from stress + radiation, no blood sensor) | IL-6 at ≥ 1.5× the crew member's own pre-flight baseline (and +1.5 pg/mL), or > 12 pg/mL |
 | **MIRROR** | Sleep quality | Fair / poor sleep |
-| **SOLARIS** | Radiation dose (24 h and mission total) | Elevated dose, solar storm → storm shelter (SHELTER-1) |
+| **SOLARIS** | Radiation dose (24 h and mission total) against the mission's normal background | ≥ 2× background = elevated; ≥ 5× background and ≥ background + 5 mSv = storm shelter (SHELTER-1) |
 
 **The three pillars**
 
 1. **PREDICT** - a least-squares trend over the last ~2 minutes of each reading forecasts when it will cross its
    agent's limit (`aegis_trends.py`). Three systems forecast to cross = an early cascade warning with a countdown.
+   **Scope:** the demo compresses a cascade into a 6-minute build-up, and AEGIS warns about 2-3 minutes before
+   the third system crosses. On a real mission the same method would run on hours-to-days data; that is not yet
+   validated.
 2. **PREVENT** - a prevention plan (PREVENT-1) and rule-approved recommendations, worded by DeepSeek and
    grounded in NASA sources (RAG over ChromaDB).
 3. **PROTECT** - live alerts with one-click protocols: RECOVER-3 (cascade), SHELTER-1 (radiation storm),
    MEDIC-1 (medical emergency), shown on board in the 2D spacecraft simulation.
+
+**Mission profile** (`aegis_mission.py`, set with `AEGIS_MISSION`): Mars transit by default, with a normal
+background of 1.84 mSv/day measured by Curiosity RAD on its cruise to Mars, so SOLARIS warns at 3.68 and orders
+the shelter at 9.2 mSv per 24 h. Profiles for the Mars surface (0.64), lunar surface (1.37) and ISS (0.5) are
+included. NASA limits used: 600 mSv career, 250 mSv per solar particle event. GENE's pre-flight IL-6 baselines are
+seeded inside the Inspiration4 crew's real pre-flight range (2.5-5.9 pg/mL, NASA OSDR OSD-575).
+
+**What is real and what is simulated** - the dashboard tags each reading: **SIM** = simulated feed in this demo
+(a wearable or dosimeter would supply it), **MODELLED** = estimated from other readings. The recovery after
+PREVENT-1 in the build-up demo is scripted and labelled as such.
 
 **Keeping the AI honest** - the rules decide *when* to act; DeepSeek only explains and words the advice.
 Every AI recommendation is fact-checked by `aegis_verify.py` (numbers, citations, approved actions, no
@@ -122,6 +135,10 @@ connected and **🔴 Offline** when it isn't. Click anywhere once so the browser
 | **Shift + M** | Medical emergency (low oxygen) for the selected crew member → medical response |
 | **Shift + S** | Solar storm for the whole crew → storm shelter |
 | **Shift + N** | Back to normal |
+| **Shift + R** | Clean demo reset: clears alerts, recommendations and history, crew back to their fixed baselines |
+
+Before a rehearsal or recording, reset with **Shift + R** (or `python reset_demo.py`). Crew baselines are
+fixed and the simulator is seeded, so the same scenario plays out the same way every time.
 
 ---
 
@@ -198,6 +215,7 @@ All under `http://127.0.0.1:8000`. Full list and try-it-out at `/docs`.
 | POST | `/api/ask` | Ask an agent a question (Voice Terminal) |
 | POST | `/api/whatif` | Run the agents on hypothetical readings |
 | POST | `/api/query` | Search the knowledge base |
+| POST | `/api/demo/reset` | Clean, repeatable demo start |
 | POST | `/api/simulation/scenario/{name}` | Demo scenarios (`buildup_demo`, `cascade_demo`, `medical_emergency`, `spe_event`, `nominal`) |
 | GET | `/api/notify/status` · POST `/api/notify/test` | Phone alarm status and a test call |
 | GET | `/api/llm/status` | DeepSeek status (never shows the key) |
@@ -215,8 +233,9 @@ It replays real Inspiration4 IL-6 values through GENE, measured ISS / Mars radia
 clinical cut-offs through PULSE, then measures how often DeepSeek's output is grounded and how many planted
 hallucinations the fact checker catches. Results: `eval/results.json` and `artifacts/AEGIS-Accuracy-Report.html`.
 
-Known gaps (documented in the report): SOLARIS's daily-dose thresholds are below normal deep-space background;
-GENE's fixed IL-6 threshold misses the post-flight rise a personal baseline catches.
+The October 2026 run fixed the two gaps the first run found: SOLARIS now judges dose against the mission
+background (8/8 measured environments and regression cases correct, up from 3/8), and GENE uses a personal
+baseline (3/4 real Inspiration4 post-flight rises detected, up from 0/4, with 1/12 pre-flight false alarms).
 
 ---
 

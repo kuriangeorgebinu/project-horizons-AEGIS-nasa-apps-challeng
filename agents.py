@@ -25,6 +25,7 @@ import aegis_llm
 import aegis_trends
 import aegis_verify
 import aegis_notify
+import aegis_mission
 import re as _re_mod
 import threading
 
@@ -60,7 +61,7 @@ VITAL_THRESHOLDS = {
     "temperature": {"low": 36.1, "high": 37.8, "critical_low": 35, "critical_high": 39},
     "respiratory_rate": {"low": 12, "high": 20, "critical_low": 8, "critical_high": 30},
     "stress_index": {"high": 70, "critical_high": 85},
-    "radiation_dose_24h": {"high": 0.5, "critical_high": 1.0}  # mSv
+    # Radiation: not a fixed number any more; judged against the mission background (aegis_mission.py)
 }
 
 
@@ -99,10 +100,14 @@ class BaseAgent:
             if v.sleep_quality is not None:
                 parts.append(f"sleep quality {v.sleep_quality:.0f}/100")
             if v.radiation_dose_24h is not None:
-                parts.append(f"radiation {v.radiation_dose_24h:.2f} mSv in last 24h")
+                th = aegis_mission.radiation_thresholds()
+                parts.append(f"radiation {v.radiation_dose_24h:.2f} mSv in last 24h (normal background on this "
+                             f"{aegis_mission.profile()['label'].lower()} is {th['background']:.2f} mSv/day; "
+                             f"SOLARIS warns at {th['warning']:.2f} and orders the storm shelter at {th['shelter']:.1f})")
             markers = GENEAgent.estimate_markers(crew_member)
             if markers:
-                parts.append(f"IL-6 {markers['il6']} pg/mL (modelled)")
+                parts.append(f"IL-6 {markers['il6']} pg/mL (modelled, not measured; this crew member's pre-flight "
+                             f"baseline {markers['baseline']} pg/mL, GENE flags at {markers['personal_limit']})")
         # PREDICT: trends + forecasts, so the agents can answer "what's coming?" too
         trend_txt = ""
         try:
@@ -116,7 +121,8 @@ class BaseAgent:
         except Exception:
             pass
         return (f"Crew member {crew_member.id} (role: {role}), mission day {crew_member.mission_day}, "
-                f"cumulative radiation {crew_member.cumulative_radiation:.0f} mSv. "
+                f"cumulative radiation {crew_member.cumulative_radiation:.0f} mSv "
+                f"(NASA career limit {aegis_mission.CAREER_LIMIT_MSV:.0f} mSv). "
                 f"Monitored metrics: {', '.join(parts) or 'no readings yet'}.{trend_txt}")
 
     @staticmethod
@@ -228,14 +234,15 @@ class BaseAgent:
                         acts.append({"step": None, "text": " ".join(str(a).split())})
                 data["actions"] = [a for a in acts if a["text"]]
                 result = aegis_verify.verify(data["assessment"], data["actions"], list(rec.actions),
-                                             passage_texts, facts, weak)
+                                             passage_texts, facts, weak, verbatim_actions=True)
             history.append({"data": data, "raw": None if data else raw, "result": result})
             if result["ok"]:
                 break
             attempt_prompt = (prompt + "\n\nYour previous answer FAILED an automatic fact check:\n- "
                               + "\n- ".join(result["problems"][:6])
                               + "\nRewrite it. Use only numbers that appear above. Cite [n] only where passage n "
-                                "really says that. Keep every action's meaning from the approved menu. "
+                                "really says that; if no passage supports a sentence, leave it uncited. "
+                                "Give every action the number of its approved menu step. "
                                 "No medicines or doses.")
         if return_trace:                              # evaluation mode: no database write
             return {"history": history, "menu": list(rec.actions), "passages": passage_texts,
@@ -245,7 +252,17 @@ class BaseAgent:
         verification["attempts"] = tries
         vline = f"Verification: {json.dumps(verification)}"
         if result["ok"]:
-            assessment, actions = data["assessment"], [a["text"] for a in data["actions"]] or rec.actions
+            # The card shows the APPROVED steps verbatim (the model only chooses and orders them); its
+            # plain-language wording stays in the explanation, so no instruction reaches the crew unreviewed.
+            menu_items, actions = list(rec.actions), []
+            for a in data["actions"]:
+                try:
+                    k = int(a.get("step"))
+                except (TypeError, ValueError):
+                    continue
+                if 1 <= k <= len(menu_items) and menu_items[k - 1] not in actions:
+                    actions.append(menu_items[k - 1])
+            assessment, actions = data["assessment"], actions or menu_items
             cited = []
             for n in data.get("sources") or []:
                 try:
@@ -486,50 +503,47 @@ class SOLARISAgent(BaseAgent):
     agent_type = AgentType.SOLARIS
     specialty = "radiation"
     
-    def analyze(self, crew_member: CrewMember) -> list[dict]:
-        """Analyze radiation exposure."""
+    def analyze(self, crew_member: CrewMember, bg: Optional[float] = None) -> list[dict]:
+        """
+        Radiation, judged against the mission's normal background (aegis_mission): warning at 2 x background,
+        storm shelter on a solar-particle-event-sized step (>= 5 x background and >= background + 5 mSv).
+        `bg` overrides the mission background (used by the accuracy evaluation to replay other environments).
+        """
         findings = []
         vitals = crew_member.vitals
-        
-        # Check 24h dose if available
-        if vitals and vitals.radiation_dose_24h:
-            dose = vitals.radiation_dose_24h
-            
-            if dose > VITAL_THRESHOLDS["radiation_dose_24h"]["critical_high"]:
+        th = aegis_mission.radiation_thresholds(bg)
+        dose = vitals.radiation_dose_24h if vitals else None
+
+        if dose is not None:
+            ratio = dose / th["background"]
+            if dose >= th["shelter"]:
                 findings.append({
-                    "type": "critical",
-                    "metric": "radiation_24h",
-                    "value": dose,
-                    "message": f"Critical radiation exposure: {dose:.2f} mSv in 24h",
-                    "pillar": "PROTECT"
-                })
-            elif dose > VITAL_THRESHOLDS["radiation_dose_24h"]["high"]:
+                    "type": "critical", "metric": "radiation_24h", "value": dose,
+                    "message": (f"Solar particle event: {dose:.1f} mSv in 24 h, {ratio:.0f}x the normal "
+                                f"{th['background']:.2f} mSv/day background (NASA limit: "
+                                f"{aegis_mission.SPE_EVENT_LIMIT_MSV:.0f} mSv per event)"),
+                    "pillar": "PROTECT"})
+            elif dose >= th["warning"]:
                 findings.append({
-                    "type": "warning",
-                    "metric": "radiation_24h",
-                    "value": dose,
-                    "message": f"Elevated radiation exposure: {dose:.2f} mSv in 24h",
-                    "pillar": "PREVENT"
-                })
-        
-        # Cumulative dose analysis
-        cumulative = crew_member.cumulative_radiation
-        days = crew_member.mission_day
-        
-        if days > 0:
-            daily_avg = cumulative / days
-            projected_annual = daily_avg * 365
-            
-            # NASA annual limit is ~500 mSv
-            if projected_annual > 400:
+                    "type": "warning", "metric": "radiation_24h", "value": dose,
+                    "message": (f"Elevated radiation: {dose:.2f} mSv in 24 h, {ratio:.1f}x the normal "
+                                f"{th['background']:.2f} mSv/day background"),
+                    "pillar": "PREVENT"})
+
+        # Mission-phase projection against NASA's 600 mSv career limit, from the measured daily dose
+        cumulative = crew_member.cumulative_radiation or 0.0
+        if dose is not None and bg is None:
+            p = aegis_mission.profile()
+            remaining = max(0, p["phase_days"] - crew_member.mission_day)
+            projected = cumulative + dose * remaining
+            if projected > 0.8 * aegis_mission.CAREER_LIMIT_MSV:
                 findings.append({
-                    "type": "prediction",
-                    "metric": "cumulative_radiation",
-                    "value": projected_annual,
-                    "message": f"Projected dose at Day 365: {projected_annual:.0f} mSv (based on {daily_avg:.1f} mSv/day avg)",
-                    "pillar": "PREDICT"
-                })
-        
+                    "type": "prediction", "metric": "cumulative_radiation", "value": round(projected),
+                    "message": (f"On track for {projected:.0f} mSv by day {p['phase_days']} of the "
+                                f"{p['label'].lower()} ({projected / aegis_mission.CAREER_LIMIT_MSV:.0%} of the "
+                                f"{aegis_mission.CAREER_LIMIT_MSV:.0f} mSv career limit), at {dose:.2f} mSv/day"),
+                    "pillar": "PREDICT"})
+
         return findings
     
     def get_recommendations(self, crew_member: CrewMember, findings: list[dict]) -> list[Recommendation]:
@@ -573,7 +587,7 @@ class SOLARISAgent(BaseAgent):
                     actions=[
                         "Limit time in high-exposure areas",
                         "Postpone non-essential EVA activities",
-                        "Consider pharmaceutical radioprotectants if available",
+                        "Check the space-weather forecast before scheduling EVAs",
                         "Review shielding in current location"
                     ],
                     evidence=evidence,
@@ -734,63 +748,66 @@ class OsteoWatchAgent(BaseAgent):
 class GENEAgent(BaseAgent):
     """
     GENE: Genomic and inflammatory marker monitoring agent.
-    Detects IL-6/CRP elevation 1-2 days after SPE or other stressors.
+    Flags a rise in modelled IL-6 against the crew member's own pre-flight baseline.
     Key to cascade detection as the immune response signals multi-system stress.
     """
     
     agent_type = AgentType.GENE
     specialty = "inflammatory"
     
-    # GENE thresholds (shared by the agent rules and the dashboard read-out)
-    IL6_CAUTION, IL6_WARNING = 8.0, 12.0     # pg/mL
-    CRP_CAUTION, CRP_WARNING = 5.0, 8.0      # mg/L
+    # Absolute backstop thresholds (pg/mL); the main rule is the personal baseline (aegis_mission)
+    IL6_CAUTION, IL6_WARNING = aegis_mission.IL6_ABS_CAUTION, aegis_mission.IL6_ABS_WARNING
 
     @classmethod
     def estimate_markers(cls, crew_member: CrewMember) -> Optional[dict]:
         """
-        IL-6 / CRP for a crew member. No in-flight biomarker sensor feeds AEGIS yet, so these are
-        MODELLED from stress and radiation (IL-6 rises with both; CRP lags and accumulates with mission
-        day). Replace with real lab / sensor values when available; everything downstream stays the same.
+        IL-6 for a crew member. No in-flight biomarker sensor feeds AEGIS, so IL-6 is MODELLED from stress and
+        radiation above the mission background (aegis_mission.il6_model). Its personal pre-flight baseline is
+        seeded inside the Inspiration4 crew's real pre-flight range. Replace with real lab values when available.
         """
         v = crew_member.vitals
         if not v:
             return None
-        stress = v.stress_index or 50
-        radiation_24h = v.radiation_dose_24h or 0.3
-        il6 = (stress / 10) + (radiation_24h * 3)
-        crp = (stress / 15) + (radiation_24h * 2) + (crew_member.mission_day / 100)
-        if il6 > cls.IL6_WARNING:          # status follows IL-6, the dashboard metric
+        il6 = aegis_mission.il6_model(v.stress_index, v.radiation_dose_24h)
+        base = aegis_mission.il6_baseline(crew_member.id)
+        limit = aegis_mission.il6_personal_limit(base)
+        if il6 >= limit or il6 > cls.IL6_WARNING:
             status = "elevated"
-        elif il6 > cls.IL6_CAUTION:
+        elif il6 >= base + 0.5 * (limit - base) or il6 > cls.IL6_CAUTION:
             status = "mild"
         else:
             status = "normal"
-        return {"il6": round(il6, 1), "crp": round(crp, 1), "il6_unit": "pg/mL", "crp_unit": "mg/L",
+        return {"il6": round(il6, 1), "il6_unit": "pg/mL", "baseline": base, "personal_limit": limit,
                 "status": status, "source": "modelled",
-                "thresholds": {"il6_caution": cls.IL6_CAUTION, "il6_warning": cls.IL6_WARNING,
-                               "crp_caution": cls.CRP_CAUTION, "crp_warning": cls.CRP_WARNING}}
+                "thresholds": {"il6_personal": limit, "il6_baseline": base,
+                               "il6_caution": cls.IL6_CAUTION, "il6_warning": cls.IL6_WARNING}}
 
     def analyze(self, crew_member: CrewMember) -> list[dict]:
-        """Analyze inflammatory markers (modelled from stress/radiation context, see estimate_markers)."""
-        findings = []
-        vitals = crew_member.vitals
-        
-        if not vitals:
-            return findings
-        
-        # Dashboard-metrics scope: GENE evaluates IL-6 (the dashboard metric). CRP is shown as context only.
-        markers = self.estimate_markers(crew_member)
-        return self.il6_findings(markers["il6"])
+        """IL-6 against this crew member's own pre-flight baseline (modelled value, see estimate_markers)."""
+        if not crew_member.vitals:
+            return []
+        m = self.estimate_markers(crew_member)
+        return self.il6_findings(m["il6"], m["baseline"])
 
     @classmethod
-    def il6_findings(cls, il6: float) -> list[dict]:
-        """GENE's IL-6 rules (also used by the What-If simulator with a hypothetical IL-6)."""
+    def il6_findings(cls, il6: float, baseline: Optional[float] = None) -> list[dict]:
+        """
+        GENE's IL-6 rules (also used by the What-If simulator and the accuracy evaluation).
+        1. Personal baseline: >= 1.5 x own pre-flight baseline AND >= +1.5 pg/mL above it. On the real
+           Inspiration4 data this caught 3 of 4 return-day rises (the fixed threshold alone caught 0 of 4).
+        2. Absolute backstop: > 12 pg/mL warning, > 8 pg/mL caution.
+        """
+        if baseline is not None and il6 >= aegis_mission.il6_personal_limit(baseline):
+            return [{"type": "warning", "metric": "il6", "value": il6, "baseline": baseline,
+                     "message": (f"Inflammation signal up: IL-6 {il6:.1f} pg/mL, {il6 / baseline:.1f}x this crew "
+                                 f"member's pre-flight baseline of {baseline:.1f} pg/mL (modelled)"),
+                     "pillar": "PREVENT"}]
         if il6 > cls.IL6_WARNING:
             return [{"type": "warning", "metric": "il6", "value": il6,
-                     "message": f"Elevated IL-6: {il6:.1f} pg/mL", "pillar": "PREVENT"}]
+                     "message": f"Elevated IL-6: {il6:.1f} pg/mL (modelled)", "pillar": "PREVENT"}]
         if il6 > cls.IL6_CAUTION:
             return [{"type": "caution", "metric": "il6", "value": il6,
-                     "message": f"Mildly elevated IL-6: {il6:.1f} pg/mL (monitoring)", "pillar": "PREDICT"}]
+                     "message": f"Mildly elevated IL-6: {il6:.1f} pg/mL (modelled, monitoring)", "pillar": "PREDICT"}]
         return []
     
     def get_recommendations(self, crew_member: CrewMember, findings: list[dict]) -> list[Recommendation]:
@@ -1331,19 +1348,30 @@ class AEGISAgent(BaseAgent):
             "Reply out loud, like a person talking, in at most 60 words. It is a conversation, not a report: "
             "if it's small talk, a joke request or any other topic, just respond naturally (you don't have to bring up "
             "health at all). If it's about the crew's health, answer only what was asked, in plain everyday words, "
-            "and say what to do if anything. If you don't have the data for it, say so simply and share what you do know."
+            "If something should be done, only mention an action that already appears in the findings or open alerts above; "
+            "never give new medical instructions, medicines, doses or procedures (say the flight surgeon will decide). "
+            "Use only these units with numbers: mSv, pg/mL, bpm, percent, hours, minutes, days. "
+            "If you don't have the data for it, say so simply and share what you do know."
         )
         answer = aegis_llm.chat(prompt, persona=agent_name, words=60, mode="chat")
         source = "deepseek"
         # Grounding: every number in a spoken answer must come from the data in the prompt (aegis_verify).
         num_check, first_check = None, None
+        # Also: only whitelisted units, and no medicine or dose that is not in the data given to the model.
+        def _voice_check(txt):
+            n = aegis_verify.check_numbers(txt, prompt)
+            u = aegis_verify.check_units(txt)
+            m = aegis_verify.check_medicine(txt, prompt)
+            bad = n["unsupported"] + u["unsupported"] + m["unsupported"]
+            return {**n, "units_ok": u["ok"], "medicine_ok": m["ok"], "unsupported": bad, "ok": not bad}
         if answer:
-            num_check = first_check = aegis_verify.check_numbers(answer, prompt)
+            num_check = first_check = _voice_check(answer)
             if not num_check["ok"]:
-                retry = aegis_llm.chat(prompt + "\n\nYour previous reply used numbers that are not in the data above ("
+                retry = aegis_llm.chat(prompt + "\n\nYour previous reply failed an automatic check ("
                                        + ", ".join(num_check["unsupported"]) + "). Answer again using only numbers "
-                                       "that appear above, or no numbers.", persona=agent_name, words=60, mode="chat")
-                num_check = aegis_verify.check_numbers(retry or "", prompt)
+                                       "that appear above (or none), only the allowed units, and no medicines or doses.",
+                                       persona=agent_name, words=60, mode="chat")
+                num_check = _voice_check(retry or "")
                 answer = retry if (retry and num_check["ok"]) else None
         if not answer:
             source = "rules"
@@ -1397,7 +1425,7 @@ class AEGISAgent(BaseAgent):
         for a in self.specialists:
             name = a.agent_type.value.upper()
             if name == "GENE":
-                f = GENEAgent.il6_findings(il6)
+                f = GENEAgent.il6_findings(il6, aegis_mission.il6_baseline(base.id))
             else:
                 # Long-range predictions (e.g. day-365 dose projection) aren't part of a what-if on readings
                 f = [x for x in a.analyze(hypo) if x.get("type") != "prediction"]
@@ -1601,6 +1629,11 @@ class AEGISAgent(BaseAgent):
         self._predict_fired.clear()
         aegis_trends.NOTES.clear()
         self._agent_status_history.clear()
+
+    def reset_state(self):
+        """Clean demo start: forget cascade / forecast / stale-recommendation memory (the DB is cleared separately)."""
+        self.rearm_cascades()
+        self._rec_misses = {}
 
     def _check_cascade(self, crew_member: CrewMember) -> Optional[dict]:
         """

@@ -423,7 +423,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/alerts?unacknowledged_only=true"</p
   <tr><td>10.2</td><td>IL-6 = 15</td><td>ALERT (GENE red)</td><td>GENE recommendation</td></tr>
   <tr><td>10.3</td><td>Heart rate = 130</td><td>ALERT (PULSE red)</td><td>PULSE recommendation</td></tr>
   <tr><td>10.4</td><td>Heart rate = 110, IL-6 = 10, Sleep = 60</td><td>CASCADE</td><td>Recovery plan (RECOVER-3)</td></tr>
-  <tr><td>10.5</td><td>Radiation 24 h = 1.4</td><td>PROTECT</td><td>Storm-shelter plan (SHELTER-1)</td></tr>
+  <tr><td>10.5</td><td>Radiation 24 h = 12</td><td>PROTECT</td><td>Storm-shelter plan (SHELTER-1)</td></tr>
   <tr><td>10.6</td><td>SpO₂ = 88</td><td>PROTECT</td><td>Medical response (MEDIC-1)</td></tr>
 </table>
 
@@ -556,9 +556,9 @@ git check-ignore .env extension_token.txt aegis.db</pre></div>
   <tr><th>Metric</th><th>Agent</th><th>Amber</th><th>Red / emergency</th></tr>
   <tr><td>Heart rate</td><td>PULSE</td><td>&gt; 100 bpm</td><td>&gt; 120 red · &gt; 150 or &lt; 40 critical (medical response)</td></tr>
   <tr><td>SpO₂</td><td>PULSE</td><td>&lt; 95%</td><td>&lt; 90% critical (medical response)</td></tr>
-  <tr><td>IL-6</td><td>GENE</td><td>&gt; 8 pg/mL (mild)</td><td>&gt; 12 pg/mL (elevated)</td></tr>
+  <tr><td>IL-6 (modelled)</td><td>GENE</td><td>&ge; 1.5&times; own pre-flight baseline and +1.5 pg/mL (e.g. 5.78 for Chen)</td><td>&gt; 12 pg/mL (absolute backstop)</td></tr>
   <tr><td>Sleep</td><td>MIRROR</td><td>&lt; 70 (fair)</td><td>&lt; 50 (poor)</td></tr>
-  <tr><td>Radiation, 24 h</td><td>SOLARIS</td><td>&gt; 0.5 mSv</td><td>&gt; 1.0 mSv (storm shelter)</td></tr>
+  <tr><td>Radiation, 24 h</td><td>SOLARIS</td><td>&ge; 2&times; mission background (3.68 mSv in Mars transit)</td><td>&ge; 5&times; background and &ge; background + 5 (9.2 mSv: storm shelter)</td></tr>
 </table>
 <p class="sub">Cascade = 3 or more agents out of range for one crew member. Early warning = domains already out of range plus domains forecast to cross within 20 minutes reaching 3.</p>
 

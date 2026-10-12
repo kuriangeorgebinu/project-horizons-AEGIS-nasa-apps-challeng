@@ -436,6 +436,15 @@
     </style>
 </head>
 <body>
+<div style="max-width:1100px;margin:12px auto;padding:14px 18px;border:2px solid #d97706;border-radius:10px;background:#fff7e6;color:#3b2a06;font:14px/1.5 system-ui,Segoe UI,Arial,sans-serif;" role="note"><b>Status note (October 2026).</b> This is the original architecture design. Some parts describe the original concept, not the software as built. Where they differ, this box is correct:<ul style="margin:.4rem 0 0 1.1rem;padding:0">
+<li><b>Built and running:</b> AEGIS coordinator + 4 specialist agents (PULSE heart rate/SpO&#8322;, GENE IL-6, MIRROR sleep, SOLARIS radiation), rule-based detection, trend forecasts, cascade detection, PREVENT/PROTECT protocols, DeepSeek explanations with an automatic fact check, phone alert to the on-call flight surgeon.</li>
+<li><b>Data:</b> vitals are <b>simulated</b> (no wearable hardware). IL-6 is <b>modelled</b> from stress and radiation, not measured. Radiation is judged against the Mars-transit background measured by Curiosity RAD (1.84 mSv/day). Real NASA data (Inspiration4 / OSDR OSD-575, NTRS abstracts) is used to <b>check the rules</b> and as the RAG knowledge base; nothing is &ldquo;trained&rdquo; on it.</li>
+<li><b>Prediction scope:</b> in the demo AEGIS forecasts a cascade about 2&ndash;3 minutes before the third domain crosses its limit (the demo runs a compressed 6-minute build-up). On a mission the same trend method would work on hours-to-days data; that has <b>not</b> been validated.</li>
+<li><b>Not built (concept only):</b> HRV, CRP, cognitive tests (PVT/n-back), live DSCOVR/GOES feeds, RadLab dose model, z-score/EWMA baselines, genomic (TP53) analysis, a 30-second auto-execute override. PROTECT protocols are raised for a human to confirm.</li>
+<li><b>Category strategy now:</b> Best Mission Concept (primary), Best Use of Technology (secondary).</li>
+</ul>
+<div style="margin-top:.4rem">Current numbers and test results: <b>README.md</b> and <b>AEGIS-Accuracy-Report.html</b>.</div></div>
+
 
     <!-- Header -->
     <header class="header">
@@ -454,9 +463,9 @@
         
         <div class="overview-box">
             <p><strong>AEGIS</strong> is a three-tier autonomous health system designed for zero-Earth-dependence missions. 
-            <strong>Tier 1 (Predict)</strong> uses multi-agent AI to detect emerging health cascades days to weeks before they become critical. 
+            <strong>Tier 1 (Predict)</strong> uses multi-agent trend forecasts to flag an emerging health cascade before it forms (about 2&ndash;3 minutes ahead in the compressed demo; hours to days on a mission, not yet validated). 
             <strong>Tier 2 (Prevent)</strong> delivers proactive intervention recommendations to stop problems before they escalate. 
-            <strong>Tier 3 (Protect)</strong> executes autonomous emergency protocols within 10 seconds when prevention fails — no Earth delay, no waiting for Mission Control.</p>
+            <strong>Tier 3 (Protect)</strong> raises emergency protocols at once when prevention fails, for a human to confirm, and phones the on-call flight surgeon — no Earth delay, no waiting for Mission Control.</p>
             <p style="margin-top:15px;"><strong>Knowledge-Grounded:</strong> All decisions are backed by <strong>RAG-powered access</strong> to NASA HRP protocols, OSDR research datasets, and real-time space weather feeds — ensuring evidence-based responses, not guesswork.</p>
         </div>
 
@@ -465,7 +474,7 @@
             <div style="flex:1;min-width:200px;background:linear-gradient(135deg,#e8f4fc,#f8f9fa);border:2px solid #0066cc;border-radius:10px;padding:20px;text-align:center;">
                 <div style="font-size:28px;margin-bottom:8px;">🔮</div>
                 <div style="font-size:18px;font-weight:700;color:#0066cc;margin-bottom:4px;">PREDICT</div>
-                <div style="font-size:12px;color:#666;">Days to weeks early</div>
+                <div style="font-size:12px;color:#666;">Before it forms (minutes in the demo)</div>
                 <div style="font-size:11px;color:#888;margin-top:8px;">Cascade detection across<br/>5 specialized agents</div>
             </div>
             <div style="flex:1;min-width:200px;background:linear-gradient(135deg,#e8f8f0,#f8f9fa);border:2px solid #059669;border-radius:10px;padding:20px;text-align:center;">
@@ -477,7 +486,7 @@
             <div style="flex:1;min-width:200px;background:linear-gradient(135deg,#fef2f2,#f8f9fa);border:2px solid #dc3545;border-radius:10px;padding:20px;text-align:center;">
                 <div style="font-size:28px;margin-bottom:8px;">⚡</div>
                 <div style="font-size:18px;font-weight:700;color:#dc3545;margin-bottom:4px;">PROTECT</div>
-                <div style="font-size:12px;color:#666;">10-second response</div>
+                <div style="font-size:12px;color:#666;">Immediate alert</div>
                 <div style="font-size:11px;color:#888;margin-top:8px;">Autonomous emergency<br/>protocol execution</div>
             </div>
         </div>
@@ -601,7 +610,7 @@
             Tier 1: PREDICT — Cascade Detection
         </h2>
         
-        <p style="color:#666;margin-bottom:25px;">Five specialized AI agents continuously monitor different health domains and correlate signals across time to detect emerging problems days to weeks before they become critical.</p>
+        <p style="color:#666;margin-bottom:25px;">Five specialized AI agents continuously monitor different health domains and correlate signals across time to flag emerging problems before they become critical (minutes ahead in the compressed demo).</p>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:30px;">
             <div style="background:#f8f4ff;border:2px solid #7c3aed;border-radius:8px;padding:15px;text-align:center;">
@@ -760,7 +769,7 @@
                 <div class="step-number">3</div>
                 <div class="step-line"></div>
                 <div class="step-content">
-                    <div class="step-title">⏱️ 10-Second Response Window</div>
+                    <div class="step-title">⏱️ Immediate alert, human confirms</div>
                     <div class="step-description">
                         AEGIS waits exactly 10 seconds for any human response. This gives crew members
                         time to acknowledge the alert, provide context, or take manual control of the situation.

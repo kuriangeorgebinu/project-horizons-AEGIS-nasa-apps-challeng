@@ -34,6 +34,15 @@ li{margin:.5rem 0;}
 </style>
 </head>
 <body>
+<div style="max-width:1100px;margin:12px auto;padding:14px 18px;border:2px solid #d97706;border-radius:10px;background:#fff7e6;color:#3b2a06;font:14px/1.5 system-ui,Segoe UI,Arial,sans-serif;" role="note"><b>Status note (October 2026).</b> This is an early interaction-flow sketch. Some parts describe the original concept, not the software as built. Where they differ, this box is correct:<ul style="margin:.4rem 0 0 1.1rem;padding:0">
+<li><b>Built and running:</b> AEGIS coordinator + 4 specialist agents (PULSE heart rate/SpO&#8322;, GENE IL-6, MIRROR sleep, SOLARIS radiation), rule-based detection, trend forecasts, cascade detection, PREVENT/PROTECT protocols, DeepSeek explanations with an automatic fact check, phone alert to the on-call flight surgeon.</li>
+<li><b>Data:</b> vitals are <b>simulated</b> (no wearable hardware). IL-6 is <b>modelled</b> from stress and radiation, not measured. Radiation is judged against the Mars-transit background measured by Curiosity RAD (1.84 mSv/day). Real NASA data (Inspiration4 / OSDR OSD-575, NTRS abstracts) is used to <b>check the rules</b> and as the RAG knowledge base; nothing is &ldquo;trained&rdquo; on it.</li>
+<li><b>Prediction scope:</b> in the demo AEGIS forecasts a cascade about 2&ndash;3 minutes before the third domain crosses its limit (the demo runs a compressed 6-minute build-up). On a mission the same trend method would work on hours-to-days data; that has <b>not</b> been validated.</li>
+<li><b>Not built (concept only):</b> HRV, CRP, cognitive tests (PVT/n-back), live DSCOVR/GOES feeds, RadLab dose model, z-score/EWMA baselines, genomic (TP53) analysis, a 30-second auto-execute override. PROTECT protocols are raised for a human to confirm.</li>
+<li><b>Category strategy now:</b> Best Mission Concept (primary), Best Use of Technology (secondary).</li>
+</ul>
+<div style="margin-top:.4rem">Current numbers and test results: <b>README.md</b> and <b>AEGIS-Accuracy-Report.html</b>.</div></div>
+
 
 <h1>◈ AEGIS — User Interaction Flows</h1>
 <p class="subtitle">UX specification for astronaut, commander, and flight surgeon interactions</p>
@@ -113,13 +122,13 @@ SYSTEM: AEGIS confirms via voice panel</div>
 AUDIO: Alert tone plays
 VOICE: AEGIS announces: "Cascade alert detected..."</div>
   <div class="flow-arrow">▼</div>
-  <div class="flow-box">USER ACTION: Reviews alert, clicks [Confirm Protocol Alpha-3]
+  <div class="flow-box">USER ACTION: Reviews alert, clicks [Start recovery plan (RECOVER-3)]
 
 OR if no response in 30 seconds:
 SYSTEM: Auto-executes protocol (autonomous mode)</div>
   <div class="flow-arrow">▼</div>
   <div class="flow-box">SYSTEM: Opens Spacecraft Simulation View
-→ Triggers via URL: aegis-spacecraft-sim-2d.html?alert=cascade&protocol=alpha-3
+→ Triggers via URL: aegis-spacecraft-sim-2d.html?alert=cascade&protocol=RECOVER-3
 
 SPACECRAFT SIM SHOWS:
 • Shelter room highlights in green
@@ -131,7 +140,7 @@ SPACECRAFT SIM SHOWS:
   <div class="flow-box">SYSTEM: Dashboard shows confirmation
 • Celebration animation (green pulse, checkmarks)
 • All agents show synchronized confirmation
-VOICE: "Protocol Alpha-3 confirmed. Crew moving to shelter."
+VOICE: "Recovery plan confirmed. Workload reduced, daily check-ins started."
 
 SPACECRAFT SIM UPDATES:
 • Astronauts arrive at shelter (animated)
@@ -154,7 +163,7 @@ SPACECRAFT SIM UPDATES:
   <p><strong>Method:</strong> URL Parameters + localStorage (no backend required for demo)</p>
   <div class="flow-box">Dashboard confirms protocol
     ↓
-window.open('aegis-spacecraft-sim-2d.html?alert=cascade&protocol=alpha-3&severity=critical')
+window.open('aegis-spacecraft-sim-2d.html?alert=cascade&protocol=RECOVER-3&severity=critical')
     ↓
 Spacecraft Sim reads URL params on load:
   const params = new URLSearchParams(window.location.search);
@@ -207,7 +216,7 @@ SYSTEM: Synthesizes response</div>
   <div class="flow-arrow">▼</div>
   <div class="flow-box">UI: Response appears (typewriter effect)
 AUDIO: Text-to-speech reads response
-"Dr. Santos is nominal. Sleep quality 89%, stress low.
+"Dr. Kowalski is nominal. Sleep quality 89%, stress low.
  No active recommendations. Last check: 2 minutes ago."</div>
 </div>
 
@@ -218,7 +227,7 @@ AUDIO: Text-to-speech reads response
   <div class="flow-box">UI: Shows all 4 crew cards with status badges:
 • Cmdr. Chen — Elevated (yellow)
 • Dr. Okonkwo — Nominal (green)
-• Dr. Santos — Nominal (green)
+• Dr. Kowalski — Nominal (green)
 • Eng. Kowalski — Nominal (green)</div>
   <div class="flow-arrow">▼</div>
   <div class="flow-box">USER ACTION: Clicks on Cmdr. Chen's card</div>

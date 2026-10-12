@@ -114,6 +114,13 @@ def call(message: str, key: str, reason: str = "alert", source: str = "rules") -
     return rec
 
 
+def reset_log() -> None:
+    """Clean demo start: clear the call log and per-alert cooldowns (the hourly cap still applies)."""
+    with _lock:
+        HISTORY.clear()
+        _last_by_key.clear()
+
+
 def call_async(message: str, key: str, reason: str = "alert", source: str = "rules") -> None:
     threading.Thread(target=call, args=(message, key, reason, source), daemon=True, name="aegis-call").start()
 

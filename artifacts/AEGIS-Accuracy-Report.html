@@ -58,40 +58,56 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <header style="display:grid;gap:.7rem">
   <div class="eyebrow">Project Horizons · NASA Space Apps 2026</div>
   <h1>AEGIS Accuracy Report</h1>
-  <p class="meta">Run on 11 Oct 2026 against the live code. AI model: DeepSeek (deepseek-flash). Scripts: <code>eval/run_eval.py</code>, <code>aegis_verify.py</code>. Raw output: <code>eval/results.json</code>.</p>
-  <p class="lede">We tested two different things. First, whether the agents' <b>rules</b> give the right answer on real measured data from NASA. Second, whether the <b>AI wording</b> stays true to the data and sources it is given. Here is what we found, including the parts that failed.</p>
+  <p class="meta">Second run, 11 Oct 2026, after the Step 1 fixes. Same tests as the first run, against the live code. AI model: DeepSeek (deepseek-flash). Scripts: <code>eval/run_eval.py</code>, <code>aegis_verify.py</code>, <code>eval/verify_step1*.py</code>. Raw output: <code>eval/results.json</code> (first run kept as <code>eval/results.before-step1.json</code>).</p>
+  <p class="lede">We test two things. First, whether the agents' <b>rules</b> give the right answer on real measured data from NASA. Second, whether the <b>AI wording</b> stays true to the data and sources it is given. The first run found two rules that were wrong. This run shows what changed after fixing them, including what still fails.</p>
 </header>
 
 <section>
   <h2>Findings at a glance</h2>
   <div class="verdicts">
-    <div class="verdict ok"><span class="num">0 of 20</span><span class="lbl">AI recommendation drafts that invented a number. 1 of 12 voice answers did, and the checker caught and corrected it.</span></div>
-    <div class="verdict ok"><span class="num">9 of 10</span><span class="lbl">AI recommendations that pass every fact check after one retry. The tenth falls back to the rule-based advice.</span></div>
-    <div class="verdict ok"><span class="num">185 of 192</span><span class="lbl">Planted hallucinations the checker caught. Numbers, citations and medicines: all caught. Actions: 75 of 82.</span></div>
-    <div class="verdict ok"><span class="num">5 of 5</span><span class="lbl">PULSE heart-rate and oxygen decisions that match the clinical definitions.</span></div>
-    <div class="verdict bad"><span class="num">0 of 4</span><span class="lbl">Real post-flight IL-6 rises (Inspiration4) that GENE's fixed 8 pg/mL threshold detects.</span></div>
-    <div class="verdict bad"><span class="num">2 of 5</span><span class="lbl">Real radiation environments where SOLARIS gives the right call. It orders shelter for normal deep-space cruise.</span></div>
+    <div class="verdict ok"><span class="num">0/4 → 3/4</span><span class="lbl">Real post-flight IL-6 rises (Inspiration4) that GENE detects, now that it compares against each person's own pre-flight baseline. 1 false alarm in 12 pre-flight samples.</span></div>
+    <div class="verdict ok"><span class="num">3/8 → 8/8</span><span class="lbl">Radiation cases where SOLARIS makes the right call, now that it judges dose against the mission's normal background. Normal deep-space cruise no longer triggers the storm shelter.</span></div>
+    <div class="verdict ok"><span class="num">9 of 10</span><span class="lbl">AI recommendations that pass every fact check (8 on the first try). The tenth falls back to the rule-based advice.</span></div>
+    <div class="verdict ok"><span class="num">184 of 195</span><span class="lbl">Planted hallucinations the checker caught. Numbers, citations and medicines: all caught. Paraphrased actions: 73 of 84.</span></div>
+    <div class="verdict ok"><span class="num">12 of 12</span><span class="lbl">Voice answers whose numbers all match the live data on the first try.</span></div>
+    <div class="verdict warn"><span class="num">2 of 10</span><span class="lbl">First drafts that pinned a sentence to a passage that does not say it. Still DeepSeek's main weakness; the checker caught both.</span></div>
   </div>
-  <p class="note">The AI layer holds up well: it rarely invents facts, and the checker blocks what it does invent. The weak spot is upstream. Two of the rules the AI explains (GENE's IL-6 threshold and SOLARIS's daily-dose threshold) do not match real data. A perfectly grounded explanation of a wrong rule is still wrong, so those rules need fixing first.</p>
+  <p class="note">Both rule problems from the first run are fixed and re-tested. The AI layer is also safer: recommendation cards now show the approved protocol steps word for word, so a mis-paraphrased action can no longer reach the crew. The biggest open limit is unchanged: the vital signs are simulated and IL-6 is modelled, so none of this is a clinical validation.</p>
+</section>
+
+<section>
+  <h2>What changed since the first run</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Area</th><th>First run</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>SOLARIS rule</td><td>Fixed: warning above 0.5, shelter above 1.0 mSv in 24 h</td><td>Relative to the mission background (<code>aegis_mission.py</code>): warning at 2× background, shelter at 5× background and at least background + 5 mSv. Mars transit: 1.84 / 3.68 / 9.2 mSv</td></tr>
+      <tr><td>GENE rule</td><td>Fixed: IL-6 above 8 pg/mL</td><td>≥ 1.5× own pre-flight baseline and +1.5 pg/mL, with &gt; 12 pg/mL as a backstop. Baselines seeded inside the real Inspiration4 pre-flight range</td></tr>
+      <tr><td>IL-6 model</td><td>Two different formulas (agent and forecast)</td><td>One shared, labelled-as-modelled formula used by GENE, the forecasts, the What-If tool and the dashboard</td></tr>
+      <tr><td>Simulator dose history</td><td>135–145 mSv at day 54 (≈2.6 mSv/day)</td><td>95–103 mSv (day 54 × 1.84 mSv/day). Solar storm demo now reaches 20–32 mSv/day</td></tr>
+      <tr><td>Radiation projection</td><td>Yearly total from history (~1,240 mSv/year)</td><td>To the end of the mission phase against NASA's 600 mSv career limit, shown only if it passes 80% of it</td></tr>
+      <tr><td>Recommendation steps</td><td>AI rewording shown on the card</td><td>Approved steps shown word for word; the AI only picks and orders them</td></tr>
+      <tr><td>Voice answers</td><td>Numbers checked</td><td>Numbers, units (whitelist) and medicines checked; the AI may only repeat actions already in the findings</td></tr>
+    </tbody></table></div>
 </section>
 
 <section>
   <h2>1 · How the fact checker works</h2>
-  <p>Every DeepSeek recommendation now passes through <code>aegis_verify.py</code> before it reaches the dashboard. It does not ask another AI whether the text looks right. Each check compares the text mechanically against exactly what the model was given.</p>
+  <p>Every DeepSeek recommendation passes through <code>aegis_verify.py</code> before it reaches the dashboard. It does not ask another AI whether the text looks right. Each check compares the text mechanically against exactly what the model was given.</p>
   <div class="checks">
     <div class="check"><b>Numbers</b><span>Every number must appear in the crew readings, thresholds or evidence (rounding allowed; "about" allows 5%). Advice durations like "2 hours" are exempt.</span></div>
-    <div class="check"><b>Citations</b><span>Each sentence that cites [n] must be about the same thing as passage n (MiniLM similarity ≥ 0.30, the same model the knowledge base uses).</span></div>
-    <div class="check"><b>Actions</b><span>The model must say which approved step each action rewrites, and the rewrite must stay close to that step (similarity ≥ 0.40).</span></div>
+    <div class="check"><b>Citations</b><span>Each sentence that cites [n] must be about the same thing as passage n (MiniLM similarity ≥ 0.30).</span></div>
+    <div class="check"><b>Actions</b><span>Each action must name a valid approved step. The card then shows that step's approved text, not the AI's wording.</span></div>
     <div class="check"><b>Medicines</b><span>No medicine, supplement or dose unless it already appears in the approved steps or evidence.</span></div>
+    <div class="check"><b>Units (voice)</b><span>Spoken numbers may only use mSv, pg/mL, bpm, %, mmHg or time units. Doses, Gy/Sv/rem and lab units are rejected.</span></div>
   </div>
-  <p>If a draft fails, the model gets one retry with the problems listed. If it fails again, the card shows the rule-based advice instead. Cards now carry a <span class="pill ok">✓ Fact-checked</span> or <span class="pill warn">Rules only</span> badge, and hovering the badge shows the counts. Voice answers get the numbers check with the same one-retry rule.</p>
+  <p>If a draft fails, the model gets one retry with the problems listed. If it fails again, the card shows the rule-based advice and a <span class="pill warn">Rules only</span> badge instead of <span class="pill ok">✓ Fact-checked</span>.</p>
 </section>
 
 <section>
   <h2>2 · Rules against real data</h2>
 
   <h3>GENE and the Inspiration4 crew (NASA OSDR, OSD-575)</h3>
-  <p>Serum IL-6 measured for the four Inspiration4 crew members: three times before launch, then 1, 45, 82 and 194 days after return. The day after return (R+1) is a known stress state for the body, and IL-6 rose for all four crew. Values are in pg/mL.</p>
+  <p>Serum IL-6 measured for the four Inspiration4 crew members: three times before launch, then 1, 45, 82 and 194 days after return. The day after return (R+1) is a known stress state, and IL-6 rose for all four. Values in pg/mL.</p>
   <div class="tbl"><table>
     <thead><tr><th>Crew</th><th class="n">L-92</th><th class="n">L-44</th><th class="n">L-3</th><th class="n">Own baseline</th><th class="n">R+1</th><th class="n">R+45</th><th class="n">R+82</th><th class="n">R+194</th></tr></thead>
     <tbody>
@@ -103,127 +119,115 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <div class="tbl"><table>
     <thead><tr><th>Rule replayed on the real values</th><th class="n">Return-day rises caught</th><th class="n">False alarms before flight</th></tr></thead>
     <tbody>
-      <tr><td>Current GENE rule: IL-6 above 8 pg/mL</td><td class="n"><span class="pill bad">0 / 4</span></td><td class="n">0 / 12</td></tr>
-      <tr><td>Personal baseline: ≥ 1.25× own pre-flight mean and +1.5 pg/mL</td><td class="n">3 / 4</td><td class="n">1 / 12</td></tr>
-      <tr><td>Personal baseline: ≥ 1.5× own pre-flight mean and +1.5 pg/mL</td><td class="n"><span class="pill ok">3 / 4</span></td><td class="n">1 / 12</td></tr>
-      <tr><td>Personal baseline: ≥ 2× own pre-flight mean and +1.5 pg/mL</td><td class="n">1 / 4</td><td class="n">1 / 12</td></tr>
+      <tr><td>Before: IL-6 above 8 pg/mL</td><td class="n"><span class="pill bad">0 / 4</span></td><td class="n">0 / 12</td></tr>
+      <tr><td><b>Now (AEGIS GENE):</b> ≥ 1.5× own baseline and +1.5 pg/mL, or &gt; 12</td><td class="n"><span class="pill ok">3 / 4</span></td><td class="n">1 / 12</td></tr>
+      <tr><td>Alternative: ≥ 1.25× own baseline and +1.5</td><td class="n">3 / 4</td><td class="n">1 / 12</td></tr>
+      <tr><td>Alternative: ≥ 2× own baseline and +1.5</td><td class="n">1 / 4</td><td class="n">1 / 12</td></tr>
     </tbody></table></div>
-  <p>Across all 28 samples the current rule flags exactly one: C002 at R+45 (12.07). The fixed threshold sits above the normal range of this assay, so it misses every return-day rise. A rule based on each person's own baseline catches 3 of 4. False alarms were scored leave-one-out: each pre-flight sample is compared against the mean of the other two. The one false alarm is C001's L-3 sample (5.94), drawn three days before launch. With four people, this is a sanity check, not a validation.</p>
-  <p class="note">In the live system, GENE's IL-6 is modelled from stress and radiation because no blood sensor feeds AEGIS. The dashboard number is an estimate, and the dashboard labels it that way.</p>
+  <p>The miss is C002 (4.40 → 5.76, a rise of 1.36, below the +1.5 floor). The false alarm is C001's L-3 sample (5.94), compared leave-one-out against the other two pre-flight samples. With four people this is a sanity check, not a validation, and the 1.5× / +1.5 values were chosen on this same small dataset.</p>
+  <p class="note">In the live system IL-6 is <b>modelled</b> from stress and radiation (no blood sensor feeds AEGIS), and the dashboard labels it that way. The real data tests the rule, not the model.</p>
 
   <h3>SOLARIS and measured radiation environments</h3>
+  <p>Each environment is judged against its own mission profile, as AEGIS would be configured for that mission.</p>
   <div class="tbl"><table>
-    <thead><tr><th>Environment</th><th class="n">mSv/day</th><th>Measured by</th><th>Correct call</th><th>SOLARIS today</th></tr></thead>
+    <thead><tr><th>Case</th><th class="n">mSv/day</th><th>Source</th><th>Correct call</th><th>Before</th><th>Now</th></tr></thead>
     <tbody>
-      <tr><td>ISS, low end</td><td class="n">0.44</td><td>SIDC (80 mSv per 6 months)</td><td>No alert</td><td><span class="pill ok">No alert</span></td></tr>
-      <tr><td>ISS, high end</td><td class="n">0.88</td><td>SIDC (160 mSv per 6 months)</td><td>No alert</td><td><span class="pill bad">Warning</span></td></tr>
-      <tr><td>Mars surface</td><td class="n">0.64</td><td>Curiosity RAD (Hassler 2014)</td><td>No alert</td><td><span class="pill bad">Warning</span></td></tr>
-      <tr><td>Deep-space cruise</td><td class="n">1.84</td><td>Curiosity RAD (Zeitlin 2013)</td><td>No shelter (normal background)</td><td><span class="pill bad">SHELTER</span></td></tr>
-      <tr><td>Solar particle event at NASA's limit</td><td class="n">250</td><td>NASA OCHMO limit</td><td>Shelter</td><td><span class="pill ok">SHELTER</span></td></tr>
+      <tr><td>ISS, low end</td><td class="n">0.44</td><td>SIDC</td><td>No alert</td><td><span class="pill ok">No alert</span></td><td><span class="pill ok">No alert</span></td></tr>
+      <tr><td>ISS, high end</td><td class="n">0.88</td><td>SIDC</td><td>No alert</td><td><span class="pill bad">Warning</span></td><td><span class="pill ok">No alert</span></td></tr>
+      <tr><td>Mars surface</td><td class="n">0.64</td><td>Curiosity RAD (Hassler 2014)</td><td>No alert</td><td><span class="pill bad">Warning</span></td><td><span class="pill ok">No alert</span></td></tr>
+      <tr><td>Lunar surface</td><td class="n">1.37</td><td>Chang'e-4 LND (Zhang 2020)</td><td>No alert</td><td><span class="pill bad">Shelter</span></td><td><span class="pill ok">No alert</span></td></tr>
+      <tr><td>Deep-space cruise</td><td class="n">1.84</td><td>Curiosity RAD (Zeitlin 2013)</td><td>No alert</td><td><span class="pill bad">Shelter</span></td><td><span class="pill ok">No alert</span></td></tr>
+      <tr><td>Cruise, enhanced day (2.5× background)</td><td class="n">4.6</td><td>Regression case</td><td>Warning</td><td><span class="pill bad">Shelter</span></td><td><span class="pill ok">Warning</span></td></tr>
+      <tr><td>Moderate solar particle event</td><td class="n">20</td><td>Regression case</td><td>Shelter</td><td><span class="pill ok">Shelter</span></td><td><span class="pill ok">Shelter</span></td></tr>
+      <tr><td>Solar particle event at NASA's limit</td><td class="n">250</td><td>NASA OCHMO</td><td>Shelter</td><td><span class="pill ok">Shelter</span></td><td><span class="pill ok">Shelter</span></td></tr>
     </tbody></table></div>
-  <p>SOLARIS's fixed thresholds (warning above 0.5, shelter above 1.0 mSv in 24 h) are below the normal background of every destination except low-end ISS. On a Mars transit the crew would be ordered to the storm shelter every day. A storm shelter is for solar particle events, which are sudden spikes many times above background. The rule should compare against the mission's expected background rate.</p>
+  <p>The 2× and 5× factors are AEGIS engineering choices, not NASA rules: real storm-shelter calls are made on proton-flux alerts. What the test shows is that the rule now separates normal background from a solar particle event in every environment we have measurements for.</p>
 
   <h3>PULSE against clinical definitions</h3>
-  <div class="tbl"><table>
-    <thead><tr><th>Reading</th><th>Definition</th><th>Expected</th><th>PULSE</th></tr></thead>
-    <tbody>
-      <tr><td>HR 99 bpm</td><td>Tachycardia is over 100 bpm at rest (AHA)</td><td>None</td><td><span class="pill ok">None</span></td></tr>
-      <tr><td>HR 105 bpm</td><td>Tachycardia is over 100 bpm at rest (AHA)</td><td>Warning</td><td><span class="pill ok">Warning</span></td></tr>
-      <tr><td>SpO₂ 96%</td><td>Normal range 95–100%</td><td>None</td><td><span class="pill ok">None</span></td></tr>
-      <tr><td>SpO₂ 93%</td><td>Below the normal range</td><td>Warning</td><td><span class="pill ok">Warning</span></td></tr>
-      <tr><td>SpO₂ 88%</td><td>Hypoxemia is below 90%</td><td>Critical</td><td><span class="pill ok">Critical</span></td></tr>
-      <tr><td>HR 45 bpm</td><td>Bradycardia is under 60 bpm (AHA), often normal in fit people</td><td>Design choice</td><td><span class="pill warn">None</span></td></tr>
-    </tbody></table></div>
-  <p>PULSE matches the definitions. One gap: PULSE only reacts to a slow heart rate below 40 bpm. The 50 bpm "low" threshold is defined in the code but never used.</p>
+  <p>Unchanged: 5 of 5 heart-rate and SpO₂ decisions match the clinical definitions (tachycardia above 100 bpm, normal SpO₂ 95–100%, hypoxemia below 90%). A slow heart rate only triggers below 40 bpm; that is a design choice, since rates in the 40s–50s are common in fit crew.</p>
 
-  <h3>Simulator radiation history</h3>
-  <p>The simulated crew start at mission day 54 with 135–145 mSv already received. That implies about 2.6 mSv per day, which is 3 to 6 times the ISS rate and above deep-space cruise. A real ISS crew would be near 24–48 mSv by day 54. Because the agents project the yearly dose from this history, they tell mission control the crew are heading for about 1,240 mSv a year. The AI repeats this accurately, but the input itself is unrealistic.</p>
+  <h3>Live scenarios after the fix</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Scenario (live backend)</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Normal operations, all four crew</td><td>24 h dose 1.80–1.87 mSv, status nominal, no alerts. IL-6 at each person's baseline (3.6–4.5 pg/mL)</td></tr>
+      <tr><td>Fast cascade demo (Commander Chen)</td><td>Radiation 4.28 mSv/24 h (amber, no shelter); cascade alert with 4 domains; other crew nominal</td></tr>
+      <tr><td>Solar storm demo</td><td>20–28 mSv/24 h for all crew; 4 SHELTER alerts; mission totals +3 mSv once</td></tr>
+      <tr><td>Slow build-up demo (6 min)</td><td>Cascade first forecast at 1.0 min; sleep, IL-6 and radiation crossed at 2.5, 3.1 and 3.6 min. <b>Lead time 2.6 minutes</b> before the third domain crossed</td></tr>
+    </tbody></table></div>
 </section>
 
 <section>
   <h2>3 · AI recommendations under the checker</h2>
-  <p>Ten scenarios covering all four specialists, each run through the real rule engine, the real knowledge-base search and DeepSeek. Every flag the checker raised was then reviewed by hand.</p>
+  <p>Ten scenarios covering all four specialists, each run through the real rule engine, the real knowledge-base search and DeepSeek. Doses and IL-6 levels were updated to the new scale.</p>
   <div class="tbl"><table>
-    <thead><tr><th>#</th><th>Scenario</th><th>First draft</th><th>Final</th><th>What was flagged (hand review)</th></tr></thead>
+    <thead><tr><th>#</th><th>Scenario</th><th>First draft</th><th>Final</th><th>What was flagged</th></tr></thead>
     <tbody>
-      <tr><td class="n">1</td><td>SOLARIS · 1.31 mSv/24 h, shelter</td><td><span class="pill ok">pass</span></td><td><span class="pill ok">AI</span></td><td>Nothing</td></tr>
-      <tr><td class="n">2</td><td>SOLARIS · 0.72 mSv/24 h</td><td><span class="pill bad">fail</span></td><td><span class="pill ok">AI</span></td><td>Cited a radiation paper for a blood-inflammation claim: <b>real</b>. Two action paraphrases: false alarm.</td></tr>
-      <tr><td class="n">3</td><td>PULSE · HR 112</td><td><span class="pill bad">fail</span></td><td><span class="pill ok">AI</span></td><td>"Check heart rate again in 30 minutes" vs "Schedule follow-up vital check": false alarm</td></tr>
-      <tr><td class="n">4</td><td>PULSE · HR 158, critical</td><td><span class="pill ok">pass</span></td><td><span class="pill ok">AI</span></td><td>Nothing</td></tr>
-      <tr><td class="n">5</td><td>PULSE · SpO₂ 93.5</td><td><span class="pill ok">pass</span></td><td><span class="pill ok">AI</span></td><td>Nothing</td></tr>
-      <tr><td class="n">6</td><td>PULSE · SpO₂ 88.5, HR 104</td><td><span class="pill bad">fail</span></td><td><span class="pill warn">Rules</span></td><td>Faithful action paraphrases flagged twice: false alarm</td></tr>
-      <tr><td class="n">7</td><td>GENE · IL-6 8.7</td><td><span class="pill bad">fail</span></td><td><span class="pill ok">AI</span></td><td>Generic sentence attached to two citations: <b>real</b> (weak citation)</td></tr>
-      <tr><td class="n">8</td><td>GENE · IL-6 12.5</td><td><span class="pill bad">fail</span></td><td><span class="pill ok">AI</span></td><td>"Take it easier for a day or two" vs "Reduce exertion 24–48 h": false alarm</td></tr>
-      <tr><td class="n">9</td><td>MIRROR · sleep 58</td><td><span class="pill ok">pass</span></td><td><span class="pill ok">AI</span></td><td>Nothing</td></tr>
-      <tr><td class="n">10</td><td>MIRROR · sleep 38</td><td><span class="pill bad">fail</span></td><td><span class="pill ok">AI</span></td><td>"Go over sleep habits together" vs "Review sleep hygiene": false alarm</td></tr>
+      <tr><td class="n">1</td><td>SOLARIS · 12 mSv/24 h, shelter</td><td><span class="pill bad">fail</span></td><td><span class="pill ok">AI</span></td><td>A sentence about the career-limit projection was pinned to two passages that do not discuss it: <b>real</b>. Fixed on retry.</td></tr>
+      <tr><td class="n">2</td><td>SOLARIS · 4.3 mSv/24 h, warning</td><td><span class="pill bad">fail</span></td><td><span class="pill warn">Rules</span></td><td>Same pattern twice: the projection to 528 mSv (a real number from the findings) cited to a passage that does not say it: <b>real</b>.</td></tr>
+      <tr><td class="n">3–6</td><td>PULSE · HR 112, HR 158, SpO₂ 93.5, SpO₂ 88.5</td><td><span class="pill ok">pass</span></td><td><span class="pill ok">AI</span></td><td>Nothing</td></tr>
+      <tr><td class="n">7–8</td><td>GENE · modelled IL-6 above personal baseline</td><td><span class="pill ok">pass</span></td><td><span class="pill ok">AI</span></td><td>Nothing</td></tr>
+      <tr><td class="n">9–10</td><td>MIRROR · sleep 58, sleep 38</td><td><span class="pill ok">pass</span></td><td><span class="pill ok">AI</span></td><td>Nothing</td></tr>
     </tbody></table></div>
   <ul>
-    <li><b>Numbers:</b> no invented numbers in any of the 17 drafts across 10 scenarios.</li>
-    <li><b>Medicines:</b> none introduced. Melatonin appears only where the approved step already offers it.</li>
-    <li><b>Citations:</b> the real problem DeepSeek has. About 1 in 7 citations points at a passage that does not say what the sentence says. The checker caught all of these, and the retry fixed them.</li>
-    <li><b>Actions:</b> no off-menu actions were invented, but the check is too strict on friendly rewording. 7 flags, all false alarms, and in scenario 6 one of them cost the AI wording.</li>
+    <li><b>Numbers:</b> no invented numbers in any draft (10/10 first try).</li>
+    <li><b>Medicines:</b> none introduced (10/10).</li>
+    <li><b>Citations:</b> 2 of 10 first drafts (20 citations checked in the final outputs) pinned a sentence to a passage that does not support it, both in the radiation scenarios. Both were caught; one was fixed on retry, the other fell back to the rules.</li>
+    <li><b>Actions:</b> 10/10. In the first run 7 friendly rewordings were flagged as false alarms and one cost the AI wording. Since the card now shows the approved step text, only the step number has to be valid.</li>
   </ul>
+  <p>An earlier attempt at this run found a flaw in the test itself: the test crew's mission dose was set to the scenario's peak dose × 100 days, so the AI correctly repeated a career total of 1,200 mSv that no real crew would have. The fixture now uses the normal background so far.</p>
 </section>
 
 <section>
   <h2>4 · Does the checker catch hallucinations?</h2>
-  <p>We took the 9 verified outputs and planted known errors in them. Each error is a realistic kind of mistake: a changed reading, an off-topic claim pinned to a real source, an action from another agent's protocol, or a medicine.</p>
+  <p>We took the verified outputs and planted known errors in them: a changed reading, an off-topic claim pinned to a real source, an action from another protocol, or a medicine. The action test here uses the strict similarity check, to measure how well paraphrases can be policed.</p>
   <div class="tbl"><table>
     <thead><tr><th>Planted error</th><th class="n">Caught</th><th>Missed</th></tr></thead>
     <tbody>
-      <tr><td>Wrong or invented number</td><td class="n"><span class="pill ok">20 / 20</span></td><td>None</td></tr>
+      <tr><td>Wrong or invented number</td><td class="n"><span class="pill ok">21 / 21</span></td><td>None</td></tr>
       <tr><td>Off-topic claim with a real citation</td><td class="n"><span class="pill ok">45 / 45</span></td><td>None</td></tr>
-      <tr><td>Medicine or dose</td><td class="n"><span class="pill ok">45 / 45</span></td><td>None. The first run missed "antibiotics" (plural); that bug is fixed and re-scored.</td></tr>
-      <tr><td>Action not in the approved steps</td><td class="n"><span class="pill warn">75 / 82</span></td><td>"Do a hard cardio workout" passed as "reduce exertion". "Put on an oxygen mask" passed as "breathing exercises". "Extra hour of sleep" passed as "schedule a follow-up".</td></tr>
-      <tr><td>Clean outputs left untouched</td><td class="n"><span class="pill ok">9 / 9 pass</span></td><td>No false alarms on verified text</td></tr>
+      <tr><td>Medicine or dose</td><td class="n"><span class="pill ok">45 / 45</span></td><td>None</td></tr>
+      <tr><td>Action not in the approved steps (paraphrase check)</td><td class="n"><span class="pill warn">73 / 84</span></td><td>"Hard cardio workout", "oxygen mask" and "extra hour of sleep" passed as rewrites of nearby steps</td></tr>
+      <tr><td>Clean outputs left untouched</td><td class="n"><span class="pill warn">8 / 9 pass</span></td><td>One faithful rewording scored below the 0.40 similarity line</td></tr>
     </tbody></table></div>
-  <p>The action check is the weak point. Similarity scoring measures topic, not meaning, so it cannot tell "reduce exertion" from "do a hard workout". The calibration below, run on 59 real AI actions and 424 off-menu pairings, shows there is no threshold that both accepts friendly rewording and rejects opposite instructions:</p>
-  <div class="tbl"><table>
-    <thead><tr><th class="n">Threshold</th><th class="n">Good rewrites rejected</th><th class="n">Off-menu actions let through</th></tr></thead>
-    <tbody>
-      <tr><td class="n">0.30</td><td class="n">0%</td><td class="n">32%</td></tr>
-      <tr><td class="n">0.35</td><td class="n">5%</td><td class="n">21%</td></tr>
-      <tr><td class="n">0.40 (used)</td><td class="n">5%</td><td class="n">13%</td></tr>
-      <tr><td class="n">0.45</td><td class="n">10%</td><td class="n">5%</td></tr>
-      <tr><td class="n">0.50</td><td class="n">15%</td><td class="n">1%</td></tr>
-    </tbody></table></div>
-  <p>The fix is a small entailment model, which checks whether one sentence means the same as another, in place of plain similarity. It needs a one-time download of about 70–180 MB, so we have not added it yet. The numbers on this page will change if the threshold is re-tuned on other data.</p>
+  <p>Similarity measures topic, not meaning, so the paraphrase check cannot tell "reduce exertion" from "do a hard workout". That is why the dashboard no longer shows the AI's wording of a step: the card displays the approved text, and the AI's role is limited to choosing and ordering steps and explaining why. The paraphrase check is kept only as an audit signal.</p>
 </section>
 
 <section>
   <h2>5 · Voice answers</h2>
-  <p>Twelve questions to the live crew data, four of them deliberately asking for data the agents do not have.</p>
+  <p>Twelve questions to the live crew data, four of them asking for data the agents do not have.</p>
   <div class="tbl"><table>
-    <thead><tr><th>Question</th><th>Answer (shortened)</th><th>Numbers</th></tr></thead>
+    <thead><tr><th>Question</th><th>Answer (shortened)</th><th>Check</th></tr></thead>
     <tbody>
-      <tr><td>PULSE: What's the commander's blood pressure?</td><td>"We don't have a blood pressure reading… that number isn't in what I'm seeing." Then gives the real heart rate and SpO₂.</td><td><span class="pill ok">grounded</span></td></tr>
-      <tr><td>PULSE: Heart rate yesterday at noon?</td><td>"I don't have yesterday's noon reading… my data is live only."</td><td><span class="pill ok">grounded</span></td></tr>
-      <tr><td>SOLARIS: When will the next solar storm hit?</td><td>"I can't give you a time… that comes from the space weather folks on Earth."</td><td><span class="pill ok">grounded</span></td></tr>
-      <tr><td>GENE: Normal range for IL-6?</td><td>First draft stated a range ("5") that is not in its data, and the checker caught it. The retry says it does not have a reference range and gives the crew member's modelled value.</td><td><span class="pill warn">fixed on retry</span></td></tr>
-      <tr><td>8 everyday questions (status, sleep, radiation, trends, a joke)</td><td>All numbers matched the live readings. The one misleading figure was the ~1,240 mSv/year projection, which comes from the simulator's history (section 2).</td><td><span class="pill ok">8 / 8</span></td></tr>
+      <tr><td>SOLARIS: How much radiation today, and is it safe?</td><td>"1.82 mSv in the last 24 hours. That's right at normal background for the cruise, 1.84, and well under my warning level."</td><td><span class="pill ok">grounded</span></td></tr>
+      <tr><td>GENE: Any signs of inflammation?</td><td>"3.6 pg/mL, right at their own pre-flight baseline of 3.65."</td><td><span class="pill ok">grounded</span></td></tr>
+      <tr><td>GENE: Normal range for IL-6?</td><td>"I don't have a standard normal range in front of me, so I won't guess one." Then gives the modelled value and baseline. (First run: invented a range, caught on retry.)</td><td><span class="pill ok">grounded</span></td></tr>
+      <tr><td>Blood pressure · yesterday's reading · next solar storm</td><td>All three say the data is not available and give what is.</td><td><span class="pill ok">grounded</span></td></tr>
+      <tr><td>PULSE: What's the engineer's heart rate?</td><td>Answered about the selected crew member instead and said so. A role word ("engineer") does not switch the focus the way a surname does.</td><td><span class="pill warn">wrong person, honest</span></td></tr>
+      <tr><td>5 everyday questions (status, sleep, trends, who needs attention, a joke)</td><td>All numbers match the live readings.</td><td><span class="pill ok">5 / 5</span></td></tr>
     </tbody></table></div>
+  <p>All 12 answers passed the numbers check on the first try. The radiation answers now describe 1.8 mSv/day as normal background, where the first run's data made it look like an emergency.</p>
 </section>
 
 <section>
   <h2>6 · What this does not prove</h2>
   <ul>
-    <li><b>Small samples.</b> 4 Inspiration4 crew, 10 recommendation scenarios and 12 questions. Each result shows a direction, not a measured accuracy rate.</li>
-    <li><b>The Inspiration4 mission lasted 3 days in low Earth orbit</b>, and its blood was drawn on the ground. Long missions may behave differently.</li>
-    <li><b>PREDICT is not validated on real data.</b> Its trend forecasts were tested on simulated vital-sign streams only. No continuous astronaut vital-sign dataset was used.</li>
-    <li><b>The citation check proves relevance, not truth.</b> A sentence can be on the same topic as its source and still misstate it. 68 of 69 cited NASA reports now carry their real abstracts, which helps.</li>
-    <li><b>Units are not checked.</b> One voice answer called mSv "milligray-ish units" in an earlier run. The number was right; the unit wording was not.</li>
+    <li><b>Simulated and modelled inputs.</b> Vital signs come from a simulator and IL-6 is modelled. The tests show the rules behave correctly on real reference values, not that AEGIS works on real astronauts.</li>
+    <li><b>Small samples.</b> 4 Inspiration4 crew, 8 radiation cases, 10 recommendation scenarios and 12 questions. Each result shows a direction, not a measured accuracy rate. The GENE thresholds were chosen on the same 4 people they are tested on.</li>
+    <li><b>Inspiration4 lasted 3 days</b> in low Earth orbit, with blood drawn on the ground. Long missions may behave differently.</li>
+    <li><b>PREDICT is validated only on simulated streams.</b> The 2.6-minute lead time comes from a compressed 6-minute demo. On a mission the same method would run on hours-to-days data; that has not been tested.</li>
+    <li><b>The citation check proves relevance, not truth.</b> A sentence can be on topic and still misstate its source.</li>
+    <li><b>The demo recovery is scripted.</b> After PREVENT-1, the simulator reverses the drift. The dashboard labels this.</li>
   </ul>
 </section>
 
 <section>
-  <h2>7 · Proposed fixes</h2>
-  <p>None of these are applied yet. Each one changes how the demo behaves.</p>
+  <h2>7 · Still open</h2>
   <ol>
-    <li><b>GENE:</b> add the personal-baseline rule (≥ 1.5× own baseline and +1.5 pg/mL) alongside the absolute threshold.</li>
-    <li><b>SOLARIS:</b> judge the daily dose against the mission's expected background (ISS ≈ 0.5, cruise ≈ 1.8, Mars surface ≈ 0.64 mSv/day). Warn at about 2× background and shelter only on a spike that looks like a solar particle event. Update the projection to NASA's 600 mSv career limit.</li>
-    <li><b>Simulator:</b> start the crew at a realistic dose for day 54 (about 30–100 mSv depending on destination).</li>
-    <li><b>Action check:</b> replace similarity with a small entailment model (needs a one-time download).</li>
-    <li><b>PULSE:</b> use the defined 50 bpm threshold as a "watch" level for slow heart rate.</li>
+    <li><b>Citations:</b> prompt DeepSeek to leave calculated projections uncited, or allow the findings themselves as a citable source.</li>
+    <li><b>Voice focus:</b> map role words ("engineer", "medical officer") to crew members the way surnames are mapped.</li>
+    <li><b>Action audit:</b> a small entailment model would make the paraphrase check meaningful (one-time ~100 MB download). Not needed for safety now that steps are shown verbatim.</li>
+    <li><b>Real data for PREDICT:</b> replay a continuous physiological dataset (for example an analog-mission or bed-rest study) through the trend engine.</li>
   </ol>
 </section>
 
@@ -234,6 +238,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <li><a href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-569" target="_blank" rel="noopener">NASA OSDR OSD-569: Inspiration4 complete blood counts</a></li>
     <li><a href="https://www.nasa.gov/wp-content/uploads/2023/03/radiation-protection-technical-brief-ochmo.pdf" target="_blank" rel="noopener">NASA OCHMO: Radiation protection technical brief (600 mSv career, 250 mSv event limits)</a></li>
     <li><a href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">Hassler et al. 2014, Science: Mars surface radiation environment (Curiosity RAD)</a></li>
+    <li><a href="https://doi.org/10.1126/sciadv.aaz1334" target="_blank" rel="noopener">Zhang et al. 2020, Science Advances: First measurements of the radiation dose on the lunar surface (Chang'e-4 LND)</a></li>
     <li><a href="https://doi.org/10.1126/science.1235989" target="_blank" rel="noopener">Zeitlin et al. 2013, Science: Radiation during the cruise to Mars (Curiosity RAD)</a></li>
     <li><a href="https://www.space.com/23875-mars-radiation-life-manned-mission.html" target="_blank" rel="noopener">Space.com: Mars radiation summary (1.84 and 0.64 mSv/day)</a></li>
     <li><a href="https://www.sidc.be/article/radiation-space" target="_blank" rel="noopener">SIDC: Radiation in space (ISS 80–160 mSv per 6 months)</a></li>

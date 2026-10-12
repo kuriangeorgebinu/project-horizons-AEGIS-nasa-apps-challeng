@@ -359,6 +359,15 @@
 </style>
 </head>
 <body>
+<div style="max-width:1100px;margin:12px auto;padding:14px 18px;border:2px solid #d97706;border-radius:10px;background:#fff7e6;color:#3b2a06;font:14px/1.5 system-ui,Segoe UI,Arial,sans-serif;" role="note"><b>Status note (October 2026).</b> This is the original concept brief. Some parts describe the original concept, not the software as built. Where they differ, this box is correct:<ul style="margin:.4rem 0 0 1.1rem;padding:0">
+<li><b>Built and running:</b> AEGIS coordinator + 4 specialist agents (PULSE heart rate/SpO&#8322;, GENE IL-6, MIRROR sleep, SOLARIS radiation), rule-based detection, trend forecasts, cascade detection, PREVENT/PROTECT protocols, DeepSeek explanations with an automatic fact check, phone alert to the on-call flight surgeon.</li>
+<li><b>Data:</b> vitals are <b>simulated</b> (no wearable hardware). IL-6 is <b>modelled</b> from stress and radiation, not measured. Radiation is judged against the Mars-transit background measured by Curiosity RAD (1.84 mSv/day). Real NASA data (Inspiration4 / OSDR OSD-575, NTRS abstracts) is used to <b>check the rules</b> and as the RAG knowledge base; nothing is &ldquo;trained&rdquo; on it.</li>
+<li><b>Prediction scope:</b> in the demo AEGIS forecasts a cascade about 2&ndash;3 minutes before the third domain crosses its limit (the demo runs a compressed 6-minute build-up). On a mission the same trend method would work on hours-to-days data; that has <b>not</b> been validated.</li>
+<li><b>Not built (concept only):</b> HRV, CRP, cognitive tests (PVT/n-back), live DSCOVR/GOES feeds, RadLab dose model, z-score/EWMA baselines, genomic (TP53) analysis, a 30-second auto-execute override. PROTECT protocols are raised for a human to confirm.</li>
+<li><b>Category strategy now:</b> Best Mission Concept (primary), Best Use of Technology (secondary).</li>
+</ul>
+<div style="margin-top:.4rem">Current numbers and test results: <b>README.md</b> and <b>AEGIS-Accuracy-Report.html</b>.</div></div>
+
 
 <nav>
   <span class="nav-logo"><span>NASA</span> · AEGIS</span>
@@ -417,7 +426,7 @@
         <div style="position:absolute;top:.75rem;right:.75rem;font-size:2rem;opacity:.15;">🔮</div>
         <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:.4rem;">Tier 1</div>
         <div style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:.5rem;">PREDICT</div>
-        <div style="font-size:.85rem;color:var(--text-muted);line-height:1.6;">Multi-agent cascade detection identifies emerging health issues <strong>days to weeks</strong> before they become critical. Correlates genomic, physiological, environmental, and behavioral signals across time.</div>
+        <div style="font-size:.85rem;color:var(--text-muted);line-height:1.6;">Multi-agent cascade detection forecasts a cascade <strong>before</strong> it forms: about 2&ndash;3 minutes ahead in the compressed demo; on a mission the same trend method would run on hours-to-days data (not yet validated). Combines heart, inflammation (modelled), sleep and radiation signals.</div>
         <div style="margin-top:.75rem;font-size:.75rem;font-weight:600;color:var(--accent);">→ Day 47: subtle pattern detected</div>
       </div>
       <div style="background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.25);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden;">
@@ -431,8 +440,8 @@
         <div style="position:absolute;top:.75rem;right:.75rem;font-size:2rem;opacity:.15;">⚡</div>
         <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--nasa-red);margin-bottom:.4rem;">Tier 3</div>
         <div style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:.5rem;">PROTECT</div>
-        <div style="font-size:.85rem;color:var(--text-muted);line-height:1.6;">When prevention fails, autonomous emergency protocols alert the crew immediately with a <strong>30-second override window</strong>. No Earth delay. No waiting for Mission Control. If no crew response, the protocol auto-executes.</div>
-        <div style="margin-top:.75rem;font-size:.75rem;font-weight:600;color:var(--nasa-red);">→ T+1s: crew alerted · T+30s: auto-execute if no override</div>
+        <div style="font-size:.85rem;color:var(--text-muted);line-height:1.6;">When prevention fails, autonomous emergency protocols alert the crew and the on-call flight surgeon immediately (dashboard alarm + phone call). No Earth delay. A human confirms the protocol; auto-execution is a future option, not built.</div>
+        <div style="margin-top:.75rem;font-size:.75rem;font-weight:600;color:var(--nasa-red);">→ T+0: crew alerted · flight surgeon phoned · human confirms</div>
       </div>
     </div>
 
@@ -884,7 +893,7 @@
       <tbody>
         <tr>
           <td>🏆 Best Use of Science</td>
-          <td><span class="award-yes">Primary Target.</span> Multi-stressor convergence detection grounded in NASA Inspiration4/OSDR reference data and HRP biomarker research. Personal baselines compared against spaceflight-validated response profiles.</td>
+          <td><span class="award-yes">Not targeted now (see status note).</span> Multi-stressor convergence detection grounded in NASA Inspiration4/OSDR reference data and HRP biomarker research. Personal baselines compared against spaceflight-validated response profiles.</td>
         </tr>
         <tr>
           <td>📊 Best Use of Data</td>
@@ -892,7 +901,7 @@
         </tr>
         <tr>
           <td>⚙️ Best Use of Technology</td>
-          <td>Multi-agent architecture with explainable cascade detection, personal statistical baselines (z-score/EWMA), local RAG (ChromaDB + MiniLM), and real-time space weather integration in a unified system.</td>
+          <td><span class="award-yes">Secondary Target.</span> Multi-agent architecture with explainable cascade detection, trend forecasts, local RAG (ChromaDB + MiniLM) and an automatic fact check on every AI explanation.</td>
         </tr>
         <tr>
           <td>🌍 Galactic Impact</td>
@@ -910,8 +919,8 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1rem;">
         <div style="font-size:.85rem;color:var(--text-muted);">✅ Reference ranges drawn from real Inspiration4 omics data from actual human spaceflight</div>
         <div style="font-size:.85rem;color:var(--text-muted);">✅ Biomarker thresholds from published NASA HRP research literature</div>
-        <div style="font-size:.85rem;color:var(--text-muted);">✅ Cognitive tests are clinically validated instruments used on ISS</div>
-        <div style="font-size:.85rem;color:var(--text-muted);">✅ Radiation dose model uses actual NASA dosimetry data (RadLab)</div>
+        <div style="font-size:.85rem;color:var(--text-muted);">⏳ Cognitive tests (PVT) &mdash; concept, not built</div>
+        <div style="font-size:.85rem;color:var(--text-muted);">✅ Radiation rule judged against the Mars-transit background measured by Curiosity RAD (1.84 mSv/day) and NASA limits (600 mSv career, 250 mSv per SPE)</div>
         <div style="font-size:.85rem;color:var(--text-muted);">✅ Open-source on GitHub — FAIR data principles, NASA TOPS aligned</div>
         <div style="font-size:.85rem;color:var(--text-muted);">⏳ Live deployment URL (planned) — judges will experience the working system</div>
       </div>

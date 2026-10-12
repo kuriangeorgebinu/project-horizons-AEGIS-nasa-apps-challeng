@@ -30,6 +30,7 @@ from models import CrewMember, Vitals, CrewRole                       # noqa: E4
 import agents as A                                                    # noqa: E402
 import aegis_verify as V                                              # noqa: E402
 import aegis_llm                                                      # noqa: E402
+import aegis_mission as M                                             # noqa: E402
 
 OUT = {"generated": time.strftime("%Y-%m-%d %H:%M"), "model": None}
 NO_LLM = "--no-llm" in sys.argv
@@ -37,11 +38,11 @@ NO_LLM = "--no-llm" in sys.argv
 
 def member(cid="eval-001", role=CrewRole.FLIGHT_ENGINEER, day=100, cum=None, **vit):
     base = dict(heart_rate=72, blood_pressure_systolic=118, blood_pressure_diastolic=76, spo2=98.0,
-                temperature=36.8, respiratory_rate=14, stress_index=40, sleep_quality=82, radiation_dose_24h=0.3)
+                temperature=36.8, respiratory_rate=14, stress_index=40, sleep_quality=82, radiation_dose_24h=1.84)
     base.update(vit)
     v = Vitals(**base)
     return CrewMember(id=cid, name="Eval", role=role, age=40, vitals=v, mission_day=day,
-                      cumulative_radiation=cum if cum is not None else base["radiation_dose_24h"] * day)
+                      cumulative_radiation=cum if cum is not None else 1.84 * day)   # normal background so far
 
 
 # ───────────────────────── A1  GENE on Inspiration4 IL-6 ─────────────────────────
@@ -57,9 +58,11 @@ def a1_gene():
         rows.append({"crew": c, **{t: tps[t] for t in pre_tps}, "baseline": round(st.mean(pre), 2),
                      "R+1": tps["R+1"], "R+45": tps["R+45"], "R+82": tps["R+82"], "R+194": tps["R+194"]})
 
-    def current(v):
-        f = A.GENEAgent.il6_findings(v)
-        return f[0]["type"] if f else "none"
+    def before(v):                         # the rule before Step 1: absolute IL-6 > 8 pg/mL
+        return v > 8
+
+    def now(v, b):                         # AEGIS GENE now: personal baseline (1.5x and +1.5) + >12 backstop
+        return bool(A.GENEAgent.il6_findings(v, b))
 
     def baseline_rule(v, base, ratio):
         return v >= base * ratio and v - base >= 1.5
@@ -67,7 +70,8 @@ def a1_gene():
     res = {"rows": rows, "rules": []}
     # Ground truth by study design: R+1 = day after return from 3 days in orbit (known stress state);
     # pre-flight samples = healthy baseline. n is tiny (4 crew), so this is a sanity check, not a validation.
-    for name, fn in [("Current: absolute IL-6 > 8 pg/mL", lambda v, b: current(v) != "none")] + \
+    for name, fn in [("Before: absolute IL-6 > 8 pg/mL", lambda v, b: before(v)),
+                     ("NOW (AEGIS GENE): >= 1.5x own baseline and +1.5 pg/mL, or > 12", now)] + \
             [(f"Personal baseline: >= {r}x own pre-flight mean and +1.5 pg/mL", (lambda r: lambda v, b: baseline_rule(v, b, r))(r))
              for r in (1.25, 1.5, 2.0)]:
         tp = sum(1 for r in rows if fn(r["R+1"], r["baseline"]))
@@ -80,33 +84,38 @@ def a1_gene():
                 fp += bool(fn(tps[t], st.mean(others)))
         res["rules"].append({"rule": name, "detected_R+1": f"{tp}/4", "preflight_false_alarms": f"{fp}/{n_pre}"})
     res["rose_on_return"] = f"{sum(1 for r in rows if r['R+1'] > r['baseline'])}/4"
-    res["current_rule_any_flag_all_samples"] = sum(1 for r in i4["il6"] if current(r["pg_ml"]) != "none")
+    res["before_rule_any_flag_all_samples"] = sum(1 for r in i4["il6"] if before(r["pg_ml"]))
     return res
 
 
 # ───────────────────────── A2  SOLARIS on measured dose rates ─────────────────────
 ENVIRONMENTS = [
-    # (label, mSv/day, source, expected outcome)
-    ("ISS, quiet sun (low end)", 0.44, "SIDC: ISS 80-160 mSv per 6 months", "no alert"),
-    ("ISS, high end", 0.88, "SIDC: ISS 80-160 mSv per 6 months", "no alert"),
-    ("Mars surface (Curiosity RAD)", 0.64, "Hassler et al. 2014 / Space.com: 0.64 mSv/day", "no alert"),
-    ("Deep-space cruise (Curiosity RAD)", 1.84, "Zeitlin et al. 2013 / Space.com: 1.84 mSv/day", "no shelter (routine background)"),
-    ("Solar particle event at NASA's 250 mSv limit", 250.0, "NASA OCHMO radiation brief: 250 mSv SPE limit", "shelter"),
+    # (label, mSv/day, mission profile, source, expected outcome)
+    ("ISS, quiet sun (low end)", 0.44, "iss", "SIDC: ISS 80-160 mSv per 6 months", "no alert"),
+    ("ISS, high end", 0.88, "iss", "SIDC: ISS 80-160 mSv per 6 months", "no alert"),
+    ("Mars surface (Curiosity RAD)", 0.64, "mars_surface", "Hassler et al. 2014: 0.64 mSv/day", "no alert"),
+    ("Lunar surface (Chang'e-4)", 1.37, "lunar_surface", "Zhang et al. 2020: 1.37 mSv/day", "no alert"),
+    ("Deep-space cruise (Curiosity RAD)", 1.84, "mars_transit", "Zeitlin et al. 2013: 1.84 mSv/day", "no alert"),
+    ("Cruise, enhanced day (2.5x background)", 4.6, "mars_transit", "Regression: GCR enhancement above background", "warning"),
+    ("Moderate SPE behind shielding (~20 mSv/day)", 20.0, "mars_transit", "Regression: SPE step change", "shelter"),
+    ("Solar particle event at NASA's 250 mSv limit", 250.0, "mars_transit", "NASA OCHMO radiation brief: 250 mSv SPE limit", "shelter"),
 ]
 
 
 def a2_solaris():
     agent, out = A.SOLARISAgent(), []
-    for label, rate, src, expect in ENVIRONMENTS:
-        f = agent.analyze(member(radiation_dose_24h=rate, day=180, cum=rate * 180))
+    for label, rate, prof, src, expect in ENVIRONMENTS:
+        bg = M.background(prof)
+        bg_cum = min(rate, bg * 1.0) * 180       # what the crew has had so far (normal background)
+        f = agent.analyze(member(radiation_dose_24h=rate, day=180, cum=bg_cum), bg=bg)
         kinds = [x for x in f if x["metric"] == "radiation_24h"]
         got = ("shelter" if any(x["pillar"] == "PROTECT" for x in kinds) else
                "warning" if kinds else "no alert")
+        before = "shelter" if rate > 1.0 else "warning" if rate > 0.5 else "no alert"
         proj = [x["message"] for x in f if x["metric"] == "cumulative_radiation"]
-        ok = (got == "no alert") if expect.startswith("no alert") else \
-             (got != "shelter") if expect.startswith("no shelter") else (got == "shelter")
-        out.append({"environment": label, "mSv_per_day": rate, "source": src, "expected": expect,
-                    "aegis_today": got, "projection": proj[0] if proj else "", "agrees": ok})
+        out.append({"environment": label, "mSv_per_day": rate, "profile": prof, "background": bg, "source": src,
+                    "expected": expect, "before_fixed_rule": before, "before_agrees": before == expect,
+                    "aegis_today": got, "projection": proj[0] if proj else "", "agrees": got == expect})
     return out
 
 
@@ -132,14 +141,14 @@ def a3_pulse():
 
 # ───────────────────────── B  DeepSeek recommendations ────────────────────────────
 SCENARIOS = [
-    ("SOLARIS", A.SOLARISAgent, CrewRole.COMMANDER, dict(radiation_dose_24h=1.31)),
-    ("SOLARIS", A.SOLARISAgent, CrewRole.FLIGHT_ENGINEER, dict(radiation_dose_24h=0.72)),
+    ("SOLARIS", A.SOLARISAgent, CrewRole.COMMANDER, dict(radiation_dose_24h=12.0)),     # shelter (> 9.2)
+    ("SOLARIS", A.SOLARISAgent, CrewRole.FLIGHT_ENGINEER, dict(radiation_dose_24h=4.3)),      # warning (> 3.68)
     ("PULSE", A.PULSEAgent, CrewRole.MISSION_SPECIALIST, dict(heart_rate=112)),
     ("PULSE", A.PULSEAgent, CrewRole.COMMANDER, dict(heart_rate=158, stress_index=80)),
     ("PULSE", A.PULSEAgent, CrewRole.MEDICAL_OFFICER, dict(spo2=93.5)),
     ("PULSE", A.PULSEAgent, CrewRole.FLIGHT_ENGINEER, dict(spo2=88.5, heart_rate=104)),
-    ("GENE", A.GENEAgent, CrewRole.MISSION_SPECIALIST, dict(stress_index=75, radiation_dose_24h=0.4)),
-    ("GENE", A.GENEAgent, CrewRole.COMMANDER, dict(stress_index=95, radiation_dose_24h=1.0)),
+    ("GENE", A.GENEAgent, CrewRole.MISSION_SPECIALIST, dict(stress_index=75, radiation_dose_24h=4.0)),
+    ("GENE", A.GENEAgent, CrewRole.COMMANDER, dict(stress_index=95, radiation_dose_24h=9.0)),
     ("MIRROR", A.MIRRORAgent, CrewRole.FLIGHT_ENGINEER, dict(sleep_quality=58)),
     ("MIRROR", A.MIRRORAgent, CrewRole.MEDICAL_OFFICER, dict(sleep_quality=38, stress_index=72)),
 ]
