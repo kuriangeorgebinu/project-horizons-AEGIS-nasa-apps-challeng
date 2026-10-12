@@ -48,9 +48,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 
 /* Grid Layout */
 .shell{position:relative;z-index:1;display:grid;min-height:100vh;padding:1rem;gap:1rem;
-  grid-template-rows:auto 1fr auto auto;
+  grid-template-rows:auto auto 1fr auto auto;
   grid-template-columns:1fr 1fr;
-  grid-template-areas:"header header" "graph vitals" "voice alert" "recs recs";
+  grid-template-areas:"header header" "mission mission" "graph vitals" "voice alert" "recs recs";
 }
 
 /* Recommendations Panel */
@@ -317,6 +317,60 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 .src-tag{display:inline-block;margin-left:.3rem;padding:0 .3rem;border-radius:4px;font-size:.58rem;letter-spacing:.04em;font-weight:600;vertical-align:middle;border:1px solid rgba(255,255,255,.18);color:var(--muted);background:rgba(255,255,255,.04);}
 .src-tag.model{color:#c9b6ff;border-color:rgba(201,182,255,.45);background:rgba(160,152,200,.12);}
 .demo-note{display:inline-block;margin-left:.4rem;padding:0 .35rem;border-radius:4px;font-size:.62rem;color:var(--muted);border:1px dashed rgba(255,255,255,.25);vertical-align:middle;}
+/* ── Mission bar: where the ship is and how far away Earth's help is ── */
+.mission-bar{grid-area:mission;position:relative;display:flex;align-items:center;gap:1rem;padding:.5rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:.8rem;color:var(--muted);min-width:0;min-height:44px;transition:background .35s,border-color .35s,color .35s;}
+.mb-normal,.mb-em{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;width:100%;min-width:0;}
+.mb-em{display:none;font-weight:600;letter-spacing:.03em;color:#fff;}
+.mb-phase{white-space:nowrap;} .mb-phase b{color:var(--text);font-weight:600;}
+.mb-track{position:relative;flex:1 1 200px;min-width:140px;height:26px;}
+.mb-line{position:absolute;left:12px;right:12px;top:50%;height:2px;transform:translateY(-50%);border-radius:2px;background:var(--border);}
+.mb-done{position:absolute;left:12px;top:50%;height:2px;transform:translateY(-50%);border-radius:2px;background:linear-gradient(90deg,var(--aegis),var(--orange));}
+.mb-planet{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);}
+.mb-earth{left:12px;background:radial-gradient(circle at 35% 35%,#8fd0ff,#1f6fb5);box-shadow:0 0 8px rgba(80,160,230,.6);}
+.mb-mars{left:calc(100% - 12px);background:radial-gradient(circle at 35% 35%,#f4ad84,#b04e2a);box-shadow:0 0 8px rgba(210,110,70,.5);}
+.mb-ship{position:absolute;top:50%;transform:translate(-50%,-55%);font-size:1rem;line-height:1;filter:drop-shadow(0 0 4px rgba(90,159,215,.6));}
+.mb-signal{position:absolute;top:50%;width:6px;height:6px;border-radius:50%;background:var(--aegis);box-shadow:0 0 8px var(--aegis);transform:translate(-50%,-50%);left:var(--from,50%);animation:mb-sig 2.4s linear infinite;}
+@keyframes mb-sig{0%{left:var(--from,50%);opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{left:12px;opacity:0;}}
+.mb-delay{white-space:nowrap;cursor:help;} .mb-delay b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:600;}
+.mb-pill{white-space:nowrap;padding:.15rem .6rem;border-radius:20px;border:1px solid var(--aegis);color:var(--aegis);font-size:.72rem;cursor:help;}
+.mb-em-timer{font-family:ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;background:rgba(0,0,0,.22);padding:.1rem .5rem;border-radius:6px;}
+.mb-em-call{margin-left:auto;font-weight:500;opacity:.95;}
+body.emergency .mission-bar{background:#b3363a;border-color:#b3363a;}
+body.cascade-alert .mission-bar{background:#b07a1e;border-color:#b07a1e;}
+body.emergency .mb-normal,body.cascade-alert .mb-normal{display:none;}
+body.emergency .mb-em,body.cascade-alert .mb-em{display:flex;}
+/* ── Emergency mode: the whole screen changes when a PROTECT alert fires ── */
+.emergency-edge{position:fixed;inset:0;pointer-events:none;z-index:90;opacity:0;transition:opacity .45s;box-shadow:inset 0 0 0 3px var(--red),inset 0 0 110px rgba(200,60,60,.42);}
+body.emergency .emergency-edge{opacity:1;animation:em-pulse 1.6s ease-in-out infinite;}
+body.cascade-alert .emergency-edge{opacity:1;box-shadow:inset 0 0 0 2px #c8901e,inset 0 0 80px rgba(200,150,40,.28);animation:em-pulse 2.8s ease-in-out infinite;}
+@keyframes em-pulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+body.acked .emergency-edge{animation:none;opacity:.35;}
+body.emergency.acked .mission-bar{background:#8f2f33;border-color:#8f2f33;}
+body.cascade-alert.acked .mission-bar{background:#8a6018;border-color:#8a6018;}
+body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60,60,.35);}
+.alert-timer{margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:.8rem;font-variant-numeric:tabular-nums;color:var(--red);white-space:nowrap;}
+/* ── Live call panel: AEGIS phoning the flight surgeon, shown on screen ── */
+.call-panel{position:fixed;right:16px;bottom:16px;z-index:96;width:min(370px,calc(100vw - 32px));background:var(--card);color:var(--text);border:2px solid var(--aegis);border-radius:14px;padding:.9rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,.28);display:grid;gap:.6rem;transform:translateY(calc(100% + 40px));opacity:0;transition:transform .4s cubic-bezier(.2,.9,.3,1.2),opacity .3s;}
+.call-panel.show{transform:none;opacity:1;}
+.call-panel.fail{border-color:var(--red);}
+.call-panel.ok{border-color:var(--green);}
+.cp-head{display:flex;gap:.7rem;align-items:flex-start;}
+.cp-icon{font-size:1.4rem;line-height:1;}
+.call-panel.ringing .cp-icon{animation:cp-ring .9s ease-in-out infinite;}
+@keyframes cp-ring{0%,100%{transform:rotate(0);}20%{transform:rotate(-14deg);}40%{transform:rotate(14deg);}60%{transform:rotate(-8deg);}80%{transform:rotate(8deg);}}
+.cp-title{font-weight:600;font-size:.95rem;}
+.cp-sub{font-size:.78rem;color:var(--muted);margin-top:.1rem;}
+.cp-close{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.3rem;line-height:1;cursor:pointer;padding:0 .2rem;}
+.cp-steps{list-style:none;display:flex;gap:.3rem;font-size:.72rem;color:var(--muted);}
+.cp-steps li{flex:1;text-align:center;padding:.3rem .2rem;border-radius:6px;background:var(--bg);border:1px solid var(--border);white-space:nowrap;}
+.cp-steps li.done{color:var(--green);border-color:var(--green);}
+.cp-steps li.now{color:#fff;background:var(--aegis);border-color:var(--aegis);}
+.cp-steps li.fail{color:#fff;background:var(--red);border-color:var(--red);}
+.cp-transcript{font-size:.85rem;line-height:1.45;max-height:8.5em;overflow-y:auto;padding:.55rem .7rem;border-radius:8px;background:var(--bg);border-left:3px solid var(--aegis);min-height:2.2em;}
+.cp-transcript:empty::before{content:'Waiting for someone to pick up…';color:var(--muted);font-style:italic;}
+.cp-foot{font-size:.7rem;color:var(--muted);line-height:1.4;}
+@media (prefers-reduced-motion:reduce){body.emergency .emergency-edge,body.cascade-alert .emergency-edge,.mb-signal,.call-panel.ringing .cp-icon{animation:none;}}
+@media (max-width:640px){.call-panel{right:8px;left:8px;top:8px;bottom:auto;width:auto;transform:translateY(calc(-100% - 40px));}.call-panel.show{transform:none;}.cp-transcript{max-height:5.5em;}.mb-pill{display:none;}.mb-delay{white-space:normal;}}
 /* What-If Simulator */
 .whatif-btn{background:linear-gradient(135deg,rgba(90,159,215,.2),rgba(160,152,200,.2));border:1px solid var(--aegis);border-radius:8px;padding:.5rem 1rem;color:var(--aegis);font-size:.85rem;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:.5rem;}
 .whatif-btn:hover{background:linear-gradient(135deg,rgba(90,159,215,.3),rgba(160,152,200,.3));transform:translateY(-1px);}
@@ -446,7 +500,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 @media (max-width: 900px) {
   /* One column: the Cascade Map first, then vitals, alerts, voice, recommendations */
   .shell { grid-template-columns: minmax(0, 1fr); padding: .6rem; gap: .75rem;
-           grid-template-areas: "header" "graph" "vitals" "alert" "voice" "recs"; }
+           grid-template-areas: "header" "mission" "graph" "vitals" "alert" "voice" "recs"; }
   .cm-legend { gap: .6rem; }
 }
 @media (max-width: 700px) {
@@ -502,6 +556,25 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
     </button>
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode">☀️</button>
   </header>
+
+  <!-- Mission bar: ship position and the signal delay to Earth; becomes the emergency strip during an alert -->
+  <div class="mission-bar" id="mission-bar" aria-label="Mission position and signal delay to Earth">
+    <div class="mb-normal">
+      <span class="mb-phase" id="mb-phase"><b>Mars transit</b> · Day 54 of 180</span>
+      <div class="mb-track" aria-hidden="true">
+        <div class="mb-line"></div><div class="mb-done" id="mb-done"></div>
+        <span class="mb-planet mb-earth" title="Earth"></span><span class="mb-planet mb-mars" title="Mars"></span>
+        <span class="mb-signal" id="mb-signal"></span><span class="mb-ship" id="mb-ship">🚀</span>
+      </div>
+      <span class="mb-delay" id="mb-delay">Signal to Earth, one way: <b id="mb-oneway">--</b><span id="mb-later"></span></span>
+      <span class="mb-pill" title="The rules that raise alerts and choose protocols run on board. The DeepSeek explanations come from a cloud service, which on a real mission would sit on the ground behind this delay.">Rules decide on board · AI explains from the ground</span>
+    </div>
+    <div class="mb-em" role="alert">
+      <span id="mb-em-text">EMERGENCY</span>
+      <span class="mb-em-timer" id="mb-em-timer">T+00:00</span>
+      <span class="mb-em-call" id="mb-em-call"></span>
+    </div>
+  </div>
 
   <!-- Mission Control Page -->
   <div class="page active" id="page-mission">
@@ -1660,6 +1733,7 @@ function confirmProtocol() {
   const ackCrew = LIVE_ALERT.crewName || 'Commander Chen';
   const ackCrewKey = LIVE_ALERT.crewKey || 'chen';
   LIVE_ALERT.pauseUntil = Date.now() + 6000;  // keep the success state visible briefly
+  _ackEmergency();
   // PREDICT: the crew member is now recovering under the protocol; don't re-forecast from the trend tail
   if (typeof PREDICT_STATE !== 'undefined') PREDICT_STATE.suppress[DASH_API.crewIdMap[ackCrewKey] || 'crew-001'] = Date.now() + 90000;
   // Show the protocol being carried out on board (spacecraft sim pop-up)
@@ -2010,6 +2084,7 @@ function renderLiveAlert(a) {
   if (!a) {
     // No live alert: show the PREDICT forecast if AEGIS sees a cascade coming, otherwise all clear
     LIVE_ALERT.id = null;
+    if (!EMG.acked) _setEmergency(null);
     if (PREDICT_STATE.prevented) renderPreventedPanel(PREDICT_STATE.preventedEntry);
     else renderPredictPanel(PREDICT_STATE.top);
     return;
@@ -2032,6 +2107,11 @@ function renderLiveAlert(a) {
   LIVE_ALERT.protocol = protoMatch ? protoMatch[1] : (isShelter ? 'SHELTER-1' : isMedic ? 'MEDIC-1' : 'RECOVER-3');
   LIVE_ALERT.crewName = _crewDisplayName(a.crew_member_id);
   LIVE_ALERT.crewKey = CREW_KEY_BY_ID[a.crew_member_id] || 'chen';
+  if (EMG.alertId !== a.id && !(EMG.acked && EMG.protocol === LIVE_ALERT.protocol)) {
+    const crewCount = isShelter ? 'all crew' : LIVE_ALERT.crewName;
+    _setEmergency({ level: isProtect ? 'protect' : 'cascade', protocol: LIVE_ALERT.protocol, name: crewCount,
+                    since: a.timestamp, alertId: a.id, crewId: a.crew_member_id });
+  }
 
   panel.style.borderColor = 'var(--red)';
   icon.textContent = isShelter ? '☢' : isMedic ? '⚕' : '⚡';
@@ -2193,6 +2273,7 @@ document.addEventListener('keydown', (e) => {
 
 // Shift+R: clean, repeatable demo start (clears alerts, cards, history and agent memory; fixed crew baselines)
 async function resetDemo() {
+  _setEmergency(null); closeCallPanel(); CALLS.dismissed.clear(); CALLS.since = Date.now();
   try {
     const r = await fetch(`${DASH_API.baseUrl}/api/demo/reset`, { method: 'POST' });
     if (!r.ok) throw new Error(r.status);
@@ -2407,8 +2488,238 @@ const MISSION = { label: 'Mars transit (deep-space cruise)', background: 1.84, w
   try {
     const r = await fetch(`${DASH_API.baseUrl}/api/mission`);
     if (r.ok) { Object.assign(MISSION, await r.json()); CM_HEALTHY.radiation_dose_24h = MISSION.background; }
+    renderMissionBar();
   } catch (e) { /* keep defaults */ }
 })();
+// ============================================
+// MISSION BAR: ship position + light-time to Earth (why AEGIS has to act on board)
+// ============================================
+function _mbDistanceAU(frac) {
+  // Earth-ship distance on a Hohmann transfer (two-body, circular coplanar orbits): ellipse a = 1.262 AU, e = 0.208,
+  // 259-day transfer, with this mission phase mapped onto it by fraction of the trip. Kepler's equation is solved for
+  // the ship's position. An estimate (good to roughly 10-20 %), not an ephemeris.
+  const a = 1.262, e = 0.208, T = 259;
+  const M = Math.PI * frac;                                       // mean anomaly (half an orbit over the transfer)
+  let E = M;
+  for (let i = 0; i < 30; i++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+  const f = 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2), Math.sqrt(1 - e) * Math.cos(E / 2));
+  const r = a * (1 - e * Math.cos(E));
+  const thE = 2 * Math.PI * (frac * T) / 365.25;                  // Earth's progress over the same time
+  return Math.sqrt(1 + r * r - 2 * r * Math.cos(f - thE));
+}
+function _mbFmt(sec) {
+  if (sec < 60) return sec < 10 ? `${sec.toFixed(1)} s` : `${Math.round(sec)} s`;
+  const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+  return `${m} min ${String(s).padStart(2, '0')} s`;
+}
+function renderMissionBar() {
+  const day = parseFloat((document.getElementById('mission-day-num') || {}).textContent) || 54;
+  const total = MISSION.phase_days || 180;
+  const prof = MISSION.profile || 'mars_transit';
+  const frac = Math.min(1, Math.max(0, day / total));
+  const phase = document.getElementById('mb-phase');
+  if (phase) phase.innerHTML = `<b>${(MISSION.label || 'Mars transit').replace(/\s*\(.*\)/, '')}</b> · Day ${Math.floor(day)} of ${total}`;
+  const pos = `calc(12px + (100% - 24px) * ${frac.toFixed(4)})`;
+  const ship = document.getElementById('mb-ship'), done = document.getElementById('mb-done'), sig = document.getElementById('mb-signal');
+  if (ship) ship.style.left = pos;
+  if (done) done.style.width = `calc((100% - 24px) * ${frac.toFixed(4)})`;
+  if (sig) sig.style.setProperty('--from', pos);
+  // One-way light-time to Earth for this mission profile
+  let oneway, note, later = '';
+  if (prof === 'mars_transit') {
+    const au = _mbDistanceAU(frac), auEnd = _mbDistanceAU(1);
+    oneway = `≈ ${_mbFmt(au * 499.0)}`;
+    later = ` now · ≈ ${Math.round(auEnd * 499 / 60)} min by arrival (estimate)`;
+    note = `About ${au.toFixed(2)} AU from Earth now and about ${auEnd.toFixed(1)} AU at arrival: an estimate from a ` +
+           `two-body Hohmann-transfer model (Kepler solve, circular orbits), not a real trajectory. ` +
+           `At Mars the delay is 3 to 22 minutes each way, depending on where the planets are.`;
+  } else if (prof === 'mars_surface') { oneway = '3-22 min'; note = 'Earth-Mars light-time varies with the planets\' positions.'; }
+  else if (prof === 'lunar_surface') { oneway = '1.3 s'; note = 'Earth-Moon light-time.'; }
+  else { oneway = '< 1 s'; note = 'Low Earth orbit: near-real-time contact with mission control.'; }
+  const ow = document.getElementById('mb-oneway'); if (ow) ow.textContent = oneway;
+  const lt = document.getElementById('mb-later'); if (lt) lt.textContent = later || ' one way';
+  const dl = document.getElementById('mb-delay');
+  if (dl) dl.title = `${note} A message sent now reaches mission control after this delay, and any reply takes as long again.`;
+}
+renderMissionBar();
+
+// ============================================
+// EMERGENCY MODE: PROTECT alert -> red edge + emergency strip with a running timer; cascade -> amber
+// ============================================
+const EMG = { level: null, since: 0, alertId: null, acked: false, ackedAt: 0, crewId: null, protocol: null, label: '' };
+function _parseUtc(ts) { return new Date(ts + (/[zZ]|[+-]\d\d:?\d\d$/.test(ts) ? '' : 'Z')).getTime(); }
+function _setEmergency(e) {
+  const body = document.body;
+  if (!e) {
+    EMG.level = null; EMG.alertId = null; EMG.acked = false;
+    body.classList.remove('emergency', 'cascade-alert', 'acked');
+    const t = document.getElementById('alert-timer'); if (t) t.remove();
+    return;
+  }
+  EMG.level = e.level; EMG.alertId = e.alertId; EMG.acked = false; EMG.crewId = e.crewId; EMG.protocol = e.protocol;
+  body.classList.remove('acked');
+  EMG.since = e.since && !isNaN(_parseUtc(e.since)) ? _parseUtc(e.since) : Date.now();
+  body.classList.toggle('emergency', e.level === 'protect');
+  body.classList.toggle('cascade-alert', e.level === 'cascade');
+  const label = e.level === 'protect' ? (e.protocol === 'SHELTER-1' ? '☢ RADIATION EMERGENCY' : '⚕ MEDICAL EMERGENCY') : '⚡ HEALTH CASCADE';
+  const txt = document.getElementById('mb-em-text');
+  EMG.label = `${label} · ${e.protocol} · ${e.name}`;
+  if (txt) txt.textContent = EMG.label;
+  if (!document.getElementById('alert-timer')) {
+    const hdr = document.querySelector('#alert-panel .alert-header');
+    if (hdr) { const t = document.createElement('span'); t.id = 'alert-timer'; t.className = 'alert-timer'; hdr.appendChild(t); }
+  }
+  _tickEmergency();
+}
+function _tickEmergency() {
+  if (!EMG.level) return;
+  const s = Math.max(0, Math.floor((Date.now() - EMG.since) / 1000));
+  const txt = `Alert +${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  const a = document.getElementById('mb-em-timer'); if (a) a.textContent = txt;
+  const b = document.getElementById('alert-timer'); if (b) { b.textContent = txt; b.title = 'Time since the alert was raised'; }
+}
+setInterval(_tickEmergency, 1000);
+// Confirming a protocol acknowledges the alert; the strip stays (steady, not pulsing) until the readings that
+// triggered it are back in a safe range, because a confirmed plan is not yet a solved problem.
+function _ackEmergency() {
+  if (!EMG.level) return;
+  EMG.acked = true; EMG.ackedAt = Date.now();
+  document.body.classList.add('acked');
+  const txt = document.getElementById('mb-em-text');
+  if (txt) txt.textContent = `${EMG.protocol} confirmed · ${EMG.label.split(' · ').pop()} · waiting for readings to return to a safe range`;
+}
+async function _checkResolved() {
+  if (!EMG.level || !EMG.acked) return;
+  if (Date.now() - EMG.ackedAt > 5 * 60000) { _setEmergency(null); return; }      // give up waiting after 5 min
+  try {
+    const B = DASH_API.baseUrl;
+    let ok = false;
+    if (EMG.protocol === 'SHELTER-1') {
+      const crew = await (await fetch(`${B}/api/crew`)).json();
+      ok = crew.every(c => !c.vitals || (c.vitals.radiation_dose_24h ?? 0) < MISSION.shelter);
+    } else if (EMG.protocol === 'MEDIC-1') {
+      const c = await (await fetch(`${B}/api/crew/${EMG.crewId}`)).json();
+      ok = c.vitals && c.vitals.spo2 >= 90 && c.vitals.heart_rate >= 40 && c.vitals.heart_rate <= 150;
+    } else {
+      const p = await (await fetch(`${B}/api/predict`)).json();
+      const me = (p.crew || []).find(x => x.crew_member_id === EMG.crewId);
+      ok = !me || (me.out_now || []).length < 3;
+    }
+    if (ok) _setEmergency(null);
+  } catch (e) { /* keep waiting */ }
+}
+setInterval(_checkResolved, 3000);
+
+// ============================================
+// LIVE CALL PANEL: AEGIS phoning the on-call flight surgeon (status followed on Twilio by the backend)
+// ============================================
+const CALLS = { id: null, rec: null, typed: 0, words: [], typeTimer: null, hideTimer: null, dismissed: new Set(),
+                since: Date.now() - 60000 };
+const _CALL_PROTOCOL = { 'the medical response': 'MEDIC-1', 'the storm-shelter plan': 'SHELTER-1', 'the recovery plan': 'RECOVER-3' };
+function closeCallPanel() {
+  const el = document.getElementById('call-panel');
+  if (CALLS.id != null) CALLS.dismissed.add(CALLS.id);
+  if (el) { el.classList.remove('show'); el.setAttribute('aria-hidden', 'true'); }
+  clearInterval(CALLS.typeTimer); clearTimeout(CALLS.hideTimer);
+  CALLS.id = null; CALLS.rec = null;
+}
+function _callStage(rec) {
+  // -> [stepKey, failLabel | null, terminal?]
+  if (rec.status === 'logged') return ['logged', null, true];
+  if (rec.status === 'failed') return ['dial', 'Call failed', true];
+  if (rec.status === 'skipped') return ['skipped', null, true];
+  const cs = rec.call_status || 'queued';
+  if (cs === 'queued' || cs === 'initiated') return ['dial', null, false];
+  if (cs === 'ringing') return ['ring', null, false];
+  if (cs === 'in-progress') return ['talk', null, false];
+  if (cs === 'completed') return rec.answered_at || rec.duration_s ? ['done', null, true] : ['ring', 'No answer', true];
+  if (cs === 'no-answer') return ['ring', 'No answer', true];
+  if (cs === 'busy') return ['ring', 'Line busy', true];
+  if (cs === 'canceled') return ['dial', 'Call canceled', true];
+  return ['dial', 'Call failed', true];
+}
+function _startTyping(rec) {
+  if (CALLS.words.length) return;
+  CALLS.words = `${rec.intro || ''} ${rec.message || ''}`.trim().split(/\s+/);
+  CALLS.typed = 0;
+  const box = document.getElementById('cp-transcript');
+  clearInterval(CALLS.typeTimer);
+  CALLS.typeTimer = setInterval(() => {               // ~2.5 words/s, about the pace of the phone voice
+    if (CALLS.typed >= CALLS.words.length) { clearInterval(CALLS.typeTimer); return; }
+    CALLS.typed++;
+    box.textContent = '“' + CALLS.words.slice(0, CALLS.typed).join(' ') + (CALLS.typed >= CALLS.words.length ? '”' : '');
+    box.scrollTop = box.scrollHeight;
+  }, 400);
+}
+function _renderCallPanel(rec, others, to) {
+  const el = document.getElementById('call-panel');
+  if (!el) return;
+  const fresh = CALLS.id !== rec.id;
+  if (fresh) {
+    CALLS.id = rec.id; CALLS.words = []; CALLS.typed = 0;
+    clearInterval(CALLS.typeTimer); clearTimeout(CALLS.hideTimer); CALLS.hideTimer = null;
+    document.getElementById('cp-transcript').textContent = '';
+  }
+  CALLS.rec = rec;
+  const [step, fail, terminal] = _callStage(rec);
+  const name = _crewDisplayName(rec.crew_id);
+  const plan = (rec.key || '').split(':').slice(2).join(':');
+  const proto = rec.reason === 'requested' ? 'requested from mission control' : (_CALL_PROTOCOL[plan] || plan || rec.reason);
+  const title = document.getElementById('cp-title');
+  title.textContent = rec.status === 'logged' ? 'SIM · AEGIS would call the flight surgeon'
+    : rec.status === 'skipped' ? 'Call held back (limit)'
+    : fail ? `Call to the flight surgeon: ${fail.toLowerCase()}`
+    : step === 'done' ? 'Call complete: flight surgeon informed'
+    : 'AEGIS is calling the flight surgeon';
+  document.getElementById('cp-sub').textContent =
+    `${name} · ${proto}${to && rec.status === 'called' ? ` · to ${to}` : ''}${others ? ` · +${others} more call${others > 1 ? 's' : ''}` : ''}`;
+  const steps = document.getElementById('cp-steps');
+  steps.style.display = (rec.status === 'called' || rec.status === 'failed') ? '' : 'none';
+  const order = ['dial', 'ring', 'talk', 'done'];
+  const idx = order.indexOf(step);
+  steps.querySelectorAll('li').forEach((li, i) => {
+    li.className = i < idx || (step === 'done' && i === idx) ? 'done' : i === idx ? (fail ? 'fail' : 'now') : '';
+    li.textContent = i === idx && fail ? fail : ['Dialling', 'Ringing', 'Answered', 'Call complete'][i];
+  });
+  el.classList.toggle('ringing', step === 'ring' && !fail);
+  el.classList.toggle('fail', !!fail);
+  el.classList.toggle('ok', step === 'done');
+  // The spoken message appears as it is read out (straight away when the phone is not set up)
+  if (step === 'talk' || step === 'logged') _startTyping(rec);
+  if (step === 'done') { _startTyping(rec); CALLS.typed = CALLS.words.length;
+    document.getElementById('cp-transcript').textContent = '“' + CALLS.words.join(' ') + '”'; }
+  if (rec.status === 'skipped') {
+    const wait = rec.next_call_in_s ? ` Next call allowed in ${Math.max(1, Math.ceil(rec.next_call_in_s / 60))} min.` : '';
+    document.getElementById('cp-transcript').textContent = `Not called again: ${rec.detail || 'already called about this alert'}.${wait}`;
+  }
+  const ago = Math.max(0, Math.round((Date.now() - _parseUtc(rec.at)) / 1000));
+  const who = rec.source === 'AEGIS tool call' ? 'worded by AEGIS (DeepSeek tool call, fact-checked)' : 'rule-based wording';
+  const twilio = rec.status === 'called' ? `Twilio status: ${rec.call_status || 'queued'}${rec.duration_s ? `, ${rec.duration_s} s` : ''} (checked every 2 s). ` : '';
+  document.getElementById('cp-foot').textContent =
+    (rec.status === 'logged' ? 'SIMULATED: phone not set up, call logged only. ' : rec.status === 'failed' ? `${rec.detail || ''} ` : '') +
+    twilio + `${ago < 60 ? ago + ' s' : Math.floor(ago / 60) + ' min'} ago · ${who}. Demo call over the phone network; ` +
+    `on a Mars transit the first call would go to the medical officer on board.`;
+  if (fresh) { el.classList.add('show'); el.setAttribute('aria-hidden', 'false'); }
+  if (terminal && !CALLS.hideTimer) CALLS.hideTimer = setTimeout(closeCallPanel, rec.status === 'skipped' ? 8000 : 30000);
+}
+async function pollCalls() {
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/notify/status`);
+    if (!r.ok) return;
+    const s = await r.json();
+    const recent = (s.history || []).filter(h => h.id != null && _parseUtc(h.at) >= CALLS.since && !CALLS.dismissed.has(h.id));
+    if (!recent.length) { if (CALLS.id != null && !(s.history || []).some(h => h.id === CALLS.id)) closeCallPanel(); return; }
+    const rec = recent[0];                                   // newest first
+    const others = recent.filter(h => h.id !== rec.id && h.status === rec.status && _parseUtc(rec.at) - _parseUtc(h.at) < 60000).length;
+    _renderCallPanel(rec, others, s.to);
+    // Emergency strip: who AEGIS phoned
+    const em = document.getElementById('mb-em-call');
+    if (em) em.textContent = rec.status === 'called' ? `📞 Flight surgeon ${({ 'in-progress': 'on the line', completed: 'call complete', ringing: 'being called', 'no-answer': 'not answering', busy: 'line busy', failed: 'call failed', canceled: 'call canceled' })[rec.call_status] || 'being called'}`
+      : rec.status === 'logged' ? '📞 Call logged (phone not set up)' : '';
+  } catch (e) { /* backend offline */ }
+}
+setInterval(pollCalls, 2000);
+
 const CM_FMT = {
   heart_rate: v => [Math.round(v), 'bpm'], spo2: v => [v.toFixed(1), '% SpO₂'], il6: v => [v.toFixed(1), 'IL-6 · modelled'],
   sleep_quality: v => [Math.round(v), '/100 sleep'], radiation_dose_24h: v => [v.toFixed(2), 'mSv / 24 h']
@@ -3125,6 +3436,19 @@ window.addEventListener('message', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSimModal(); });
 document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.target.id === 'sim-modal') closeSimModal(); });
 </script>
+
+<!-- Emergency edge glow + live call panel (AEGIS phoning the flight surgeon) -->
+<div class="emergency-edge" aria-hidden="true"></div>
+<aside class="call-panel" id="call-panel" role="status" aria-live="polite" aria-hidden="true">
+  <div class="cp-head">
+    <span class="cp-icon" aria-hidden="true">📞</span>
+    <div><div class="cp-title" id="cp-title">AEGIS is calling the flight surgeon</div><div class="cp-sub" id="cp-sub"></div></div>
+    <button class="cp-close" onclick="closeCallPanel()" aria-label="Close call panel">×</button>
+  </div>
+  <ol class="cp-steps" id="cp-steps"><li data-k="dial">Dialling</li><li data-k="ring">Ringing</li><li data-k="talk">Answered</li><li data-k="done">Call complete</li></ol>
+  <div class="cp-transcript" id="cp-transcript"></div>
+  <div class="cp-foot" id="cp-foot"></div>
+</aside>
 
 <!-- AEGIS API Client - connects frontend to backend -->
 <script src="aegis-api-client.js?v=10"></script>

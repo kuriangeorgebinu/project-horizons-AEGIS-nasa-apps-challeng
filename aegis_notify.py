@@ -28,14 +28,26 @@ _lock = threading.Lock()
 _last_by_key: dict[str, float] = {}
 _recent: list[float] = []
 HISTORY: list[dict] = []          # newest first, shown on the dashboard
+_seq = 0
+# Twilio call states that end a call (anything else is still in progress)
+TERMINAL = {"completed", "busy", "no-answer", "failed", "canceled"}
+INTRO = "This is AEGIS, the crew health system, with an urgent alert."
+OUTRO = "Please check the AEGIS dashboard. Goodbye."
 
 
 def _env(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
 
 
+def _placeholder(v: str) -> bool:
+    """The .env template's placeholder values (ACxxxx..., your_..., +10000000000) count as not set."""
+    low = v.lower()
+    return "xxxx" in low or low.startswith("your_") or v.replace("+", "").strip("0") in ("", "1")
+
+
 def configured() -> bool:
-    return all(_env(k) for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_FROM_NUMBER", "AEGIS_ONCALL_NUMBER"))
+    keys = ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_FROM_NUMBER", "AEGIS_ONCALL_NUMBER")
+    return all(_env(k) and not _placeholder(_env(k)) for k in keys)
 
 
 def enabled() -> bool:
@@ -47,24 +59,51 @@ def _masked(num: str) -> str:
 
 
 def status() -> dict:
+    with _lock:
+        hist = [{k: v for k, v in h.items() if k != "call_sid"} for h in HISTORY[:10]]
     return {"enabled": enabled(), "configured": configured(),
             "to": _masked(_env("AEGIS_ONCALL_NUMBER")) if configured() else None,
             "cooldown_min": float(_env("AEGIS_CALL_COOLDOWN_MIN", "10")),
             "max_per_hour": int(_env("AEGIS_CALL_MAX_PER_HOUR", "4")),
-            "history": HISTORY[:10]}
+            "history": hist}
+
+
+def _track(rec: dict) -> None:
+    """Follow a placed call on Twilio (queued -> ringing -> in-progress -> completed / no-answer / busy / failed)
+    so the dashboard can show whether anyone actually picked up. Polls the call resource; no webhook needed."""
+    sid, token = _env("TWILIO_ACCOUNT_SID"), _env("TWILIO_AUTH_TOKEN")
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Calls/{rec['call_sid']}.json"
+    t_end = time.time() + 300
+    while time.time() < t_end:
+        try:
+            r = httpx.get(url, auth=(sid, token), timeout=10)
+            if r.status_code == 200:
+                j = r.json()
+                st = j.get("status") or rec.get("call_status")
+                with _lock:
+                    rec["call_status"] = st
+                    if j.get("duration"):
+                        rec["duration_s"] = int(j["duration"])
+                    if st == "in-progress" and not rec.get("answered_at"):
+                        rec["answered_at"] = datetime.utcnow().isoformat()
+                if st in TERMINAL:
+                    return
+        except Exception:
+            pass
+        time.sleep(2)
 
 
 def _twiml(message: str) -> str:
     """What the phone says: the alert twice, with a pause, in a clear voice."""
     m = escape(message)
     return ("<Response>"
-            "<Say voice=\"Polly.Joanna\">This is AEGIS, the crew health system, with an urgent alert.</Say>"
+            f"<Say voice=\"Polly.Joanna\">{INTRO}</Say>"
             "<Pause length=\"1\"/>"
             f"<Say voice=\"Polly.Joanna\">{m}</Say>"
             "<Pause length=\"2\"/>"
             f"<Say voice=\"Polly.Joanna\">Repeating. {m}</Say>"
             "<Pause length=\"1\"/>"
-            "<Say voice=\"Polly.Joanna\">Please check the AEGIS dashboard. Goodbye.</Say>"
+            f"<Say voice=\"Polly.Joanna\">{OUTRO}</Say>"
             "</Response>")
 
 
@@ -77,17 +116,24 @@ def call(message: str, key: str, reason: str = "alert", source: str = "rules") -
     now = time.time()
     cooldown = float(_env("AEGIS_CALL_COOLDOWN_MIN", "10")) * 60
     cap = int(_env("AEGIS_CALL_MAX_PER_HOUR", "4"))
-    rec = {"at": datetime.utcnow().isoformat(), "key": key, "reason": reason, "source": source,
-           "message": message, "status": None, "detail": None}
+    global _seq
+    with _lock:
+        _seq += 1
+        seq = _seq
+    rec = {"id": seq, "at": datetime.utcnow().isoformat(), "key": key, "crew_id": key.split(":", 1)[0],
+           "reason": reason, "source": source, "message": message, "intro": INTRO, "outro": OUTRO,
+           "status": None, "detail": None, "call_status": None}
     with _lock:
         if not enabled():
             rec.update(status="skipped", detail="calls turned off (AEGIS_CALLS=off)")
         elif now - _last_by_key.get(key, 0) < cooldown:
-            rec.update(status="skipped", detail="already called for this alert recently")
+            rec.update(status="skipped", detail="already called for this alert recently",
+                       next_call_in_s=int(cooldown - (now - _last_by_key[key])))
         else:
             _recent[:] = [t for t in _recent if now - t < 3600]
             if len(_recent) >= cap:
-                rec.update(status="skipped", detail=f"hourly limit of {cap} calls reached")
+                rec.update(status="skipped", detail=f"hourly limit of {cap} calls reached",
+                           next_call_in_s=int(3600 - (now - min(_recent))))
             else:
                 _last_by_key[key] = now
                 _recent.append(now)
@@ -103,7 +149,8 @@ def call(message: str, key: str, reason: str = "alert", source: str = "rules") -
                                      "Twiml": _twiml(message)})
                 if r.status_code in (200, 201):
                     rec.update(status="called", detail=f"calling {_masked(_env('AEGIS_ONCALL_NUMBER'))}",
-                               call_sid=r.json().get("sid"))
+                               call_sid=r.json().get("sid"), call_status=r.json().get("status") or "queued",
+                               to=_masked(_env("AEGIS_ONCALL_NUMBER")))
                 else:
                     rec.update(status="failed", detail=f"Twilio HTTP {r.status_code}: {r.text[:160]}")
             except Exception as e:
@@ -111,6 +158,8 @@ def call(message: str, key: str, reason: str = "alert", source: str = "rules") -
     with _lock:
         HISTORY.insert(0, rec)
         del HISTORY[30:]
+    if rec.get("call_sid"):
+        threading.Thread(target=_track, args=(rec,), daemon=True, name="aegis-call-track").start()
     return rec
 
 
