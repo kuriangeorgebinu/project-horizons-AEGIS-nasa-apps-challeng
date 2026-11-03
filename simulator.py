@@ -55,6 +55,11 @@ class VitalsSimulator:
         self.start_time = datetime.utcnow()
         self.scenario_started_at = datetime.utcnow()   # for gradual scenarios (buildup_demo)
         self.recovery_from_p = 0.0                     # build-up progress when PREVENT-1 started
+        # One-click story demo (dashboard "Run demo"): the same build-up and recovery, compressed so the whole
+        # story fits in about 3 minutes. None = the normal BUILDUP_SECONDS / RECOVERY_SECONDS.
+        self.story_buildup_s: Optional[float] = None
+        self.story_recovery_s: Optional[float] = None
+        self.story_fast_settle = False                 # 2-minute cut: the dose drops back at once after the storm
         self._task: Optional[asyncio.Task] = None
         
         # M5: Track simulator health
@@ -195,7 +200,8 @@ class VitalsSimulator:
         # Apply smoothing (R3: bypass for affected vitals during anomaly/scenario)
         cardiac_bypass = (anomaly_active and self.config.inject_anomaly == "cardiac") or \
             self.config.scenario == "cascade_demo"   # heart rate reacts at once in the cascade demo
-        radiation_bypass = (anomaly_active and self.config.inject_anomaly == "radiation") or scenario_active
+        radiation_bypass = (anomaly_active and self.config.inject_anomaly == "radiation") or scenario_active \
+            or self.story_fast_settle
         
         vitals = Vitals(
             heart_rate=int(smooth("heart_rate", hr_raw, bypass=cardiac_bypass)),
@@ -235,6 +241,9 @@ class VitalsSimulator:
         self.start_time = datetime.utcnow()
         self.scenario_started_at = datetime.utcnow()
         self.recovery_from_p = 0.0
+        self.story_buildup_s = None
+        self.story_recovery_s = None
+        self.story_fast_settle = False
         self._crew_baselines = {}
         self._previous_vitals = {}
 
@@ -242,9 +251,9 @@ class VitalsSimulator:
         """0..1 progress of the build-up toward the cascade end state (reverses during prevent_recovery)."""
         elapsed = (datetime.utcnow() - self.scenario_started_at).total_seconds()
         if self.config.scenario == "buildup_demo":
-            return min(1.0, elapsed / BUILDUP_SECONDS)
+            return min(1.0, elapsed / (self.story_buildup_s or BUILDUP_SECONDS))
         if self.config.scenario == "prevent_recovery":
-            return self.recovery_from_p * max(0.0, 1.0 - elapsed / RECOVERY_SECONDS)
+            return self.recovery_from_p * max(0.0, 1.0 - elapsed / (self.story_recovery_s or RECOVERY_SECONDS))
         return 0.0
 
     def start_prevention(self, crew_id: str) -> bool:
@@ -404,7 +413,7 @@ class VitalsSimulator:
         """Update vitals for all crew members."""
         # PREVENT-1 recovery finished: back to nominal operations
         if self.config.scenario == "prevent_recovery" and \
-                (datetime.utcnow() - self.scenario_started_at).total_seconds() > RECOVERY_SECONDS + 60:
+                (datetime.utcnow() - self.scenario_started_at).total_seconds() > (self.story_recovery_s or RECOVERY_SECONDS) + 60:
             config = self.config.model_copy()
             config.scenario = None
             self.set_config(config)

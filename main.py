@@ -41,6 +41,7 @@ import aegis_trends
 import aegis_llm
 import aegis_notify
 import aegis_mission
+import aegis_echo
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -112,8 +113,9 @@ async def lifespan(app: FastAPI):
     analyze_task = asyncio.create_task(auto_analyze_loop())
     
     print("✅ AEGIS Backend Ready!")
-    print("   Dashboard: http://localhost:8000")
-    print("   API Docs:  http://localhost:8000/docs")
+    print("   API:       http://127.0.0.1:8000  (docs at /docs)")
+    print("   Dashboard: serve the project folder with  python -m http.server 8080 --bind 127.0.0.1")
+    print("              then open http://127.0.0.1:8080/aegis-mission-control.html")
     
     yield
     
@@ -203,9 +205,58 @@ async def demo_reset():
     simulator.reset_demo()
     removed = db.reset_demo_data()
     get_coordinator().reset_state()
+    get_coordinator().protect_mode = False
     aegis_notify.reset_log()
+    aegis_notify.DEMO_QUIET["on"] = False
+    aegis_echo.reset()
     db.log_event(EventType.SYSTEM, "Demo reset: clean start", details={"removed": removed})
     return {"reset": True, "removed": removed, "mission_day": simulator.mission_day}
+
+
+# One-click story timings. full = about 3 minutes; short = the 2-minute judging cut (the build-up still leaves
+# AEGIS ~20 s of warning before the third system would cross, and the dose drops back at once after the storm).
+STORY_CUTS = {"full": {"buildup_s": 120, "recovery_s": 30, "fast_settle": False},
+              "short": {"buildup_s": 100, "recovery_s": 20, "fast_settle": True}}
+
+
+@app.post("/api/demo/story/start")
+async def story_start(cut: str = "short"):
+    """
+    One-click story demo (dashboard "Run demo"): clean reset, then Commander Chen's readings start drifting on a
+    compressed build-up so AEGIS can PREDICT the cascade and PREVENT it; the dashboard then triggers the solar
+    storm (PROTECT) and ends with ECHO checking in. Phone calls are logged, never dialled, while the story runs.
+    """
+    out = await demo_reset()
+    simulator = get_simulator()
+    t = STORY_CUTS.get(cut, STORY_CUTS["short"])
+    simulator.story_buildup_s = t["buildup_s"]
+    simulator.story_recovery_s = t["recovery_s"]
+    simulator.story_fast_settle = t["fast_settle"]
+    aegis_notify.DEMO_QUIET["on"] = True
+    config = simulator.config.model_copy()
+    config.scenario = "buildup_demo"
+    config.inject_crew_id = "crew-001"
+    simulator.set_config(config)
+    get_coordinator().rearm_cascades()
+    db.log_event(EventType.SYSTEM, "Story demo started (calls logged, not dialled)")
+    return {"started": True, "crew_id": "crew-001", "cut": cut if cut in STORY_CUTS else "short", **t, "reset": out}
+
+
+@app.post("/api/demo/story/stop")
+async def story_stop():
+    """End the story demo: back to nominal, normal timings, phone alarm back to its normal setting."""
+    simulator = get_simulator()
+    simulator.story_buildup_s = None
+    simulator.story_recovery_s = None
+    simulator.story_fast_settle = False
+    aegis_notify.DEMO_QUIET["on"] = False
+    config = simulator.config.model_copy()
+    config.scenario = None
+    config.inject_crew_id = None
+    simulator.set_config(config)
+    get_coordinator().protect_mode = False
+    get_coordinator().rearm_cascades()
+    return {"stopped": True}
 
 
 @app.get("/api/notify/status")
@@ -279,6 +330,64 @@ async def what_if(req: WhatIfRequest):
     """What-If simulator: run the real agent rules on hypothetical dashboard values (nothing is stored)."""
     values = req.model_dump(exclude={"crew_id", "explain"})
     return await asyncio.to_thread(get_coordinator().what_if, values, req.crew_id, req.explain)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ECHO: crew companion (companion / check-in / support modes). Private: nothing here is logged except
+# the fact that someone chose to share, and nothing is sent to mission control unless they say yes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class EchoCheckin(_BaseModel):
+    mood: int = _Field(..., ge=1, le=5, description="1 rough · 2 low · 3 okay · 4 good · 5 great")
+    note: str = _Field("", max_length=300)
+
+
+class EchoChat(_BaseModel):
+    message: str = _Field(..., min_length=1, max_length=500)
+
+
+class EchoShare(_BaseModel):
+    to: str = _Field("onboard", description="onboard (medical officer, or the Commander) or ground (flight surgeon)")
+
+
+def _echo_member(crew_id: str):
+    if not db.get_crew_member(crew_id):
+        raise HTTPException(status_code=404, detail=f"Crew member {crew_id} not found")
+
+
+@app.get("/api/echo/{crew_id}")
+async def echo_status(crew_id: str, event: Optional[str] = None):
+    """ECHO's mode for this person (companion / checkin / support) and the line it opens with."""
+    _echo_member(crew_id)
+    return await asyncio.to_thread(aegis_echo.status, crew_id, event)
+
+
+@app.post("/api/echo/{crew_id}/checkin")
+async def echo_checkin(crew_id: str, req: EchoCheckin):
+    """'How are you feeling?': record a 1-5 check-in (memory only) and get ECHO's reply."""
+    _echo_member(crew_id)
+    return await asyncio.to_thread(aegis_echo.checkin, crew_id, req.mood, req.note)
+
+
+@app.post("/api/echo/{crew_id}/chat")
+async def echo_chat(crew_id: str, req: EchoChat):
+    """Talk to ECHO. Crisis detection is rule-based; DeepSeek may word ordinary replies (checked, role only)."""
+    _echo_member(crew_id)
+    return await asyncio.to_thread(aegis_echo.chat, crew_id, req.message)
+
+
+@app.post("/api/echo/{crew_id}/share")
+async def echo_share(crew_id: str, req: EchoShare):
+    """Only when the crew member says yes: let the medical officer (or the flight surgeon) know they'd like to talk."""
+    _echo_member(crew_id)
+    return await asyncio.to_thread(aegis_echo.share, crew_id, req.to)
+
+
+@app.post("/api/echo/{crew_id}/dismiss")
+async def echo_dismiss(crew_id: str):
+    """'I'm okay for now': ECHO leaves support mode for a while."""
+    _echo_member(crew_id)
+    return await asyncio.to_thread(aegis_echo.dismiss, crew_id)
 
 
 @app.post("/api/llm/backfill")

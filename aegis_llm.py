@@ -59,6 +59,12 @@ MODE_RULES = {
             "only health. If someone asks for a joke, tell a short, kind one (space and science humour works well); a "
             "light touch of humour is fine in relaxed moments too, but never when someone is in danger or an urgent "
             "alert is open. If a health question comes in, answer it simply first.",
+    # ECHO, the crew companion: talks WITH a crew member, never about them
+    "echo": "You are a companion, not a counsellor or a doctor: never diagnose, never suggest medicines or doses. "
+            "Talk directly to the crew member ('you'), warmly, like a kind friend on the radio. Two or three short "
+            "sentences. Reflect what they said, then offer one small, practical idea (a crewmate, a message home, a "
+            "slow breath, rest) or one gentle question. If asked, say plainly that you are an AI. Never claim to be "
+            "human, never promise secrecy you cannot keep, never mention readings you were not given.",
 }
 
 PERSONAS = {
@@ -66,6 +72,8 @@ PERSONAS = {
     "SOLARIS": "SOLARIS, who watches space radiation and solar storms (calm, with a dry sense of humour)",
     "GENE": "GENE, who tracks inflammation signals in the blood (curious and gentle)",
     "MIRROR": "MIRROR, who looks after sleep and wellbeing (warm and supportive)",
+    "ECHO": "ECHO, the crew companion who keeps people company on the long trip and helps them feel less alone "
+            "(warm, gentle, a little playful, always honest that it is an AI)",
     "OSTEOWATCH": "OsteoWatch, who looks after bones and muscles",
     "AEGIS": "AEGIS, the team lead who pulls everyone's findings together and spots when several problems build "
              "up at once (steady, reassuring)",
@@ -113,7 +121,7 @@ def chat(prompt: str, persona: str = "AEGIS", words: int = 70,
     system = BASE_SYSTEM.format(persona=PERSONAS.get(persona.upper(), PERSONAS["AEGIS"]), words=words,
                                 mode_rules=MODE_RULES.get(mode, MODE_RULES["report"]))
     if temperature is None:
-        temperature = 0.8 if mode == "chat" else 0.2   # lively conversation, steady health reports
+        temperature = 0.8 if mode in ("chat", "echo") else 0.2   # lively conversation, steady health reports
     base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
     t0 = time.time()
     try:

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -526,6 +526,299 @@ body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60
   .vital-row { flex-wrap: wrap; }
   .vital-label { min-width: 50px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   AEGIS v2 DESIGN SYSTEM: one set of tokens, one panel style, one type scale, one set of status colours.
+   Dark mission control is the default; [data-theme="light"] keeps a clean light variant.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#04070d;--card:#0b1322;--border:rgba(120,160,215,.15);--border-strong:rgba(120,175,235,.34);
+  --text:#e3ecf8;--muted:#8a9cb4;
+  --aegis:#5cb4ff;--gene:#b6a7ff;--pulse:#ff8f8f;--solaris:#f5c451;--mirror:#4fd6a6;--echo:#ffb085;
+  --green:#36d695;--yellow:#f3c04f;--orange:#ff9d57;--red:#ff5c5c;--cm-amber:#f3b23c;
+  --glass:linear-gradient(180deg,rgba(16,26,44,.86),rgba(8,14,26,.9));
+  --panel-shadow:0 22px 48px -26px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.045);
+  --font-ui:"Segoe UI Variable Text","Segoe UI",Inter,system-ui,-apple-system,sans-serif;
+  --font-num:Bahnschrift,"DIN Alternate","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --r:16px;--space-bg-opacity:1;
+}
+[data-theme="light"]{
+  --bg:#eef3f9;--card:#ffffff;--border:#d3dce7;--border-strong:#aebdd0;--text:#162232;--muted:#566578;
+  --aegis:#2f74b5;--gene:#6450a8;--pulse:#b24f4f;--solaris:#9a7a1c;--mirror:#2f8a69;--echo:#c4622f;
+  --green:#22865f;--yellow:#8f7a1c;--orange:#b3601f;--red:#b8383d;--cm-amber:#c27c0e;
+  --glass:linear-gradient(180deg,#ffffff,#f9fbfe);--panel-shadow:0 10px 30px -18px rgba(20,40,70,.35);
+  --space-bg-opacity:0;
+}
+html,body{font-family:var(--font-ui);}
+body{background:radial-gradient(1200px 700px at 78% -10%,rgba(60,110,200,.16),transparent 60%),
+  radial-gradient(900px 600px at -10% 110%,rgba(255,140,90,.08),transparent 60%),var(--bg);background-attachment:fixed;}
+[data-theme="light"] body{background:var(--bg);}
+.space-bg{background-image:
+  radial-gradient(1px 1px at 22px 34px,rgba(255,255,255,.75) 50%,transparent 51%),
+  radial-gradient(1px 1px at 140px 96px,rgba(255,255,255,.45) 50%,transparent 51%),
+  radial-gradient(1.4px 1.4px at 260px 170px,rgba(190,225,255,.7) 50%,transparent 51%),
+  radial-gradient(1px 1px at 330px 40px,rgba(255,255,255,.35) 50%,transparent 51%),
+  radial-gradient(1px 1px at 80px 210px,rgba(255,230,210,.5) 50%,transparent 51%),
+  radial-gradient(1.2px 1.2px at 200px 260px,rgba(255,255,255,.55) 50%,transparent 51%);
+  background-size:360px 300px;}
+
+/* Layout: hero, Cascade Map + vitals, ECHO / alerts / voice, recommendations, NASA data */
+.shell{grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:auto;gap:14px;padding:14px 16px 22px;
+  max-width:1680px;margin:0 auto;grid-template-areas:"header header header header header header header header header header header header" "mission mission mission mission mission mission mission mission mission mission mission mission" "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals" "echo echo echo echo alert alert alert alert voice voice voice voice" "recs recs recs recs recs recs recs recs recs recs recs recs" "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}
+.header,.mission-bar,.graph-panel,.vitals-panel,.voice-panel,.alert-panel,.recs-panel,.echo-panel,.nasa-panel{
+  background:var(--glass);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--panel-shadow);
+  min-width:0;}
+.alert-panel{border-width:1px;border-top-width:3px;}
+.graph-panel,.vitals-panel,.voice-panel,.alert-panel,.recs-panel{padding:1.1rem 1.25rem;}
+
+/* One type scale for panel labels */
+.graph-title,.vitals-title,.voice-title,.recs-title,.cg-head,.response-label,.panel-kicker,.hero-kicker{
+  font-family:var(--font-num);font-size:.7rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+.graph-title{color:var(--text);opacity:.85;}
+.vital-value,.cm-val,.cm-big,.stat-value,.hero-big,.nd-num,.mission-day span{font-family:var(--font-num);font-variant-numeric:tabular-nums;}
+
+/* Header */
+.header{padding:.55rem .9rem;gap:.75rem;}
+.logo{font-family:var(--font-num);letter-spacing:.28em;font-size:1.35rem;background:linear-gradient(90deg,#9fd3ff,#5cb4ff 45%,#b6a7ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;}
+[data-theme="light"] .logo{background:none;color:var(--aegis);}
+.nav-tabs{background:rgba(0,0,0,.22);border-color:var(--border);}
+.nav-tab.active{background:linear-gradient(135deg,#3d8fe0,#5cb4ff);box-shadow:0 6px 16px -8px rgba(92,180,255,.8);}
+.run-demo-btn{border:none;cursor:pointer;color:#fff;font:inherit;font-weight:700;font-size:.85rem;letter-spacing:.04em;
+  padding:.5rem 1.1rem;border-radius:999px;background:linear-gradient(135deg,#ff9d57,#ff5c8a);
+  box-shadow:0 8px 22px -8px rgba(255,110,110,.75);transition:transform .2s,box-shadow .2s;}
+.run-demo-btn:hover{transform:translateY(-1px);box-shadow:0 12px 26px -8px rgba(255,110,110,.9);}
+.run-demo-btn.on{background:linear-gradient(135deg,#5a6b85,#3d4a60);box-shadow:none;}
+.whatif-btn{border-radius:999px;}
+.theme-toggle{border-radius:999px;}
+#api-status{font-family:var(--font-num);letter-spacing:.08em;}
+
+/* ── Hero mission header: the Mars transit ── */
+.mission-bar{padding:.75rem 1.2rem;min-height:132px;overflow:hidden;}
+.mb-normal.hero{display:grid;grid-template-columns:minmax(160px,210px) minmax(0,1fr) minmax(220px,270px);align-items:center;gap:1.2rem;flex-wrap:nowrap;}
+.hero-col{display:flex;flex-direction:column;gap:.2rem;min-width:0;}
+.hero-right{align-items:flex-end;text-align:right;}
+.hero-day{display:flex;align-items:baseline;gap:.45rem;}
+.hero-big{font-size:2.6rem;font-weight:600;line-height:1;color:var(--text);letter-spacing:.01em;}
+.hero-delay{font-size:2rem;color:#9fd3ff;cursor:help;white-space:nowrap;}
+[data-theme="light"] .hero-delay{color:var(--aegis);}
+.hero-of{font-family:var(--font-num);color:var(--muted);font-size:.95rem;}
+.hero-sub{font-size:.78rem;color:var(--muted);white-space:normal;}
+.hero-sub b{color:var(--text);font-weight:600;}
+.hero-arc{width:100%;height:128px;display:block;overflow:visible;}
+.hero-orbit{fill:none;stroke:rgba(140,170,210,.28);stroke-width:1.5;stroke-dasharray:3 6;}
+.hero-done{fill:none;stroke:url(#hg-done);stroke-width:3;stroke-linecap:round;filter:url(#hg-glow);}
+.hero-earth-glow{fill:rgba(92,180,255,.18);} .hero-mars-glow{fill:rgba(255,140,90,.16);}
+.hero-planet{font-family:var(--font-num);font-size:9.5px;letter-spacing:.25em;fill:var(--muted);}
+.hero-ship-halo{fill:rgba(255,255,255,.08);stroke:rgba(255,255,255,.35);stroke-width:1;animation:ship-halo 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+.hero-ship-body{fill:#fff;filter:url(#hg-glow);}
+[data-theme="light"] .hero-ship-body{fill:#2f74b5;}
+.hero-ship-label{font-family:var(--font-num);font-size:9px;letter-spacing:.18em;fill:var(--muted);text-transform:uppercase;}
+.hero-signal{fill:#9fd3ff;filter:url(#hg-glow);}
+@keyframes ship-halo{0%,100%{transform:scale(1);opacity:.7;}50%{transform:scale(1.35);opacity:.25;}}
+.mb-pill{margin-top:.35rem;border-color:rgba(92,180,255,.45);background:rgba(92,180,255,.08);white-space:nowrap;}
+
+/* Emergency mode: dramatic but instantly readable */
+.mb-em{min-height:108px;justify-content:center;gap:1.4rem;font-family:var(--font-num);}
+#mb-em-text{font-size:1.55rem;font-weight:700;letter-spacing:.06em;text-shadow:0 2px 12px rgba(0,0,0,.35);}
+.mb-em-timer{font-size:1.3rem;padding:.25rem .7rem;background:rgba(0,0,0,.3);border-radius:10px;}
+.mb-em-call{font-family:var(--font-ui);font-size:.9rem;}
+body.emergency .mission-bar{background:linear-gradient(100deg,#4a070c,#b0222c 45%,#4a070c);border-color:#ff6b6b;
+  box-shadow:0 0 0 1px rgba(255,90,90,.6),0 0 60px -10px rgba(255,60,60,.6);}
+body.cascade-alert .mission-bar{background:linear-gradient(100deg,#3f2a05,#a8701a 45%,#3f2a05);border-color:#f3b23c;}
+body.emergency .mission-bar::before,body.cascade-alert .mission-bar::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 16px,transparent 16px 32px);animation:hazard 1.2s linear infinite;}
+body.acked .mission-bar::before{animation:none;opacity:.4;}
+@keyframes hazard{to{background-position:45px 0;}}
+body.emergency .emergency-edge{box-shadow:inset 0 0 0 3px #ff5c5c,inset 0 0 160px rgba(255,40,40,.4);}
+body.emergency .alert-panel{border-color:#ff5c5c;box-shadow:0 0 0 1px #ff5c5c,0 0 50px -8px rgba(255,60,60,.55);}
+body.emergency .alert-title{font-size:1.15rem;}
+body.emergency .confirm-btn{background:#ff5c5c;color:#fff;border-color:#ff5c5c;font-weight:700;font-size:1rem;padding:.85rem 1.4rem;
+  animation:btn-pulse 1.4s ease-in-out infinite;}
+body.emergency.acked .confirm-btn{animation:none;}
+@keyframes btn-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,92,92,.6);}50%{box-shadow:0 0 0 10px rgba(255,92,92,0);}}
+.confirm-btn{border-radius:10px;font-weight:600;}
+
+/* ── Cascade Map: the glowing centrepiece ── */
+.graph-panel{background:radial-gradient(520px 300px at 50% 52%,rgba(92,180,255,.10),transparent 70%),var(--glass);}
+[data-theme="light"] .graph-panel{background:var(--glass);}
+.cm-svg{max-height:400px;}
+.cm-aura{fill:url(#cm-aura-grad);animation:cm-aura 4s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+@keyframes cm-aura{0%,100%{opacity:.6;transform:scale(.96);}50%{opacity:1;transform:scale(1.04);}}
+#cm-aura-grad stop{stop-color:#5cb4ff;transition:stop-color .6s;}
+.graph-panel:has(.node-aegis[data-mode="cascade"]) #cm-aura-grad stop{stop-color:#f3b23c;}
+.graph-panel:has(.node-aegis[data-mode="alert"]) #cm-aura-grad stop{stop-color:#ff5c5c;}
+.graph-panel:has(.node-aegis[data-mode="alert"]) .cm-aura{animation-duration:1.4s;}
+.graph-panel:has(.node-aegis[data-mode="averted"]) #cm-aura-grad stop,.graph-panel:has(.node-aegis[data-mode="prevent"]) #cm-aura-grad stop{stop-color:#36d695;}
+:root:not([data-theme="light"]) .cm-core{fill:url(#cm-core-grad);stroke:rgba(140,180,230,.25);}
+:root:not([data-theme="light"]) .cm-gauge,:root:not([data-theme="light"]) .cm-seg{filter:url(#cm-glow);}
+:root:not([data-theme="light"]) .cm-track{stroke:rgba(140,170,210,.18);opacity:1;}
+.cm-link{stroke:rgba(140,170,210,.28);}
+:root:not([data-theme="light"]) .cm-link.warm,:root:not([data-theme="light"]) .cm-link.hot,:root:not([data-theme="light"]) .conn-line.s-watch,:root:not([data-theme="light"]) .conn-line.s-out{filter:url(#cm-glow);}
+.conn-line{stroke:rgba(140,170,210,.22);}
+.cm-comet{display:none;fill:var(--cm-amber);filter:url(#cm-glow);}
+.cm-comet.on{display:inline;}
+.cm-comet.hot{fill:var(--red);}
+.cm-spark{fill:#fff;filter:url(#cm-glow);pointer-events:none;}
+.cm-spark.watch{fill:var(--cm-amber);} .cm-spark.out{fill:var(--red);}
+.cm-name{letter-spacing:.24em;font-family:var(--font-num);}
+.cm-caption{font-size:.9rem;}
+.cm-tether{fill:none;stroke:var(--echo);stroke-width:1.5;stroke-dasharray:2 4;opacity:.55;}
+.echo-mini{cursor:pointer;}
+.echo-mini .em-halo{fill:var(--echo);opacity:.12;transform-box:fill-box;transform-origin:center;animation:cm-breathe 3.2s ease-in-out infinite;}
+.echo-mini[data-mode="support"] .em-halo{opacity:.3;animation-duration:1.6s;}
+.echo-mini .em-core{filter:url(#cm-glow);}
+.echo-mini .em-eye{fill:#3a1a10;animation:ea-blink 5s infinite;transform-box:fill-box;transform-origin:center;}
+.echo-mini .em-smile{fill:none;stroke:#3a1a10;stroke-width:1.4;stroke-linecap:round;}
+.echo-mini .em-name{font-family:var(--font-num);font-size:10px;font-weight:700;letter-spacing:.24em;fill:var(--echo);}
+.echo-mini:focus-visible .em-core{stroke:var(--aegis);stroke-width:2;}
+
+/* Vitals */
+.vital-row{border-radius:10px;padding:.35rem .4rem;transition:background .2s;}
+.vital-row:hover{background:rgba(255,255,255,.035);}
+.vital-value{font-weight:600;}
+.vital-bar,.rad-bar{background:rgba(140,170,210,.14);}
+.vital-fill,.rad-fill{box-shadow:0 0 12px -2px currentColor;}
+
+/* ── ECHO panel ── */
+.echo-panel{grid-area:echo;position:relative;display:flex;flex-direction:column;gap:.7rem;padding:1.1rem 1.2rem;overflow:hidden;
+  border-top:3px solid var(--echo);background:radial-gradient(420px 180px at 0% 0%,rgba(255,176,133,.14),transparent 70%),var(--glass);
+  transition:box-shadow .5s,border-color .5s;}
+.echo-panel[data-mode="support"]{box-shadow:0 0 0 1px rgba(255,176,133,.45),0 0 50px -12px rgba(255,150,110,.55),var(--panel-shadow);}
+.echo-panel[data-level="urgent"]{border-top-color:#ff8aa8;box-shadow:0 0 0 1px rgba(255,138,168,.6),0 0 60px -10px rgba(255,120,150,.6);}
+.echo-panel.spotlight{animation:echo-spot 2.4s ease-out 1;}
+@keyframes echo-spot{0%{box-shadow:0 0 0 0 rgba(255,176,133,.9),var(--panel-shadow);}100%{box-shadow:0 0 0 24px rgba(255,176,133,0),var(--panel-shadow);}}
+.echo-head{display:flex;align-items:center;gap:.85rem;}
+.echo-avatar{width:66px;height:66px;flex:none;}
+.echo-avatar svg{width:100%;height:100%;overflow:visible;}
+.ea-ring{fill:none;stroke:var(--echo);stroke-width:1.2;opacity:.35;stroke-dasharray:3 5;animation:ea-spin 18s linear infinite;transform-origin:40px 40px;}
+.ea-glow{fill:var(--echo);opacity:.18;animation:ea-breathe 3.4s ease-in-out infinite;transform-origin:40px 40px;}
+.ea-eyes ellipse{fill:#3b1a0e;animation:ea-blink 5.5s infinite;transform-box:fill-box;transform-origin:center;}
+.ea-mouth{fill:none;stroke:#3b1a0e;stroke-width:2.2;stroke-linecap:round;transition:d .3s;}
+.ea-cheek{fill:#ff8a6a;opacity:.45;}
+.echo-panel.speaking .ea-mouth{animation:ea-talk .32s ease-in-out infinite alternate;}
+.echo-panel.speaking .ea-glow{animation-duration:1.2s;opacity:.32;}
+.echo-panel[data-mode="support"] .ea-glow{opacity:.3;}
+@keyframes ea-breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+@keyframes ea-spin{to{transform:rotate(360deg);}}
+@keyframes ea-blink{0%,92%,100%{transform:scaleY(1);}95%{transform:scaleY(.12);}}
+@keyframes ea-talk{from{transform:translateY(0) scaleY(1);}to{transform:translateY(.6px) scaleY(1.5);}}
+.ea-mouth{transform-box:fill-box;transform-origin:center;}
+.echo-id{min-width:0;flex:1;}
+.echo-title{font-family:var(--font-num);font-size:1.45rem;font-weight:700;letter-spacing:.28em;color:var(--echo);line-height:1.1;margin:.1rem 0;}
+.echo-with{font-size:.78rem;color:var(--muted);}
+.echo-modes{display:flex;flex-direction:column;gap:.25rem;align-items:stretch;}
+.echo-mode{font-size:.64rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.18rem .55rem;border-radius:999px;
+  border:1px solid var(--border);color:var(--muted);text-align:center;cursor:help;transition:all .3s;}
+.echo-mode.on{color:#1d0f08;background:var(--echo);border-color:var(--echo);box-shadow:0 0 14px -3px var(--echo);}
+.echo-chat{flex:1 1 auto;min-height:150px;max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:.5rem;padding:.6rem;
+  background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:12px;scroll-behavior:smooth;}
+[data-theme="light"] .echo-chat{background:#f6f8fb;}
+.eb{max-width:88%;padding:.5rem .75rem;border-radius:14px;font-size:.86rem;line-height:1.45;animation:eb-in .35s ease-out;}
+@keyframes eb-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.eb.echo{align-self:flex-start;background:rgba(255,176,133,.13);border:1px solid rgba(255,176,133,.28);border-bottom-left-radius:4px;}
+.eb.crew{align-self:flex-end;background:rgba(92,180,255,.15);border:1px solid rgba(92,180,255,.32);border-bottom-right-radius:4px;}
+.eb.note{align-self:center;max-width:100%;font-size:.72rem;color:var(--muted);background:none;border:1px dashed var(--border);border-radius:999px;padding:.2rem .7rem;}
+.eb.urgent{background:rgba(255,120,150,.14);border-color:rgba(255,138,168,.5);}
+.eb .eb-who{display:block;font-family:var(--font-num);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--echo);margin-bottom:.15rem;}
+.eb.crew .eb-who{color:var(--aegis);text-align:right;}
+.eb-typing{display:inline-flex;gap:3px;} .eb-typing i{width:5px;height:5px;border-radius:50%;background:var(--echo);animation:eb-dot 1s infinite;}
+.eb-typing i:nth-child(2){animation-delay:.15s;} .eb-typing i:nth-child(3){animation-delay:.3s;}
+@keyframes eb-dot{0%,100%{opacity:.25;transform:translateY(0);}50%{opacity:1;transform:translateY(-3px);}}
+.echo-feel{display:flex;flex-direction:column;gap:.45rem;}
+.echo-feel-btn{align-self:flex-start;font:inherit;font-weight:600;font-size:.88rem;cursor:pointer;color:#1d0f08;border:none;border-radius:999px;
+  padding:.5rem 1rem;background:linear-gradient(135deg,#ffd0b0,#ffb085);box-shadow:0 8px 20px -10px rgba(255,160,110,.9);}
+.echo-panel[data-mode="checkin"] .echo-feel-btn,.echo-panel[data-mode="support"] .echo-feel-btn{animation:btn-glow 2.2s ease-in-out infinite;}
+@keyframes btn-glow{0%,100%{box-shadow:0 0 0 0 rgba(255,176,133,.55);}50%{box-shadow:0 0 0 9px rgba(255,176,133,0);}}
+.echo-moods{display:none;grid-template-columns:repeat(5,1fr);gap:.35rem;}
+.echo-feel.open .echo-moods{display:grid;}
+.echo-moods button{font:inherit;font-size:.68rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:.15rem;cursor:pointer;
+  padding:.4rem .2rem;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.03);transition:all .2s;}
+.echo-moods button span{font-size:1.35rem;line-height:1;}
+.echo-moods button:hover{border-color:var(--echo);color:var(--text);transform:translateY(-2px);}
+.echo-support[hidden]{display:none!important;}
+.echo-support{border:1px solid rgba(255,176,133,.35);background:rgba(255,176,133,.07);border-radius:12px;padding:.65rem .8rem;display:grid;gap:.5rem;}
+.es-title{font-family:var(--font-num);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--echo);}
+.es-steps{margin:0;padding-left:1.1rem;font-size:.8rem;line-height:1.45;display:grid;gap:.2rem;}
+.es-actions{display:flex;flex-wrap:wrap;gap:.4rem;}
+.es-btn{font:inherit;font-size:.76rem;font-weight:600;cursor:pointer;border-radius:999px;padding:.38rem .75rem;border:1px solid var(--echo);color:var(--echo);background:transparent;}
+.es-btn.primary{background:var(--echo);color:#1d0f08;}
+.es-btn.ghost{border-color:var(--border);color:var(--muted);}
+.es-path{font-size:.7rem;color:var(--muted);line-height:1.4;}
+.echo-form{display:flex;gap:.45rem;}
+.echo-form input{flex:1;min-width:0;font:inherit;font-size:.86rem;color:var(--text);background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:999px;padding:.5rem .9rem;}
+[data-theme="light"] .echo-form input{background:#fff;}
+.echo-form input:focus{outline:none;border-color:var(--echo);box-shadow:0 0 0 3px rgba(255,176,133,.2);}
+.echo-send{font:inherit;font-weight:700;font-size:.8rem;cursor:pointer;border-radius:999px;padding:.45rem 1rem;border:1px solid var(--echo);background:rgba(255,176,133,.15);color:var(--echo);}
+.echo-send:disabled{opacity:.5;cursor:wait;}
+.echo-foot{font-size:.7rem;color:var(--muted);cursor:help;}
+
+/* ── Real NASA Data ── */
+.nasa-panel{grid-area:nasa;padding:1.1rem 1.25rem 1.25rem;}
+.nasa-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.85rem;}
+.nasa-title{font-family:var(--font-num);font-size:1.15rem;font-weight:600;letter-spacing:.06em;margin-top:.15rem;}
+.nasa-title span{font-family:var(--font-ui);font-size:.82rem;font-weight:400;letter-spacing:0;color:var(--muted);}
+.nasa-report{font-size:.8rem;color:var(--aegis);text-decoration:none;border:1px solid rgba(92,180,255,.4);border-radius:999px;padding:.35rem .8rem;}
+.nasa-report:hover{background:rgba(92,180,255,.1);}
+.nasa-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+.nd-card{position:relative;display:flex;flex-direction:column;gap:.35rem;padding:.9rem 1rem;border-radius:12px;border:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));overflow:hidden;}
+.nd-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c);box-shadow:0 0 14px var(--c);}
+.nd-src{font-family:var(--font-num);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--c);}
+.nd-name{font-size:.95rem;font-weight:600;}
+.nd-num{font-size:1.55rem;font-weight:600;line-height:1.1;}
+.nd-num small{font-size:.72rem;color:var(--muted);font-family:var(--font-ui);font-weight:400;}
+.nd-use{font-size:.78rem;color:var(--muted);line-height:1.45;}
+.nd-test{margin-top:auto;font-size:.74rem;line-height:1.4;padding:.4rem .55rem;border-radius:8px;color:var(--green);
+  background:rgba(54,214,149,.08);border:1px solid rgba(54,214,149,.25);}
+.nd-test b{font-weight:700;}
+.nd-link{font-size:.72rem;color:var(--aegis);text-decoration:none;}
+.nd-link:hover{text-decoration:underline;}
+
+/* ── Story bar (Run demo) ── */
+.story-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:2100;width:min(600px,calc(100vw - 32px));padding:.85rem 1rem .75rem;border-radius:16px;
+  background:linear-gradient(180deg,rgba(14,22,38,.96),rgba(7,12,22,.96));border:1px solid var(--border-strong);
+  box-shadow:0 20px 50px -18px rgba(0,0,0,.9);display:grid;gap:.55rem;color:var(--text);}
+.story-bar[hidden]{display:none;}
+[data-theme="light"] .story-bar{background:#fff;}
+.story-chapters{display:flex;gap:.35rem;}
+.story-chapters span{flex:1;text-align:center;font-family:var(--font-num);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;
+  padding:.3rem .2rem;border-radius:8px;border:1px solid var(--border);color:var(--muted);transition:all .4s;}
+.story-chapters span.done{color:var(--green);border-color:rgba(54,214,149,.4);}
+.story-chapters span.now{color:#08111f;background:linear-gradient(135deg,#9fd3ff,#5cb4ff);border-color:transparent;box-shadow:0 0 16px -4px #5cb4ff;}
+.story-chapters span[data-ch="4"].now{background:linear-gradient(135deg,#ffd0b0,#ffb085);box-shadow:0 0 16px -4px #ffb085;}
+.story-text{font-size:.95rem;line-height:1.45;min-height:2.9em;}
+.story-text b{color:#9fd3ff;}
+.story-foot{display:flex;align-items:center;gap:.7rem;}
+.story-prog{flex:1;height:4px;border-radius:4px;background:rgba(140,170,210,.18);overflow:hidden;}
+.story-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5cb4ff,#ffb085);transition:width .8s linear;}
+.story-note{font-size:.66rem;color:var(--muted);white-space:nowrap;}
+.story-stop{font:inherit;font-size:.75rem;font-weight:700;cursor:pointer;border-radius:999px;padding:.3rem .8rem;border:1px solid var(--border-strong);background:transparent;color:var(--text);}
+
+/* Recommendations: cards in the same system */
+.rec-card{border-radius:12px;border-color:var(--border);background:rgba(255,255,255,.025);}
+
+/* Responsive */
+@media (max-width:1200px){
+  .shell{grid-template-areas:"header header header header header header header header header header header header" "mission mission mission mission mission mission mission mission mission mission mission mission" "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals" "echo echo echo echo echo echo alert alert alert alert alert alert" "voice voice voice voice voice voice recs recs recs recs recs recs" "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}
+  .nasa-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);padding:10px;gap:12px;grid-template-areas:"header" "mission" "graph" "vitals" "alert" "echo" "voice" "recs" "nasa";}
+  .mb-normal.hero{grid-template-columns:1fr;gap:.4rem;}
+  .hero-right{align-items:flex-start;text-align:left;}
+  .hero-big{font-size:2rem;} .hero-delay{font-size:1.5rem;}
+  .mb-pill{white-space:normal;}
+  #mb-em-text{font-size:1.05rem;}
+  .nasa-grid{grid-template-columns:minmax(0,1fr);}
+  .echo-head{flex-wrap:wrap;} .echo-modes{flex-direction:row;}
+  .story-note{display:none;}
+}
+@media (prefers-reduced-motion:reduce){
+  .cm-aura,.hero-ship-halo,.ea-ring,.ea-glow,.ea-eyes ellipse,.echo-mini .em-halo,.echo-mini .em-eye,.echo-feel-btn,
+  body.emergency .mission-bar::before,body.emergency .confirm-btn{animation:none!important;}
+  .cm-comet.on{display:none;}
+}
 </style>
 </head>
 <body>
@@ -551,23 +844,50 @@ body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60
     </nav>
     <div class="mission-day">Day <span id="mission-day-num">54</span></div>
     <span id="api-status" style="font-size:.7rem;padding:.25rem .5rem;border-radius:12px;background:rgba(128,128,128,.2);cursor:help;" title="Backend connection status">🔴 Offline</span>
-    <button class="whatif-btn" onclick="openWhatIf()" aria-label="Open What-If Scenario Simulator">
+    <button class="run-demo-btn" id="run-demo-btn" onclick="runStory(event.shiftKey ? 'full' : 'short')" title="The 2-minute judging cut: predict, prevent, protect, and ECHO's check-in. Shift+click for the full 3-minute version. Phone calls are logged, never dialled.">▶ Run demo · 2 min</button>
+    <button class="whatif-btn" onclick="openWhatIf()" aria-label="Open the What-If simulator" title="What-If simulator: try hypothetical readings for the selected crew member and see how the agents would judge them. Nothing is saved.">
       <span class="icon">🔮</span> What-If
     </button>
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode">☀️</button>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Light / dark mode">🌙</button>
   </header>
 
   <!-- Mission bar: ship position and the signal delay to Earth; becomes the emergency strip during an alert -->
   <div class="mission-bar" id="mission-bar" aria-label="Mission position and signal delay to Earth">
-    <div class="mb-normal">
-      <span class="mb-phase" id="mb-phase"><b>Mars transit</b> · Day 54 of 180</span>
-      <div class="mb-track" aria-hidden="true">
-        <div class="mb-line"></div><div class="mb-done" id="mb-done"></div>
-        <span class="mb-planet mb-earth" title="Earth"></span><span class="mb-planet mb-mars" title="Mars"></span>
-        <span class="mb-signal" id="mb-signal"></span><span class="mb-ship" id="mb-ship">🚀</span>
+    <div class="mb-normal hero">
+      <div class="hero-col hero-left">
+        <div class="hero-kicker" id="mb-kicker">Mars transit · deep-space cruise</div>
+        <div class="hero-day"><span class="hero-big" id="hero-day">54</span><span class="hero-of">/ <span id="hero-total">180</span> days</span></div>
+        <div class="hero-sub" id="mb-phase"><b>Mars transit</b> · Day 54 of 180</div>
       </div>
-      <span class="mb-delay" id="mb-delay">Signal to Earth, one way: <b id="mb-oneway">--</b><span id="mb-later"></span></span>
-      <span class="mb-pill" title="The rules that raise alerts and choose protocols run on board. The DeepSeek explanations come from a cloud service, which on a real mission would sit on the ground behind this delay.">Rules decide on board · AI explains from the ground</span>
+      <svg class="hero-arc" id="hero-arc" viewBox="0 0 640 124" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The ship's position between Earth and Mars">
+        <defs>
+          <radialGradient id="hg-earth" cx="35%" cy="35%"><stop offset="0" stop-color="#b8e4ff"/><stop offset=".55" stop-color="#3d8fdc"/><stop offset="1" stop-color="#123c75"/></radialGradient>
+          <radialGradient id="hg-mars" cx="35%" cy="35%"><stop offset="0" stop-color="#ffc9a3"/><stop offset=".55" stop-color="#d0643a"/><stop offset="1" stop-color="#6b2412"/></radialGradient>
+          <linearGradient id="hg-done" x1="0" x2="1"><stop offset="0" stop-color="#5cb4ff"/><stop offset="1" stop-color="#ff9d57"/></linearGradient>
+          <filter id="hg-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <path class="hero-orbit" d="M40,96 C 200,-4 440,-4 600,96"/>
+        <path class="hero-done" id="hero-done" d="M40,96 C 200,-4 440,-4 600,96"/>
+        <path id="hero-path" d="M40,96 C 200,-4 440,-4 600,96" fill="none" stroke="none"/>
+        <circle class="hero-earth-glow" cx="40" cy="96" r="20"/>
+        <circle cx="40" cy="96" r="12" fill="url(#hg-earth)"/>
+        <circle class="hero-mars-glow" cx="600" cy="96" r="17"/>
+        <circle cx="600" cy="96" r="9" fill="url(#hg-mars)"/>
+        <text class="hero-planet" x="40" y="121" text-anchor="middle">EARTH</text>
+        <text class="hero-planet" x="600" y="121" text-anchor="middle">MARS</text>
+        <circle class="hero-signal" id="hero-signal" r="3.2" cx="40" cy="96"/>
+        <g id="hero-ship" class="hero-ship" transform="translate(320,30)">
+          <circle r="11" class="hero-ship-halo"/>
+          <path d="M-8,-4 L9,0 L-8,4 L-5,0 Z" class="hero-ship-body"/>
+        </g>
+        <text class="hero-ship-label" id="hero-ship-label" x="320" y="16" text-anchor="middle">AEGIS crew · 4 aboard</text>
+      </svg>
+      <div class="hero-col hero-right">
+        <div class="hero-kicker">Signal to Earth · one way</div>
+        <div class="hero-big hero-delay mb-delay" id="mb-delay"><span id="mb-oneway">--</span></div>
+        <div class="hero-sub"><span id="mb-later"></span></div>
+        <span class="mb-pill" title="The rules that raise alerts and choose protocols run on board. The DeepSeek explanations come from a cloud service, which on a real mission would sit on the ground behind this delay.">Rules decide on board · AI explains from the ground</span>
+      </div>
     </div>
     <div class="mb-em" role="alert">
       <span id="mb-em-text">EMERGENCY</span>
@@ -585,6 +905,13 @@ body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60
       <div class="cm-legend" aria-hidden="true"><span><i style="background:var(--green)"></i>Steady</span><span><i style="background:var(--yellow)"></i>Heading for its limit</span><span><i style="background:var(--red)"></i>Out of range</span></div>
     </div>
     <svg class="cm-svg" id="cascade-map" viewBox="0 0 640 336" role="img" aria-labelledby="cm-caption">
+      <defs>
+        <filter id="cm-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <radialGradient id="cm-aura-grad"><stop offset="0" stop-opacity=".22"/><stop offset=".55" stop-opacity=".08"/><stop offset="1" stop-opacity="0"/></radialGradient>
+        <radialGradient id="cm-core-grad" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#16233b"/><stop offset="1" stop-color="#070c16"/></radialGradient>
+        <radialGradient id="echo-grad" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#ffe3cf"/><stop offset=".5" stop-color="#ffb085"/><stop offset="1" stop-color="#e0704f"/></radialGradient>
+      </defs>
+      <circle class="cm-aura" cx="320" cy="165" r="92"/>
       <path class="cm-link" id="link-solaris-gene" d="M130,80 Q320,10 510,80"/>
       <path class="cm-link" id="link-gene-pulse" d="M510,80 Q612,165 510,250"/>
       <path class="cm-link" id="link-pulse-mirror" d="M510,250 Q320,322 130,250"/>
@@ -601,7 +928,20 @@ body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60
       <path class="conn-line" id="line-mirror" d="M130,250 L320,165"/>
       <circle class="cm-particle" data-agent="mirror" r="3.5"><animateMotion dur="1.6s" begin="0s" repeatCount="indefinite" path="M130,250 L320,165"/></circle>
       <circle class="cm-particle" data-agent="mirror" r="3.5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M130,250 L320,165"/></circle>
+      <g id="cm-comets"></g>
       <g id="cm-fx"></g>
+      <!-- ECHO rides with MIRROR: the companion that answers what MIRROR detects (not a fifth cascade system) -->
+      <path class="cm-tether" d="M168,276 Q190,300 211,302"/>
+      <g class="echo-mini" id="node-echo" data-mode="checkin" transform="translate(228,302)" tabindex="0" role="button"
+         aria-label="ECHO, the crew companion. Opens the ECHO panel" onclick="focusEcho()" onkeydown="if(event.key==='Enter')focusEcho()">
+        <title>ECHO, the crew companion. MIRROR detects, ECHO responds. Not counted as a cascade system.</title>
+        <circle class="em-halo" r="19"/>
+        <circle class="em-core" r="13" fill="url(#echo-grad)"/>
+        <ellipse class="em-eye" cx="-4.2" cy="-1.5" rx="1.6" ry="2.2"/>
+        <ellipse class="em-eye" cx="4.2" cy="-1.5" rx="1.6" ry="2.2"/>
+        <path class="em-smile" d="M-4,3.6 Q0,6.6 4,3.6"/>
+        <text class="em-name" x="24" y="4">ECHO</text>
+      </g>
       <g class="agent-node node-aegis active" id="node-aegis" data-mode="none" transform="translate(320,165)" tabindex="0" role="button" aria-label="AEGIS, the coordinator" aria-pressed="true" onclick="selectAgent('aegis')" onkeydown="if(event.key==='Enter')selectAgent('aegis')">
         <title>AEGIS combines the four specialists. Three strained systems at once is a cascade.</title>
         <path class="cm-seg ok" id="cm-seg-0" d="M8.35,-59.42 A60,60 0 0 1 55.63,22.48"/>
@@ -740,6 +1080,65 @@ body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60
     </div>
   </div>
 
+  <!-- ECHO: crew companion against isolation (MIRROR detects, ECHO responds) -->
+  <section class="echo-panel" id="echo-panel" data-mode="checkin" data-level="calm" aria-labelledby="echo-title">
+    <div class="echo-head">
+      <div class="echo-avatar" aria-hidden="true">
+        <svg viewBox="0 0 80 80">
+          <circle class="ea-ring" cx="40" cy="40" r="36"/>
+          <circle class="ea-glow" cx="40" cy="40" r="30"/>
+          <circle cx="40" cy="40" r="24" fill="url(#ea-grad)"/>
+          <defs><radialGradient id="ea-grad" cx="38%" cy="30%" r="80%"><stop offset="0" stop-color="#fff1e6"/><stop offset=".45" stop-color="#ffb689"/><stop offset="1" stop-color="#d9653f"/></radialGradient></defs>
+          <g class="ea-eyes"><ellipse cx="32" cy="37" rx="3" ry="4.2"/><ellipse cx="48" cy="37" rx="3" ry="4.2"/></g>
+          <path class="ea-mouth" d="M32,47 Q40,53 48,47"/>
+          <circle class="ea-cheek" cx="27" cy="45" r="3"/><circle class="ea-cheek" cx="53" cy="45" r="3"/>
+        </svg>
+      </div>
+      <div class="echo-id">
+        <div class="panel-kicker">Crew companion · beside MIRROR</div>
+        <h2 class="echo-title" id="echo-title">ECHO</h2>
+        <div class="echo-with" id="echo-with">with Commander Chen · Day 54</div>
+      </div>
+      <div class="echo-modes" role="group" aria-label="ECHO mode (set automatically)">
+        <span class="echo-mode" data-m="companion" title="Companion: talk to ECHO about anything">Companion</span>
+        <span class="echo-mode" data-m="checkin" title="Check-in: the daily 'How are you feeling?'">Check-in</span>
+        <span class="echo-mode" data-m="support" title="Support (crisis) mode: after an emergency, poor sleep, a low check-in or distress, ECHO checks in on its own and offers coping steps and the escalation path">Support</span>
+      </div>
+    </div>
+
+    <div class="echo-chat" id="echo-chat" role="log" aria-live="polite" aria-label="Conversation with ECHO"></div>
+
+    <div class="echo-feel" id="echo-feel">
+      <button type="button" class="echo-feel-btn" id="echo-feel-btn" onclick="echoToggleMoods()">💬 How are you feeling?</button>
+      <div class="echo-moods" id="echo-moods" role="group" aria-label="How are you feeling?">
+        <button type="button" onclick="echoCheckin(1)" title="Rough"><span>😣</span>Rough</button>
+        <button type="button" onclick="echoCheckin(2)" title="Low"><span>😔</span>Low</button>
+        <button type="button" onclick="echoCheckin(3)" title="Okay"><span>😐</span>Okay</button>
+        <button type="button" onclick="echoCheckin(4)" title="Good"><span>🙂</span>Good</button>
+        <button type="button" onclick="echoCheckin(5)" title="Great"><span>😄</span>Great</button>
+      </div>
+    </div>
+
+    <div class="echo-support" id="echo-support" hidden>
+      <div class="es-title">Small things that help</div>
+      <ul class="es-steps" id="es-steps"></ul>
+      <div class="es-actions">
+        <button type="button" class="es-btn primary" id="es-onboard" onclick="echoShare('onboard')">Talk to Dr. Nakamura</button>
+        <button type="button" class="es-btn" id="es-ground" onclick="echoShare('ground')">Private note to the flight surgeon</button>
+        <button type="button" class="es-btn ghost" onclick="echoDismiss()">I'm okay for now</button>
+      </div>
+      <div class="es-path" id="es-path">Escalation: the medical officer on board first, then the flight surgeon at mission control, a signal delay away.</div>
+    </div>
+
+    <form class="echo-form" onsubmit="event.preventDefault(); echoSend();">
+      <input type="text" id="echo-input" maxlength="500" autocomplete="off" placeholder="Talk to ECHO…" aria-label="Message to ECHO">
+      <button type="submit" class="echo-send" aria-label="Send to ECHO">Send</button>
+    </form>
+    <div class="echo-foot" id="echo-foot" title="Check-ins and chats live only in this session's memory. Nothing is logged or sent to mission control unless you choose to share. One exception: if you say you might harm yourself, ECHO alerts the medical officer.">
+      🔒 Private unless you choose to share · ECHO is an AI companion, not a counsellor
+    </div>
+  </section>
+
   <!-- Alert Panel -->
   <div class="alert-panel" id="alert-panel">
     <div class="alert-header">
@@ -832,6 +1231,51 @@ body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60
 
     </div>
   </div>
+  <!-- Real NASA data: the datasets behind the numbers, each with its test result -->
+  <section class="nasa-panel" aria-labelledby="nasa-title">
+    <div class="nasa-head">
+      <div>
+        <div class="panel-kicker">Grounded in real data</div>
+        <h2 class="nasa-title" id="nasa-title">Real NASA Data <span>· what the numbers come from, and how each rule was tested against it</span></h2>
+      </div>
+      <a class="nasa-report" href="artifacts/AEGIS-Accuracy-Report.html" target="_blank" rel="noopener">Full accuracy report ↗</a>
+    </div>
+    <div class="nasa-grid">
+      <article class="nd-card" style="--c:var(--gene)">
+        <div class="nd-src">NASA OSDR · OSD-575 / OSD-569</div>
+        <h3 class="nd-name">Inspiration4 crew blood data</h3>
+        <div class="nd-num">2.5–5.9 <small>pg/mL</small></div>
+        <p class="nd-use">Real pre-flight IL-6 range of the 4 civilian astronauts. GENE seeds each crew member's personal baseline inside it.</p>
+        <div class="nd-test"><b>Tested:</b> replayed through GENE: 3 of 4 real post-flight IL-6 rises caught, 1 false alarm in 12 pre-flight samples</div>
+        <a class="nd-link" href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-575" target="_blank" rel="noopener">osdr.nasa.gov · OSD-575 ↗</a>
+      </article>
+      <article class="nd-card" style="--c:var(--solaris)">
+        <div class="nd-src">Curiosity RAD · Zeitlin et al. 2013, Science</div>
+        <h3 class="nd-name">Radiation on the cruise to Mars</h3>
+        <div class="nd-num">1.84 <small>mSv / day</small></div>
+        <p class="nd-use">Measured inside the spacecraft on the way to Mars: the background SOLARIS judges every reading against (warning 2×, shelter 5×).</p>
+        <div class="nd-test"><b>Tested:</b> 8 of 8 measured environments and regression cases judged correctly (the old fixed rule got 3 of 8)</div>
+        <a class="nd-link" href="https://doi.org/10.1126/science.1235989" target="_blank" rel="noopener">doi.org/10.1126/science.1235989 ↗</a>
+      </article>
+      <article class="nd-card" style="--c:var(--orange)">
+        <div class="nd-src">Curiosity RAD · Hassler 2014 · Chang'e-4 LND · Zhang 2020</div>
+        <h3 class="nd-name">Mars surface and the Moon</h3>
+        <div class="nd-num">0.64 <small>·</small> 1.37 <small>mSv / day</small></div>
+        <p class="nd-use">Measured on the surface of Mars (Gale crater) and the Moon: the backgrounds for the Mars-surface and lunar mission profiles.</p>
+        <div class="nd-test"><b>Tested:</b> no false alarms on either surface; the old fixed rule would have ordered a storm shelter every day on the Moon</div>
+        <a class="nd-link" href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">Mars ↗</a> <a class="nd-link" href="https://doi.org/10.1126/sciadv.aaz1334" target="_blank" rel="noopener">Moon ↗</a>
+      </article>
+      <article class="nd-card" style="--c:var(--aegis)">
+        <div class="nd-src">NASA-STD-3001 · NASA OCHMO · Human Research Roadmap</div>
+        <h3 class="nd-name">NASA limits and risks</h3>
+        <div class="nd-num">600 <small>mSv career</small> · 250 <small>per storm</small></div>
+        <p class="nd-use">NASA's radiation limits, plus the countermeasures and Human Research Program risks the AI must cite when it gives advice.</p>
+        <div class="nd-test"><b>Tested:</b> the fact checker caught 21 of 21 invented numbers, 45 of 45 fake citations and 45 of 45 invented medicines</div>
+        <a class="nd-link" href="https://humanresearchroadmap.nasa.gov/" target="_blank" rel="noopener">humanresearchroadmap.nasa.gov ↗</a>
+      </article>
+    </div>
+  </section>
+
   </div><!-- End Mission Control Page -->
 
   <!-- Crew Roster Page -->
@@ -1384,6 +1828,7 @@ const AGENT_VOICE = {
   gene:    { pref: /sonia|libby|maisie|natasha|clara|google uk english female|linda|hazel|susan|karen/i,  rate: 0.98, pitch: 1.08 }, // gentle
   pulse:   { pref: /ryan|tony|jason|brandon|roger|steffan|richard|thomas|george|\bmark\b|david/i,        rate: 1.08, pitch: 1.05 }, // upbeat coach
   mirror:  { pref: /emma|michelle|ana\b|jane|nancy|sara|moira|tessa|linda|zira/i,                     rate: 0.94, pitch: 1.0  }, // warm
+  echo:    { pref: /ava\b|jenny|emma|aria|libby|sonia|samantha|serena|zira/i,                        rate: 0.95, pitch: 1.12 }, // companion: soft, friendly
 };
 const _shortVoiceName = v => v ? v.name.replace(/^Microsoft\s+/, '').replace(/\s*Online.*$/, '').replace(/\s*-\s*English.*$/, '') : 'Default';
 
@@ -1391,7 +1836,7 @@ function assignAgentVoices() {
   const vs = englishVoices();
   const used = new Set(Object.values(VOICE.userChoice || {}));
   VOICE.byAgent = {};
-  ['aegis', 'solaris', 'gene', 'pulse', 'mirror'].forEach(a => {
+  ['aegis', 'solaris', 'gene', 'pulse', 'mirror', 'echo'].forEach(a => {
     const chosen = VOICE.userChoice && VOICE.userChoice[a] && vs.find(v => v.name === VOICE.userChoice[a]);
     if (chosen) { VOICE.byAgent[a] = chosen; return; }
     const ranked = vs.map(v => ({ v, s: _voiceScore(v) + (AGENT_VOICE[a].pref.test(v.name) ? 60 : 0) }))
@@ -2517,30 +2962,60 @@ function renderMissionBar() {
   const total = MISSION.phase_days || 180;
   const prof = MISSION.profile || 'mars_transit';
   const frac = Math.min(1, Math.max(0, day / total));
+  const label = (MISSION.label || 'Mars transit').replace(/\s*\(.*\)/, '');
   const phase = document.getElementById('mb-phase');
-  if (phase) phase.innerHTML = `<b>${(MISSION.label || 'Mars transit').replace(/\s*\(.*\)/, '')}</b> · Day ${Math.floor(day)} of ${total}`;
-  const pos = `calc(12px + (100% - 24px) * ${frac.toFixed(4)})`;
-  const ship = document.getElementById('mb-ship'), done = document.getElementById('mb-done'), sig = document.getElementById('mb-signal');
-  if (ship) ship.style.left = pos;
-  if (done) done.style.width = `calc((100% - 24px) * ${frac.toFixed(4)})`;
-  if (sig) sig.style.setProperty('--from', pos);
+  const left = Math.max(0, Math.round(total - day));
+  if (phase) phase.innerHTML = prof === 'mars_transit' ? `<b>${Math.round(frac * 100)}%</b> of the way to Mars · arrival in ${left} days`
+                                                       : `<b>${label}</b> · Day ${Math.floor(day)} of ${total}`;
+  const kick = document.getElementById('mb-kicker'); if (kick) kick.textContent = (MISSION.label || 'Mars transit').replace(/\s*\((.*)\)/, ' · $1');
+  const hd = document.getElementById('hero-day'); if (hd) hd.textContent = Math.floor(day);
+  const ht = document.getElementById('hero-total'); if (ht) ht.textContent = total;
+  // Ship on the transfer arc
+  const path = document.getElementById('hero-path'), done = document.getElementById('hero-done'), ship = document.getElementById('hero-ship');
+  if (path && path.getTotalLength) {
+    const L = path.getTotalLength(), at = L * frac;
+    if (done) { done.style.strokeDasharray = `${at.toFixed(1)} ${L.toFixed(1)}`; }
+    const p = path.getPointAtLength(at), q = path.getPointAtLength(Math.min(L, at + 1));
+    const ang = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+    if (ship) ship.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${ang.toFixed(1)})`);
+    const lab = document.getElementById('hero-ship-label');
+    if (lab) { lab.setAttribute('x', p.x.toFixed(1)); lab.setAttribute('y', Math.max(10, p.y - 16).toFixed(1)); }
+    HERO.L = L; HERO.at = at;
+  }
   // One-way light-time to Earth for this mission profile
   let oneway, note, later = '';
   if (prof === 'mars_transit') {
     const au = _mbDistanceAU(frac), auEnd = _mbDistanceAU(1);
     oneway = `≈ ${_mbFmt(au * 499.0)}`;
-    later = ` now · ≈ ${Math.round(auEnd * 499 / 60)} min by arrival (estimate)`;
+    later = `now · ≈ ${Math.round(auEnd * 499 / 60)} min by arrival · 3–22 min while at Mars (estimate)`;
     note = `About ${au.toFixed(2)} AU from Earth now and about ${auEnd.toFixed(1)} AU at arrival: an estimate from a ` +
            `two-body Hohmann-transfer model (Kepler solve, circular orbits), not a real trajectory. ` +
            `At Mars the delay is 3 to 22 minutes each way, depending on where the planets are.`;
-  } else if (prof === 'mars_surface') { oneway = '3-22 min'; note = 'Earth-Mars light-time varies with the planets\' positions.'; }
+  } else if (prof === 'mars_surface') { oneway = '3–22 min'; note = 'Earth-Mars light-time varies with the planets\' positions.'; }
   else if (prof === 'lunar_surface') { oneway = '1.3 s'; note = 'Earth-Moon light-time.'; }
   else { oneway = '< 1 s'; note = 'Low Earth orbit: near-real-time contact with mission control.'; }
   const ow = document.getElementById('mb-oneway'); if (ow) ow.textContent = oneway;
-  const lt = document.getElementById('mb-later'); if (lt) lt.textContent = later || ' one way';
+  const lt = document.getElementById('mb-later'); if (lt) lt.textContent = later || 'one way';
   const dl = document.getElementById('mb-delay');
   if (dl) dl.title = `${note} A message sent now reaches mission control after this delay, and any reply takes as long again.`;
+  HERO.oneway = oneway;
 }
+// The signal pulse travels from the ship back to Earth, over and over
+const HERO = { L: 0, at: 0, oneway: '' };
+(function heroSignal() {
+  const sig = document.getElementById('hero-signal'), path = document.getElementById('hero-path');
+  if (!sig || !path || !path.getPointAtLength || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let t0 = performance.now();
+  const step = now => {
+    const period = 2600, k = ((now - t0) % (period + 700)) / period;
+    if (k <= 1 && HERO.at > 0) {
+      const p = path.getPointAtLength(HERO.at * (1 - k));
+      sig.setAttribute('cx', p.x.toFixed(1)); sig.setAttribute('cy', p.y.toFixed(1)); sig.style.opacity = String(1 - k * .5);
+    } else sig.style.opacity = '0';
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+})();
 renderMissionBar();
 
 // ============================================
@@ -2672,7 +3147,7 @@ function _renderCallPanel(rec, others, to) {
     : step === 'done' ? 'Call complete: flight surgeon informed'
     : 'AEGIS is calling the flight surgeon';
   document.getElementById('cp-sub').textContent =
-    `${name} · ${proto}${to && rec.status === 'called' ? ` · to ${to}` : ''}${others ? ` · +${others} more call${others > 1 ? 's' : ''}` : ''}`;
+    `Alert for ${name} · ${proto}${to && rec.status === 'called' ? ` · to ${to}` : ''}${others ? ` · +${others} more call${others > 1 ? 's' : ''}` : ''}`;
   const steps = document.getElementById('cp-steps');
   steps.style.display = (rec.status === 'called' || rec.status === 'failed') ? '' : 'none';
   const order = ['dial', 'ring', 'talk', 'done'];
@@ -2773,13 +3248,26 @@ function renderCascadeMap(fc) {
       p.style.fill = state === 'out' ? 'var(--red)' : 'var(--yellow)';
     });
   });
-  // Strain spreading between neighbouring systems
+  // Strain spreading between neighbouring systems: glowing comets travel along strained links
+  _cmEnsureComets();
   CM_PAIRS.forEach(([a, b]) => {
     const l = document.getElementById(`link-${a}-${b}`); if (!l) return;
     const sa = states[a], sb = states[b];
-    l.classList.toggle('hot', sa === 'out' && sb === 'out');
-    l.classList.toggle('warm', sa !== 'ok' && sb !== 'ok' && !(sa === 'out' && sb === 'out'));
+    const hot = sa === 'out' && sb === 'out', warm = sa !== 'ok' && sb !== 'ok' && !hot;
+    l.classList.toggle('hot', hot);
+    l.classList.toggle('warm', warm);
+    document.querySelectorAll(`.cm-comet[data-pair="${a}-${b}"]`).forEach(c => {
+      c.classList.toggle('on', hot || warm); c.classList.toggle('hot', hot);
+    });
   });
+  // A spike: when a system newly heads for (or crosses) its limit, a pulse fires from it into AEGIS and its neighbours
+  const RANK = { ok: 0, watch: 1, out: 2 };
+  if (CM.prevStates && CM.prevCrew === fc.crew_member_id) {
+    Object.entries(states).forEach(([agent, st]) => {
+      if (RANK[st] > RANK[CM.prevStates[agent] || 'ok']) _cmPropagate(agent, st);
+    });
+  }
+  CM.prevStates = states; CM.prevCrew = fc.crew_member_id;
   // AEGIS centre: three segments = three strained systems make a cascade
   const strained = Object.values(states).filter(s => s !== 'ok').sort((x, y) => (y === 'out') - (x === 'out'));
   for (let i = 0; i < 3; i++) {
@@ -2792,7 +3280,8 @@ function renderCascadeMap(fc) {
   let mode, big, sub, cap;
   const outDom = Object.keys(states).filter(a => states[a] === 'out').map(a => a.toUpperCase());
   const watchDom = Object.keys(states).filter(a => states[a] === 'watch').map(a => a.toUpperCase());
-  if (LIVE_ALERT.id && LIVE_ALERT.crewKey === key) {
+  // A storm-shelter order is crew-wide: it takes over every crew member's map, not only the person on the alert card
+  if (LIVE_ALERT.id && (LIVE_ALERT.crewKey === key || String(LIVE_ALERT.protocol || '').startsWith('SHELTER'))) {
     const p = LIVE_ALERT.protocol || '';
     mode = 'alert';
     big = p.startsWith('SHELTER') ? 'SHELTER' : p.startsWith('MEDIC') ? 'MEDICAL' : 'CASCADE';
@@ -2836,6 +3325,51 @@ function renderCascadeMap(fc) {
   document.getElementById('cm-caption').innerHTML = cap;
   if (mode === 'averted' && CM.prevMode !== 'averted') _cmRipple();
   CM.prevMode = CM.mode = mode;
+}
+
+// Propagation effects on the Cascade Map
+const CM_POS = { solaris: [130, 80], gene: [510, 80], pulse: [510, 250], mirror: [130, 250] };
+function _cmEnsureComets() {
+  const g = document.getElementById('cm-comets');
+  if (!g || g.dataset.built) return;
+  CM_PAIRS.forEach(([a, b]) => {
+    const d = document.getElementById(`link-${a}-${b}`)?.getAttribute('d'); if (!d) return;
+    [0, 0.9, 1.8].forEach(begin => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('class', 'cm-comet'); c.setAttribute('r', '3.6'); c.dataset.pair = `${a}-${b}`;
+      c.innerHTML = `<animateMotion dur="2.7s" begin="${begin}s" repeatCount="indefinite" path="${d}"/>`;
+      g.appendChild(c);
+    });
+  });
+  g.dataset.built = '1';
+}
+function _cmShot(d, cls, reverse, dur) {
+  const fx = document.getElementById('cm-fx'); if (!fx || !d) return;
+  const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  c.setAttribute('class', 'cm-spark ' + cls); c.setAttribute('r', '5');
+  const m = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+  m.setAttribute('dur', dur + 's'); m.setAttribute('fill', 'freeze'); m.setAttribute('path', d); m.setAttribute('begin', 'indefinite');
+  if (reverse) { m.setAttribute('keyPoints', '1;0'); m.setAttribute('keyTimes', '0;1'); m.setAttribute('calcMode', 'linear'); }
+  c.appendChild(m); fx.appendChild(c);
+  try { m.beginElement(); } catch (e) {}
+  setTimeout(() => c.remove(), dur * 1000 + 80);
+}
+function _cmPropagate(agent, state) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const fx = document.getElementById('cm-fx'); if (!fx) return;
+  const [x, y] = CM_POS[agent] || [320, 165];
+  for (let i = 0; i < 2; i++) setTimeout(() => {
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    r.setAttribute('class', 'cm-burst'); r.setAttribute('cx', x); r.setAttribute('cy', y);
+    r.style.stroke = state === 'out' ? 'var(--red)' : 'var(--cm-amber)';
+    fx.appendChild(r); setTimeout(() => r.remove(), 700);
+  }, i * 220);
+  _cmShot(document.getElementById('line-' + agent)?.getAttribute('d'), state, false, 0.9);       // into AEGIS
+  CM_PAIRS.forEach(([a, b]) => {                                                                   // out to neighbours
+    if (a !== agent && b !== agent) return;
+    _cmShot(document.getElementById(`link-${a}-${b}`)?.getAttribute('d'), state, b === agent, 1.3);
+  });
+  if (typeof playTone === 'function') playTone(state === 'out' ? 300 : 440, 0.12);
 }
 
 function _cmClock() {
@@ -3436,6 +3970,286 @@ window.addEventListener('message', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSimModal(); });
 document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.target.id === 'sim-modal') closeSimModal(); });
 </script>
+
+<script>
+// ============================================
+// ECHO: crew companion against isolation. MIRROR detects, ECHO responds as a presence.
+// Modes (set by the backend rules): companion · checkin · support (crisis). Private by default.
+// ============================================
+const ECHO = { crew: null, mode: null, level: null, reason: null, lastProactive: null, busy: false, esc: null, ready: false };
+const ECHO_MOOD_FACE = { 1: '😣 Rough', 2: '😔 Low', 3: '😐 Okay', 4: '🙂 Good', 5: '😄 Great' };
+const _echoEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function echoCrewId() { return DASH_API.selectedCrewId || 'crew-001'; }
+
+function echoBubble(who, text, cls = '') {
+  const chat = document.getElementById('echo-chat'); if (!chat) return null;
+  const b = document.createElement('div');
+  b.className = `eb ${who} ${cls}`.trim();
+  b.innerHTML = who === 'note' ? _echoEsc(text)
+    : `<span class="eb-who">${who === 'echo' ? 'ECHO' : _echoEsc(_crewDisplayName(echoCrewId()))}</span>${_echoEsc(text)}`;
+  chat.appendChild(b);
+  chat.scrollTop = chat.scrollHeight;
+  return b;
+}
+function echoTyping(on) {
+  const chat = document.getElementById('echo-chat'); if (!chat) return;
+  let t = document.getElementById('echo-typing');
+  if (on && !t) {
+    t = document.createElement('div'); t.id = 'echo-typing'; t.className = 'eb echo';
+    t.innerHTML = '<span class="eb-who">ECHO</span><span class="eb-typing"><i></i><i></i><i></i></span>';
+    chat.appendChild(t); chat.scrollTop = chat.scrollHeight;
+  } else if (!on && t) t.remove();
+}
+function echoSpeak(text) {
+  const panel = document.getElementById('echo-panel');
+  if (!('speechSynthesis' in window) || !VOICE.unlocked) { if (panel) { panel.classList.add('speaking'); setTimeout(() => panel.classList.remove('speaking'), 2200); } return; }
+  try {
+    stopVoice();
+    const u = new SpeechSynthesisUtterance(speechify(text));
+    const v = (VOICE.byAgent && VOICE.byAgent.echo) || VOICE.voice;
+    if (v) { u.voice = v; u.lang = v.lang; }
+    u.rate = VOICE.rate * AGENT_VOICE.echo.rate; u.pitch = VOICE.pitch * AGENT_VOICE.echo.pitch;
+    u.onstart = () => panel && panel.classList.add('speaking');
+    u.onend = u.onerror = () => panel && panel.classList.remove('speaking');
+    setTimeout(() => speechSynthesis.speak(u), 80);
+  } catch (e) {}
+}
+// "Talk to the medical officer": names come from the backend's escalation path (medic first, the Commander for the medic)
+function echoRenderSupport(d) {
+  const box = document.getElementById('echo-support'); if (!box) return;
+  const show = d && d.mode === 'support' && (d.coping || []).length;
+  box.hidden = !show;
+  if (!show) return;
+  document.getElementById('es-steps').innerHTML = d.coping.map(c => `<li>${_echoEsc(c)}</li>`).join('');
+  const esc = d.escalation || ECHO.esc;
+  if (esc) {
+    ECHO.esc = esc;
+    document.getElementById('es-onboard').textContent = `Talk to ${esc.onboard.name}`;
+    document.getElementById('es-ground').textContent = `Private note to the flight surgeon (${(HERO.oneway || '').replace('≈ ', '≈') || 'signal delay'} away)`;
+    document.getElementById('es-path').textContent =
+      `Escalation: ${esc.onboard.name} on board first, then the flight surgeon at mission control, ${HERO.oneway || 'a signal delay'} away one way. ECHO only shares if you say yes.`;
+  }
+}
+function echoSetMode(mode, level) {
+  const panel = document.getElementById('echo-panel'); if (!panel) return;
+  ECHO.mode = mode || 'companion'; ECHO.level = level || 'calm';
+  panel.dataset.mode = ECHO.mode; panel.dataset.level = ECHO.level;
+  panel.querySelectorAll('.echo-mode').forEach(m => m.classList.toggle('on', m.dataset.m === ECHO.mode));
+  const mini = document.getElementById('node-echo'); if (mini) mini.dataset.mode = ECHO.mode;
+  const feel = document.getElementById('echo-feel');
+  if (feel && ECHO.mode === 'support') feel.classList.add('open');
+}
+function echoToggleMoods() { document.getElementById('echo-feel')?.classList.toggle('open'); }
+function focusEcho() {
+  const p = document.getElementById('echo-panel'); if (!p) return;
+  p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  p.classList.remove('spotlight'); void p.offsetWidth; p.classList.add('spotlight');
+  setTimeout(() => document.getElementById('echo-input')?.focus({ preventScroll: true }), 600);
+}
+
+// Poll ECHO's mode. A new crew member = the daily greeting; a new support reason = ECHO checks in on its own.
+async function echoRefresh(event, opts = {}) {
+  const crew = echoCrewId();
+  try {
+    const r = await fetch(`${DASH_API.baseUrl}/api/echo/${crew}${event ? `?event=${encodeURIComponent(event)}` : ''}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    if (crew !== echoCrewId()) return null;
+    const withEl = document.getElementById('echo-with');
+    if (withEl) withEl.textContent = `with ${d.name} · ${String(d.escalation && d.escalation.onboard ? '' : '')}Day ${d.facts.mission_day} of ${d.facts.mission_days} · private`;
+    if (ECHO.crew !== crew) {                       // switched person: fresh conversation, greeting ritual
+      ECHO.crew = crew; ECHO.lastProactive = d.reason;
+      const chat = document.getElementById('echo-chat'); if (chat) chat.innerHTML = '';
+      echoBubble('note', `Daily check-in · Day ${d.facts.mission_day}`);
+      echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
+      if (ECHO.ready && opts.speak) echoSpeak(d.text);
+      ECHO.ready = true;
+    } else if (d.reason && d.reason !== ECHO.lastProactive && ['after_emergency', 'poor_sleep'].includes(d.reason)) {
+      ECHO.lastProactive = d.reason;
+      echoBubble('note', d.reason === 'after_emergency' ? 'ECHO is checking in after the emergency' : 'MIRROR flagged poor sleep · ECHO checks in');
+      echoTyping(true);
+      setTimeout(() => { echoTyping(false); echoBubble('echo', d.text); echoSpeak(d.text); }, 1100);
+    } else if (!d.reason) ECHO.lastProactive = null;
+    echoSetMode(d.mode, d.level);
+    echoRenderSupport(d);
+    return d;
+  } catch (e) { return null; }
+}
+
+async function echoPost(path, body) {
+  const r = await fetch(`${DASH_API.baseUrl}/api/echo/${echoCrewId()}/${path}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+async function echoReply(promise) {
+  echoTyping(true);
+  try {
+    const [d] = await Promise.all([promise, new Promise(res => setTimeout(res, 700))]);
+    echoTyping(false);
+    echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
+    if (d.alerted) echoBubble('note', `ECHO alerted ${d.alerted.name} · nothing from the chat was shared`);
+    if (d.shared_with) echoBubble('note', `Shared with ${d.shared_with.name} · only that you'd like to talk`);
+    echoSetMode(d.mode, d.level);
+    echoRenderSupport(d);
+    echoSpeak(d.text);
+  } catch (e) {
+    echoTyping(false);
+    echoBubble('echo', "I can't reach the ship's systems right now, but I'm still here. Try me again in a moment.");
+  }
+}
+function echoCheckin(mood) {
+  document.getElementById('echo-feel')?.classList.remove('open');
+  echoBubble('crew', ECHO_MOOD_FACE[mood]);
+  echoReply(echoPost('checkin', { mood }));
+}
+function echoSend() {
+  const input = document.getElementById('echo-input');
+  const msg = (input.value || '').trim(); if (!msg) return;
+  input.value = '';
+  echoBubble('crew', msg);
+  echoReply(echoPost('chat', { message: msg }));
+}
+function echoShare(to) { echoBubble('crew', to === 'ground' ? 'Yes, send a private note to the flight surgeon.' : 'Yes, please let them know.'); echoReply(echoPost('share', { to })); }
+function echoDismiss() { echoBubble('crew', "I'm okay for now."); echoReply(echoPost('dismiss', {})); }
+
+setInterval(() => { if (!STORY.on || STORY.allowEcho) echoRefresh(); }, 8000);
+setTimeout(() => echoRefresh(), 1800);
+
+// ============================================
+// ONE-CLICK STORY DEMO: Predict → Prevent → Protect → ECHO (about 3 minutes). Calls are logged, never dialled.
+// ============================================
+const STORY = { on: false, run: 0, t0: 0, allowEcho: true, est: 175 };
+const _sleep = ms => new Promise(res => setTimeout(res, ms));
+function _storyAlive(run) { if (!STORY.on || run !== STORY.run) throw new Error('stopped'); }
+async function _storyWait(run, cond, timeoutMs) {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) { _storyAlive(run); try { if (cond()) return true; } catch (e) {} await _sleep(500); }
+  _storyAlive(run); return false;
+}
+function storyCaption(ch, html) {
+  const bar = document.getElementById('story-bar'); if (!bar) return;
+  bar.hidden = false;
+  document.querySelectorAll('#story-chapters span').forEach(sp => {
+    const n = +sp.dataset.ch; sp.classList.toggle('now', n === ch); sp.classList.toggle('done', n < ch);
+  });
+  document.getElementById('story-text').innerHTML = html;
+  announce(document.getElementById('story-text').textContent);
+}
+function _storyProgress() {
+  if (!STORY.on) return;
+  const k = Math.min(.98, (Date.now() - STORY.t0) / (STORY.est * 1000));
+  const i = document.getElementById('story-prog'); if (i) i.style.width = (k * 100).toFixed(1) + '%';
+}
+setInterval(_storyProgress, 800);
+
+async function _storyAckShelter() {
+  try {
+    const B = DASH_API.baseUrl;
+    const open = await (await fetch(`${B}/api/alerts?unacknowledged_only=true&limit=200`)).json();
+    await Promise.all(open.filter(a => /SHELTER|radiation storm/i.test(`${a.title} ${a.message}`))
+      .map(a => fetch(`${B}/api/alerts/${encodeURIComponent(a.id)}/acknowledge`, { method: 'POST' })));
+  } catch (e) {}
+}
+function _storyLocalReset() {
+  _setEmergency(null); closeCallPanel(); closeSimModal();
+  CALLS.dismissed.clear(); CALLS.since = Date.now();
+  Object.assign(PREDICT_STATE, { top: null, announcedKey: null, lastCrew: null, suppress: {}, prevented: null, preventedEntry: null });
+  LIVE_ALERT.id = null; LIVE_ALERT.pauseUntil = 0;
+  CM.etaEnd = null; CM.prevStates = null;
+  ECHO.crew = null; ECHO.lastProactive = null;
+}
+// Two cuts, both ending on ECHO's check-in: 'short' = the 2-minute judging cut (default), 'full' = about 3 minutes
+const STORY_CUTS = {
+  short: { est: 120, warn: 5000, prevSim: 6000, averted: 3500, emergency: 6000, shelterSim: 7000, settle: 1000, solaris: 4500, echo: 7000 },
+  full:  { est: 175, warn: 9000, prevSim: 9000, averted: 7000, emergency: 9000, shelterSim: 13000, settle: 2500, solaris: 6500, echo: 9000 },
+};
+async function runStory(cut) {
+  if (STORY.on) { stopStory(); return; }
+  cut = STORY_CUTS[cut] ? cut : (new URLSearchParams(location.search).get('demo') === 'full' ? 'full' : 'short');
+  const T = STORY_CUTS[cut]; STORY.est = T.est; STORY.cut = cut;
+  const run = ++STORY.run;
+  STORY.on = true; STORY.t0 = Date.now(); STORY.allowEcho = false;
+  const btn = document.getElementById('run-demo-btn'); if (btn) { btn.classList.add('on'); btn.textContent = '■ Stop demo'; }
+  if (typeof _unlockVoice === 'function') _unlockVoice();
+  try {
+    switchPage('mission');
+    storyCaption(1, 'Resetting the ship to a clean start…');
+    _storyLocalReset();
+    if (selectedCrew !== 'chen') { const card = document.querySelector(`.crew-card[onclick*="'chen'"]`); selectedCrew = 'chen'; DASH_API.selectedCrewId = 'crew-001'; document.querySelectorAll('.crew-card').forEach(c => c.classList.toggle('selected', c === card)); const vt = document.querySelector('.vitals-title'); if (vt) vt.textContent = 'Live Vitals · Commander Chen'; }
+    const r = await fetch(`${DASH_API.baseUrl}/api/demo/story/start?cut=${cut}`, { method: 'POST' });
+    if (!r.ok) throw new Error('backend ' + r.status);
+    setTimeout(() => { if (STORY.run === run) echoRefresh(); }, 6000);   // ECHO's daily greeting, once the first readings are in
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    VOICE.nextSpeaker = 'aegis';
+    typeResponse("Day 54 on the way to Mars. Everyone is steady. I'm watching the trends, not just the limits.");
+    storyCaption(1, '<b>PREDICT.</b> Day 54. Commander Chen\'s radiation dose starts to creep up, and her sleep and inflammation follow. AEGIS watches the <b>trends</b>, not just the limits.');
+    await _storyWait(run, () => CM.mode === 'cascade' || (PREDICT_STATE.lastCrew === 'crew-001'), 150000);
+    storyCaption(1, '<b>Early warning.</b> AEGIS forecasts a health cascade (three systems out of range at once) <b>before it happens</b>. The countdown in the centre is live.');
+    await _sleep(T.warn); _storyAlive(run);
+    storyCaption(2, '<b>PREVENT.</b> The crew accepts the prevention plan: small, approved fixes now instead of an emergency later. It runs on board straight away.');
+    if (PREDICT_STATE.lastCrew) await startPrevention();
+    await _sleep(T.prevSim); _storyAlive(run); closeSimModal();
+    storyCaption(2, '<b>PREVENT.</b> Watch the rings come back down…');
+    await _storyWait(run, () => PREDICT_STATE.prevented && PREDICT_STATE.prevented.avertedAt, 70000);
+    storyCaption(2, '<b>Cascade avoided.</b> Every ring is back to green. AEGIS acted before anything went wrong.');
+    await _sleep(T.averted); _storyAlive(run);
+    storyCaption(3, '<b>PROTECT.</b> A solar storm hits the whole crew. You can\'t prevent space weather, only protect against it.');
+    await setDemoScenario('spe_event');
+    await _storyWait(run, () => LIVE_ALERT.id && String(LIVE_ALERT.protocol || '').startsWith('SHELTER'), 60000);
+    storyCaption(3, '<b>Radiation emergency.</b> SOLARIS orders the storm shelter and AEGIS phones the flight surgeon <i>(logged, not dialled, in this demo)</i>. No waiting for Earth.');
+    await _sleep(T.emergency); _storyAlive(run);
+    if (LIVE_ALERT.id) confirmProtocol();
+    // SHELTER-1 covers the whole crew: confirm the shelter alerts raised for everyone else too
+    const sweep = setInterval(_storyAckShelter, 4000);
+    setTimeout(() => clearInterval(sweep), 40000);
+    storyCaption(3, '<b>SHELTER-1 confirmed.</b> The crew moves into the shelter on board. The alert stays up until the readings are safe again.');
+    await _sleep(T.shelterSim); _storyAlive(run); closeSimModal();
+    await _storyWait(run, () => !EMG.level && !LIVE_ALERT.id, 60000);
+    storyCaption(3, '<b>The storm passes.</b> Doses fall back toward the normal background…');
+    await _storyWait(run, () => CM.last && (CM.last.crew || []).every(c => !(c.metrics.radiation_dose_24h || {}).out_of_range), 45000);
+    await _sleep(T.settle); _storyAlive(run);
+    closeCallPanel(); CALLS.since = Date.now();
+    VOICE.nextSpeaker = 'solaris';
+    typeResponse("The storm has passed. Everyone's dose is back near the normal background, and the crew can leave the shelter.");
+    await _sleep(T.solaris); _storyAlive(run);
+    storyCaption(4, '<b>ECHO.</b> The storm is over and every reading is safe. AEGIS looked after the body. <b>ECHO checks on the person.</b>');
+    STORY.allowEcho = true;
+    focusEcho();
+    await _sleep(900);
+    ECHO.lastProactive = null;
+    await echoRefresh('shelter');
+    await _sleep(T.echo); _storyAlive(run);
+    storyCaption(4, '<b>End of demo.</b> ECHO is waiting for an answer. Your turn: tell ECHO how you feel.');
+    const i = document.getElementById('story-prog'); if (i) i.style.width = '100%';
+    await fetch(`${DASH_API.baseUrl}/api/demo/story/stop`, { method: 'POST' }).catch(() => {});
+    STORY.on = false;
+  } catch (e) {
+    if (e.message !== 'stopped') storyCaption(STORY.ch || 1, `The demo couldn't continue: ${_echoEsc(e.message)}. Is the backend running?`);
+    STORY.on = false; STORY.allowEcho = true;
+  }
+  if (btn) { btn.classList.remove('on'); btn.textContent = '▶ Run demo · 2 min'; }
+}
+function stopStory() {
+  if (!STORY.on) { document.getElementById('story-bar').hidden = true; return; }
+  STORY.on = false; STORY.run++; STORY.allowEcho = true;
+  closeSimModal();
+  fetch(`${DASH_API.baseUrl}/api/demo/story/stop`, { method: 'POST' }).catch(() => {});
+  storyCaption(1, 'Demo stopped. Everyone is back to normal readings.');
+  setTimeout(() => { if (!STORY.on) document.getElementById('story-bar').hidden = true; }, 2500);
+  const btn = document.getElementById('run-demo-btn'); if (btn) { btn.classList.remove('on'); btn.textContent = '▶ Run demo · 2 min'; }
+}
+</script>
+
+<!-- One-click story demo: chapter captions + Stop -->
+<div class="story-bar" id="story-bar" role="status" aria-live="polite" hidden>
+  <div class="story-chapters" id="story-chapters">
+    <span data-ch="1">1 · Predict</span><span data-ch="2">2 · Prevent</span><span data-ch="3">3 · Protect</span><span data-ch="4">4 · ECHO</span>
+  </div>
+  <div class="story-text" id="story-text">Starting the demo…</div>
+  <div class="story-foot"><div class="story-prog"><i id="story-prog"></i></div><span class="story-note">Demo run · simulated readings · calls logged, not dialled</span>
+    <button type="button" class="story-stop" id="story-stop" onclick="stopStory()">■ Stop</button></div>
+</div>
 
 <!-- Emergency edge glow + live call panel (AEGIS phoning the flight surgeon) -->
 <div class="emergency-edge" aria-hidden="true"></div>

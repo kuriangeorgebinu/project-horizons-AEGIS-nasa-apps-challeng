@@ -107,6 +107,10 @@ def _twiml(message: str) -> str:
             "</Response>")
 
 
+# One-click story demo: calls are logged, never dialled, so a rehearsal can't ring a real phone
+DEMO_QUIET = {"on": False}
+
+
 def call(message: str, key: str, reason: str = "alert", source: str = "rules") -> dict:
     """
     Ring the on-call phone and read `message`. `key` groups repeats of the same alert (cooldown).
@@ -138,7 +142,9 @@ def call(message: str, key: str, reason: str = "alert", source: str = "rules") -
                 _last_by_key[key] = now
                 _recent.append(now)
     if rec["status"] is None:
-        if not configured():
+        if DEMO_QUIET["on"]:
+            rec.update(status="logged", detail="Demo run: the phone was not dialled (would have called the on-call phone)")
+        elif not configured():
             rec.update(status="logged", detail="Twilio not configured: would have called the on-call phone")
         else:
             sid, token = _env("TWILIO_ACCOUNT_SID"), _env("TWILIO_AUTH_TOKEN")

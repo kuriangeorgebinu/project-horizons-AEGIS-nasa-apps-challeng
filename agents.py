@@ -1781,7 +1781,9 @@ class AEGISAgent(BaseAgent):
         results = []
         
         for member in crew:
-            result = self.analyze_crew_member(member)
+            # Re-read each person just before analysing them: one pass can take several seconds, and a reading
+            # taken at the start of the pass may already be stale (e.g. a storm-shelter alert after the storm ended)
+            result = self.analyze_crew_member(db.get_crew_member(member.id) or member)
             results.append(result)
         
         return results
