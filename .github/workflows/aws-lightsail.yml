@@ -1,0 +1,132 @@
+name: AEGIS on AWS (Lightsail)
+
+# One button: Actions -> "AEGIS on AWS (Lightsail)" -> Run workflow -> pick an action.
+#   deploy      create the infrastructure if needed (Terraform) and deploy the current code
+#   app-only    redeploy the code to the existing server (no Terraform changes)
+#   destroy     delete everything Terraform created (server, static IP, key pair). Billing stops.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        required: true
+        default: deploy
+        options:
+          - deploy
+          - app-only
+          - destroy
+
+permissions:
+  id-token: write   # GitHub OIDC token -> assume the AWS role (no stored AWS keys)
+  contents: read
+
+concurrency:
+  group: aegis-aws
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  TF_DIR: infra/terraform
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  aws:
+    name: ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Assume the AWS role (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN || 'arn:aws:iam::522921672742:role/aegis-github-deploy' }}
+          role-session-name: aegis-${{ inputs.action }}-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Show the assumed identity
+        run: aws sts get-caller-identity
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform apply (create or update infrastructure)
+        if: inputs.action == 'deploy'
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -input=false -auto-approve -var "region=${AWS_REGION}"
+
+      - name: Terraform destroy (delete all infrastructure)
+        if: inputs.action == 'destroy'
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform destroy -input=false -auto-approve -var "region=${AWS_REGION}"
+
+      - name: Read server details from Terraform
+        if: inputs.action != 'destroy'
+        id: tf
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          IP=$(terraform output -raw public_ip)
+          HOST=$(terraform output -raw hostname)
+          mkdir -p ~/.ssh
+          terraform output -raw ssh_private_key > ~/.ssh/aegis
+          chmod 600 ~/.ssh/aegis
+          echo "ip=$IP" >> "$GITHUB_OUTPUT"
+          echo "host=$HOST" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for SSH
+        if: inputs.action != 'destroy'
+        run: |
+          for i in $(seq 1 60); do
+            if ssh -i ~/.ssh/aegis -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 \
+                 ubuntu@${{ steps.tf.outputs.ip }} true 2>/dev/null; then echo "SSH ready"; exit 0; fi
+            sleep 10
+          done
+          echo "SSH never came up"; exit 1
+
+      - name: Deploy the app
+        if: inputs.action != 'destroy'
+        env:
+          IP: ${{ steps.tf.outputs.ip }}
+          HOST: ${{ steps.tf.outputs.host }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || 'deepseek-flash' }}
+        run: |
+          SSH="ssh -i $HOME/.ssh/aegis -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@$IP"
+          git archive --format=tar.gz -o aegis.tgz HEAD
+          scp -i ~/.ssh/aegis -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+              aegis.tgz deploy/remote-deploy.sh ubuntu@$IP:/tmp/
+          # Secrets go over SSH stdin straight into a root-only file: never on a command line or in the image
+          {
+            echo "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}"
+            echo "DEEPSEEK_MODEL=${DEEPSEEK_MODEL}"
+            if [ -z "${DEEPSEEK_API_KEY}" ]; then echo "AEGIS_LLM=off"; fi
+            echo "AEGIS_CALLS=off"            # public site: never phone anyone
+            echo "AEGIS_MISSION=mars_transit"
+          } | $SSH "sudo mkdir -p /opt/aegis/shared && sudo tee /opt/aegis/shared/.env >/dev/null && sudo chmod 600 /opt/aegis/shared/.env"
+          $SSH "sudo bash /tmp/remote-deploy.sh /tmp/aegis.tgz ${GITHUB_SHA} ${HOST}"
+
+      - name: Smoke test over HTTPS
+        if: inputs.action != 'destroy'
+        run: |
+          URL="https://${{ steps.tf.outputs.host }}"
+          for i in $(seq 1 30); do
+            if curl -fsS "$URL/health" >/dev/null && curl -fsS "$URL/aegis-mission-control.html" | grep -q "AEGIS"; then
+              echo "### AEGIS is live: $URL/" >> "$GITHUB_STEP_SUMMARY"
+              echo "Live: $URL/"; exit 0
+            fi
+            sleep 10
+          done
+          echo "HTTPS smoke test failed (the certificate can take a minute on the first deploy)"; exit 1
+
+      - name: Summary (destroy)
+        if: inputs.action == 'destroy'
+        run: echo "### AEGIS infrastructure destroyed. Lightsail billing has stopped." >> "$GITHUB_STEP_SUMMARY"

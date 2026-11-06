@@ -25,3 +25,8 @@ eval/*.before-*.html
 eval/dump.txt
 eval/part_c.py.txt
 eval/splice.py
+
+# Terraform (state lives in S3)
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/.terraform.lock.hcl

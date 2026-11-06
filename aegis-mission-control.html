@@ -1540,8 +1540,11 @@ function switchPage(pageName) {
 }
 
 // H4: API configuration
+// Local development: the page is served on :8080 (or opened as a file) and the API runs on 127.0.0.1:8000.
+// Deployed (AWS): one web server serves both, so the API is on the same origin as the page.
+const AEGIS_API_ORIGIN = (location.protocol === 'file:' || location.port === '8080') ? 'http://127.0.0.1:8000' : location.origin;
 const DASH_API = {
-  baseUrl: 'http://127.0.0.1:8000',
+  baseUrl: AEGIS_API_ORIGIN,
   selectedCrewId: 'crew-001',  // Maps to backend IDs
   crewIdMap: {
     'chen': 'crew-001',
@@ -4056,7 +4059,7 @@ async function echoRefresh(event, opts = {}) {
     const d = await r.json();
     if (crew !== echoCrewId()) return null;
     const withEl = document.getElementById('echo-with');
-    if (withEl) withEl.textContent = `with ${d.name} · ${String(d.escalation && d.escalation.onboard ? '' : '')}Day ${d.facts.mission_day} of ${d.facts.mission_days} · private`;
+    if (withEl) withEl.textContent = `with ${d.name} · Day ${d.facts.mission_day} of ${d.facts.mission_days} · private`;
     if (ECHO.crew !== crew) {                       // switched person: fresh conversation, greeting ritual
       ECHO.crew = crew; ECHO.lastProactive = d.reason;
       const chat = document.getElementById('echo-chat'); if (chat) chat.innerHTML = '';

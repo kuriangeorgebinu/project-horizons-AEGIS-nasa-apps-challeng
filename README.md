@@ -177,6 +177,35 @@ fixed and the simulator is seeded, so the same scenario plays out the same way e
 
 ---
 
+## Deploy to AWS (one button)
+
+AEGIS runs on a single **Amazon Lightsail** server ($12/month plan: 2 GB RAM, static IP, 3 TB transfer), with
+Caddy serving the dashboard and the API over HTTPS on a free `<ip>.sslip.io` name. Everything is driven from
+GitHub Actions, with no AWS keys stored in GitHub:
+
+**Actions → "AEGIS on AWS (Lightsail)" → Run workflow → choose:**
+
+| Action | What it does |
+|---|---|
+| `deploy` | Creates the infrastructure if it doesn't exist (Terraform), then deploys the current `main` and prints the live URL |
+| `app-only` | Redeploys the code to the existing server, without touching the infrastructure |
+| `destroy` | Deletes the server, static IP and key pair. Lightsail billing stops |
+
+How it fits together:
+- **Access:** the workflow assumes the IAM role `aegis-github-deploy` through GitHub's OpenID Connect provider. The role
+  trusts only this repository's `main` branch and can only manage Lightsail and its own Terraform state.
+- **Terraform** (`infra/terraform`): the Lightsail instance (Ubuntu 24.04), static IP, firewall (22/80/443) and a
+  deploy SSH key. State is kept in the private, versioned S3 bucket `aegis-tfstate-522921672742` with S3-native locking.
+- **App deploy** (`deploy/remote-deploy.sh`): ships a `git archive` of the commit, installs CPU-only PyTorch and the
+  requirements, runs the backend under systemd, and serves only the public dashboard files.
+- **Public-site safety:** the phone alarm is always off (`AEGIS_CALLS=off`). DeepSeek is on only if the repository
+  secret `DEEPSEEK_API_KEY` is set; without it AEGIS runs in rule-based mode.
+
+Repository settings used: variable `AWS_ROLE_ARN` (and optionally `AWS_REGION`, default `us-east-1`), secret
+`DEEPSEEK_API_KEY` (optional).
+
+---
+
 ## Configuration
 
 `.env` (never commit it; it is in `.gitignore`):

@@ -7,7 +7,7 @@
  */
 
 const AEGIS_API = {
-  BASE_URL: 'http://127.0.0.1:8000',
+  BASE_URL: (location.protocol === 'file:' || location.port === '8080') ? 'http://127.0.0.1:8000' : location.origin,
   
   // State
   crew: [],
