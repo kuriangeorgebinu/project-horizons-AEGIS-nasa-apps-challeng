@@ -9,7 +9,7 @@ REL="$BASE/releases/$SHA"
 
 echo "== waiting for first-boot setup"
 for i in $(seq 1 90); do [ -f /var/lib/aegis-bootstrap-done ] && break; sleep 10; done
-[ -f /var/lib/aegis-bootstrap-done ] || { echo "first-boot setup did not finish"; exit 1; }
+[ -f /var/lib/aegis-bootstrap-done ] || { echo "first-boot setup did not finish:"; tail -n 40 /var/log/aegis-bootstrap.log 2>/dev/null; exit 1; }
 
 echo "== unpacking release $SHA"
 rm -rf "$REL" && mkdir -p "$REL"

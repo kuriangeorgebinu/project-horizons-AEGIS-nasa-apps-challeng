@@ -1,3 +1,7 @@
+# First boot of the AEGIS Lightsail server. Lightsail appends this to its own launch script and runs it with
+# /bin/sh, so the real (bash) bootstrap is written to a file and run explicitly with bash.
+mkdir -p /opt/aegis-bootstrap
+cat > /opt/aegis-bootstrap/bootstrap.sh <<'BOOTSTRAP'
 #!/bin/bash
 # First boot of the AEGIS Lightsail server: OS packages, swap, Caddy and the app user/folders.
 # The app itself is installed by deploy/remote-deploy.sh (run by GitHub Actions over SSH).
@@ -24,3 +28,5 @@ id aegis >/dev/null 2>&1 || useradd --system --create-home --home-dir /opt/aegis
 mkdir -p /opt/aegis/releases /opt/aegis/shared /opt/aegis/web
 chown -R aegis:aegis /opt/aegis
 touch /var/lib/aegis-bootstrap-done
+BOOTSTRAP
+bash /opt/aegis-bootstrap/bootstrap.sh > /var/log/aegis-bootstrap.log 2>&1
