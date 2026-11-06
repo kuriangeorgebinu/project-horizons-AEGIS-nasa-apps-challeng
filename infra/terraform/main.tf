@@ -30,11 +30,22 @@ resource "aws_lightsail_static_ip" "app" {
 resource "aws_lightsail_static_ip_attachment" "app" {
   static_ip_name = aws_lightsail_static_ip.app.name
   instance_name  = aws_lightsail_instance.app.name
+
+  # The server is referenced by name, which stays the same when it is replaced (e.g. new user data), so
+  # re-attach the static IP whenever the server itself is recreated
+  lifecycle {
+    replace_triggered_by = [aws_lightsail_instance.app.id, aws_lightsail_instance.app.created_at]
+  }
 }
 
 # Firewall: SSH (deploys), HTTP (certificate challenge + redirect), HTTPS (the app)
 resource "aws_lightsail_instance_public_ports" "app" {
   instance_name = aws_lightsail_instance.app.name
+
+  # Same reason: a replaced server starts with Lightsail's default firewall, so re-apply the rules
+  lifecycle {
+    replace_triggered_by = [aws_lightsail_instance.app.id, aws_lightsail_instance.app.created_at]
+  }
 
   port_info {
     protocol  = "tcp"
