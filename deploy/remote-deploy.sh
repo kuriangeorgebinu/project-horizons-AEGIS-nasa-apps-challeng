@@ -31,6 +31,11 @@ mkdir -p "$BASE/web.new/docs" && [ -d "$REL/docs/screenshots" ] && cp -r "$REL/d
 rm -rf "$BASE/web.old"; [ -d "$BASE/web" ] && mv "$BASE/web" "$BASE/web.old"; mv "$BASE/web.new" "$BASE/web"
 
 chown -R aegis:aegis "$BASE"
+# Caddy (user "caddy") may read only the public web folder; code, venv and secrets stay private to "aegis"
+chmod 755 "$BASE"
+chmod -R a+rX "$BASE/web"
+chmod 750 "$BASE/releases" "$BASE/venv"
+chmod 700 "$BASE/shared"
 chmod 600 "$BASE/shared/.env"
 ln -sfn "$REL" "$BASE/current"
 
