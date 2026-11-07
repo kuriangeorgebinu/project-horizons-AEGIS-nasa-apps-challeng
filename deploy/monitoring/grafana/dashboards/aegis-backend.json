@@ -151,7 +151,8 @@
       ]
      },
      "unit": "percentunit",
-     "decimals": 0
+     "decimals": 0,
+     "noValue": "no calls"
     },
     "overrides": []
    }
@@ -164,7 +165,7 @@
     "type": "prometheus",
     "uid": "prometheus"
    },
-   "description": "How long ago DeepSeek last answered successfully.",
+   "description": "How long ago DeepSeek last answered successfully (since the backend last restarted).",
    "gridPos": {
     "h": 4,
     "w": 4,
@@ -178,7 +179,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "time() - max(aegis_llm_last_success_timestamp_seconds)",
+     "expr": "time() - (max(aegis_llm_last_success_timestamp_seconds) > 0)",
      "instant": true
     }
    ],
@@ -213,7 +214,8 @@
       ]
      },
      "unit": "s",
-     "decimals": 0
+     "decimals": 0,
+     "noValue": "never"
     },
     "overrides": []
    }
@@ -240,7 +242,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "histogram_quantile(0.9, sum(rate(aegis_llm_latency_seconds_bucket[15m])) by (le))",
+     "expr": "histogram_quantile(0.9, sum(rate(aegis_llm_latency_seconds_bucket[15m])) by (le)) > 0",
      "instant": true
     }
    ],
@@ -275,7 +277,8 @@
       ]
      },
      "unit": "s",
-     "decimals": 1
+     "decimals": 1,
+     "noValue": "no calls"
     },
     "overrides": []
    }
@@ -337,7 +340,8 @@
       ]
      },
      "unit": "percentunit",
-     "decimals": 0
+     "decimals": 0,
+     "noValue": "no replies yet"
     },
     "overrides": []
    }
@@ -364,7 +368,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "sum(increase(aegis_llm_calls_total[1h]))",
+     "expr": "sum(increase(aegis_llm_calls_total[1h])) or vector(0)",
      "instant": true
     }
    ],
@@ -577,7 +581,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "ALERTS{alertstate=\"firing\"}",
+     "expr": "max by (alertname) (ALERTS{alertstate=\"firing\"})",
      "legendFormat": "{{alertname}}"
     }
    ],
@@ -760,7 +764,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "sum(increase(aegis_http_requests_total{status=~\"5..\"}[15m]))",
+     "expr": "sum(increase(aegis_http_requests_total{status=~\"5..\"}[15m])) or vector(0)",
      "instant": true
     }
    ],
@@ -1538,7 +1542,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "node_memory_MemAvailable_bytes",
+     "expr": "max(node_memory_MemAvailable_bytes)",
      "legendFormat": "available"
     },
     {
@@ -1547,7 +1551,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "node_memory_MemTotal_bytes",
+     "expr": "max(node_memory_MemTotal_bytes)",
      "legendFormat": "total"
     }
    ],
@@ -1598,7 +1602,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"}",
+     "expr": "max(node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"})",
      "legendFormat": "free"
     }
    ],
