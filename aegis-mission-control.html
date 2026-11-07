@@ -1686,6 +1686,7 @@ function selectCrew(crewId) {
   const hrVal = document.getElementById('hr-value');
   ['hr', 'spo2', 'il6', 'sleep'].forEach(k => { const v = document.getElementById(`${k}-value`); if (v) { v.textContent = '…'; v.style.color = 'var(--muted)'; } });
   fetchAndUpdateVitals();                    // the selected person's live readings, straight away
+  if (typeof echoSwitchCrew === 'function') echoSwitchCrew();   // ECHO follows at once
   
   playTone(400, 0.15);
   announce('Selected ' + crew.name);
@@ -2870,7 +2871,7 @@ function renderLiveAlert(a) {
     spoken = `${name} needs attention: ${plainDomains(agents)} are all out of range at once. I recommend starting the recovery plan.`;
   }
   title.textContent = headline;
-  title.title = cleanTitle + (LIVE_ALERT.protocol ? ` · Protocol ${LIVE_ALERT.protocol}` : '');
+  title.title = cleanTitle + (LIVE_ALERT.protocol ? ` · Protocol ${LIVE_ALERT.protocol}` : ''); desc.title = '';
   desc.textContent = plain;
   _renderAiNote(aiMsg);
   agentsEl.innerHTML = agents.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('');
@@ -3111,6 +3112,7 @@ function renderAllClear() {
       (near.length ? `Closest to a limit: ${plainList(near)}, holding steady. ` : '') +
       "If anything starts heading the wrong way, the early warning appears here first.";
   }
+  title.title = ''; desc.title = '';          // no leftover tooltip from an earlier alert
   agentsEl.innerHTML = '';
   btn.style.display = 'none';
   _showPreventBtn(false);
@@ -3198,7 +3200,7 @@ function renderPredictPanel(p) {
   title.style.color = 'var(--yellow)';
   const forming = p.risk === 'converged';
   title.textContent = forming ? `Early warning: it's happening now · ${name}` : `Early warning: trouble likely in ${fmtEta(p.cascade_eta_min)} · ${name}`;
-  title.title = 'PREDICT: forecast from the last few minutes of readings';
+  title.title = 'PREDICT: forecast from the last few minutes of readings'; desc.title = '';
   // Plain sentence: what's already off + what's heading the wrong way
   const parts = [];
   if (p.out_now.length) parts.push(`${plainDomains(p.out_now)} ${p.out_now.length > 1 ? 'are' : 'is'} already off`);
@@ -3646,7 +3648,7 @@ function renderCascadeMap(fc) {
     mode = 'alert'; big = 'NOW'; sub = 'CASCADE FORMING';
     cap = `<b>It's happening:</b> ${name}'s ${plainDomains(outDom)} are out of range together. AEGIS is raising the alert.`;
   } else if (strained.length) {
-    mode = 'watch'; big = `${strained.length} of 3`; sub = 'STRAINED';
+    mode = 'watch'; big = `${strained.length} of 4`; sub = 'STRAINED';
     cap = `Keeping an eye on ${name}'s ${plainDomains([...outDom, ...watchDom])}. ` +
           (strained.length >= 2 ? 'One more strained system would make a cascade.' : 'Nothing needs action yet.');
   } else {
@@ -3820,13 +3822,15 @@ async function refreshPredict() {
       const e = (d.crew || []).find(c => c.crew_member_id === pv.crew);
       PREDICT_STATE.preventedEntry = e || null;
       const inRange = e && e.out_now.length === 0 && !e.upcoming.length && sysAllOk(e) && Date.now() - pv.at > 20000;
+      // After "avoided", a new strain (e.g. the solar storm) is a new event: drop the old outcome instead of showing it
+      if (pv.avertedAt && e && !sysAllOk(e)) { PREDICT_STATE.prevented = null; PREDICT_STATE.preventedEntry = null; }
       if (inRange && !pv.avertedAt) {
         pv.avertedAt = Date.now();
         if (typeof playTone === 'function') { playTone(523, 0.12); setTimeout(() => playTone(659, 0.12), 150); setTimeout(() => playTone(784, 0.2), 300); }
         if (typeof typeResponse === 'function') typeResponse(`Good news: all four of ${_crewDisplayName(pv.crew)}'s systems are steady again. The prevention plan worked, and we avoided a bigger problem.`);
       }
       // Keep the outcome on screen for 45 s, then return to normal monitoring (failsafe: 8 min)
-      if ((pv.avertedAt && Date.now() - pv.avertedAt > 45000) || Date.now() - pv.at > 8 * 60000) {
+      if (PREDICT_STATE.prevented && (pv.avertedAt && Date.now() - pv.avertedAt > 45000) || Date.now() - pv.at > 8 * 60000) {
         PREDICT_STATE.prevented = null;
         PREDICT_STATE.preventedEntry = null;
         PREDICT_STATE.suppress[pv.crew] = Date.now() + 60000;
@@ -4436,6 +4440,18 @@ function focusEcho() {
   setTimeout(() => document.getElementById('echo-input')?.focus({ preventScroll: true }), 600);
 }
 
+function echoSwitchCrew() {
+  const crew = echoCrewId(); if (ECHO.crew === crew) return;
+  const chat = document.getElementById('echo-chat');
+  if (ECHO.crew && chat) ECHO.chats[ECHO.crew] = chat.innerHTML;
+  const withEl = document.getElementById('echo-with');
+  if (withEl) withEl.textContent = `with ${_crewDisplayName(crew)} · private`;
+  document.getElementById('echo-support')?.setAttribute('hidden', '');
+  document.getElementById('echo-feel')?.classList.remove('open');
+  if (ECHO.chats[crew] && chat) { chat.innerHTML = ECHO.chats[crew]; chat.scrollTop = chat.scrollHeight; ECHO.crew = crew; }
+  else { if (chat) chat.innerHTML = ''; ECHO.crew = null; echoTyping(true); }
+  echoRefresh();
+}
 // Poll ECHO's mode. A new crew member = the daily greeting; a new support reason = ECHO checks in on its own.
 async function echoRefresh(event, opts = {}) {
   const crew = echoCrewId();
@@ -4556,14 +4572,14 @@ function _storyLocalReset() {
 }
 // Two cuts, both ending on ECHO's check-in: 'short' = the 2-minute judging cut (default), 'full' = about 3 minutes
 const STORY_CUTS = {
-  short: { est: 120, warn: 5000, prevSim: 6000, averted: 3500, emergency: 6000, shelterSim: 7000, settle: 1000, solaris: 4500, echo: 7000 },
+  short: { est: 120, warn: 5000, prevSim: 6000, averted: 7000, emergency: 6000, shelterSim: 7000, settle: 1000, solaris: 4500, echo: 7000 },
   full:  { est: 175, warn: 9000, prevSim: 9000, averted: 7000, emergency: 9000, shelterSim: 13000, settle: 2500, solaris: 6500, echo: 9000 },
 };
 async function runStory(cut) {
   if (STORY.on) { stopStory(); return; }
   cut = STORY_CUTS[cut] ? cut : (new URLSearchParams(location.search).get('demo') === 'full' ? 'full' : 'short');
   const T = STORY_CUTS[cut]; STORY.est = T.est; STORY.cut = cut;
-  const _sb = document.getElementById('story-stop'); if (_sb) _sb.style.visibility = '';
+  const _sb = document.getElementById('story-stop'); if (_sb) { _sb.style.visibility = ''; _sb.textContent = '■ Stop'; }
   const run = ++STORY.run;
   STORY.on = true; STORY.t0 = Date.now(); STORY.allowEcho = false;
   const btn = document.getElementById('run-demo-btn'); if (btn) { btn.classList.add('on'); btn.textContent = '■ Stop demo'; }
@@ -4591,7 +4607,6 @@ async function runStory(cut) {
     storyCaption(2, averted ? '<b>Cascade avoided.</b> Every ring is back to green. AEGIS acted before anything went wrong.'
                             : '<b>PREVENT.</b> The prevention plan is still bringing the readings down. The cascade never formed.');
     await _sleep(T.averted); _storyAlive(run);
-    PREDICT_STATE.prevented = null; PREDICT_STATE.preventedEntry = null;   // the next chapter is a new event
     storyCaption(3, '<b>PROTECT.</b> A solar storm hits the whole crew. You can\'t prevent space weather, only protect against it.');
     await setDemoScenario('spe_event');
     await _storyWait(run, () => LIVE_ALERT.id && String(LIVE_ALERT.protocol || '').startsWith('SHELTER'), 60000);
@@ -4621,6 +4636,7 @@ async function runStory(cut) {
     await echoRefresh('shelter');
     await _sleep(T.echo); _storyAlive(run);
     storyCaption(4, '<b>End of demo.</b> ECHO is waiting for an answer. Your turn: tell ECHO how you feel.');
+    const sbtn = document.getElementById('story-stop'); if (sbtn) sbtn.textContent = '✕ Close';
     const i = document.getElementById('story-prog'); if (i) i.style.width = '100%';
     await fetch(`${DASH_API.baseUrl}/api/demo/story/stop`, { method: 'POST' }).catch(() => {});
     STORY.on = false;

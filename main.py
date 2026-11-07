@@ -91,7 +91,13 @@ async def lifespan(app: FastAPI):
         loop = asyncio.get_running_loop()
         while True:
             scenario = simulator.config.scenario
-            interval = 10 if scenario else 120
+            # Nominal: every 120 s, but every 30 s while agent recommendations are still open, so one whose
+            # reading is back to normal resolves within about a minute instead of lingering for several
+            try:
+                open_recs = any(r.agent.value != "AEGIS" for r in db.get_recommendations(status=RecommendationStatus.PENDING, limit=20))
+            except Exception:
+                open_recs = False
+            interval = 10 if scenario else (30 if open_recs else 120)
             now = loop.time()
             if scenario is None and last_scenario is not None:
                 # Back to nominal: smoothed vitals (EWMA) still carry the scenario for a few ticks,
