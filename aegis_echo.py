@@ -359,7 +359,10 @@ def _ai_reply(text: str, m, f: dict, history: list) -> Optional[str]:
               f"Facts you may use: sleep score last night {f['sleep']} out of 100. "
               f"Recent conversation: {convo or '(none)'}. "
               f"They just said: \"{text}\". Reply as ECHO.")
-    out = aegis_llm.chat(prompt, persona="ECHO", words=55, mode="echo")
+    # A chat reply should feel live: two tries of up to 12 s each (one slow DeepSeek call used to leave the
+    # crew member with a canned line after a 25 s wait)
+    out = aegis_llm.chat(prompt, persona="ECHO", words=55, mode="echo", timeout=12) or \
+          aegis_llm.chat(prompt, persona="ECHO", words=55, mode="echo", timeout=12)
     if not out:
         return None
     allowed = {str(f.get("sleep")), str(f.get("mission_day")), str(f.get("mission_days")), "4", "5", "3", "10"}

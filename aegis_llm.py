@@ -109,7 +109,8 @@ def _record(ok: bool, latency: float, error: Optional[str] = None):
 
 
 def chat(prompt: str, persona: str = "AEGIS", words: int = 70,
-         max_tokens: int = 1500, temperature: Optional[float] = None, mode: str = "report") -> Optional[str]:
+         max_tokens: int = 1500, temperature: Optional[float] = None, mode: str = "report",
+         timeout: Optional[float] = None) -> Optional[str]:
     """Blocking DeepSeek call. Returns the answer text, or None on any failure.
 
     DeepSeek's current models reason before answering and the reasoning counts against
@@ -129,7 +130,7 @@ def chat(prompt: str, persona: str = "AEGIS", words: int = 70,
             r = httpx.post(
                 f"{base}/chat/completions",
                 headers={"Authorization": f"Bearer {_key()}"},
-                timeout=float(os.getenv("DEEPSEEK_TIMEOUT", "25")),
+                timeout=timeout or float(os.getenv("DEEPSEEK_TIMEOUT", "25")),
                 json={"model": model(), "max_tokens": budget, "temperature": temperature,
                       "messages": [{"role": "system", "content": system},
                                    {"role": "user", "content": prompt}]},

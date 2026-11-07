@@ -1353,7 +1353,8 @@ class AEGISAgent(BaseAgent):
             "Use only these units with numbers: mSv, pg/mL, bpm, percent, hours, minutes, days. "
             "If you don't have the data for it, say so simply and share what you do know."
         )
-        answer = aegis_llm.chat(prompt, persona=agent_name, words=60, mode="chat")
+        answer = aegis_llm.chat(prompt, persona=agent_name, words=60, mode="chat", timeout=15) or \
+                 aegis_llm.chat(prompt, persona=agent_name, words=60, mode="chat", timeout=15)   # one retry if slow
         source = "deepseek"
         # Grounding: every number in a spoken answer must come from the data in the prompt (aegis_verify).
         num_check, first_check = None, None

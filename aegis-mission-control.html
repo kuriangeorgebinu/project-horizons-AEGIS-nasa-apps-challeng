@@ -947,6 +947,25 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
 .shell>.story-bar .story-prog{flex:0 0 110px;}
 @media (max-width:1100px){.shell>.story-bar{grid-template-columns:minmax(0,1fr) auto;}.shell>.story-bar .story-chapters{grid-column:1/-1;}}
 @media (max-width:700px){.shell>.story-bar{grid-template-columns:minmax(0,1fr);}.shell>.story-bar .story-note{display:none;}}
+
+/* Chat with the agents: a typed conversation (no microphone) */
+.chat-panel{display:flex;flex-direction:column;align-items:stretch;gap:.55rem;padding:.75rem 1rem;}
+.chat-panel .ask-form{width:100%;}
+.chat-panel .voice-title{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin:0;}
+.chat-to{font-size:.72rem;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:auto;}
+.chat-to b{color:var(--aegis);font-weight:600;}
+.mute-btn{font:inherit;font-size:.85rem;line-height:1;background:none;border:1px solid var(--border);border-radius:8px;padding:.2rem .45rem;cursor:pointer;color:var(--text);}
+.mute-btn[aria-pressed="true"]{opacity:.6;}
+.ask-log{display:flex;flex-direction:column;gap:.45rem;max-height:15rem;overflow-y:auto;padding-right:.2rem;}
+.ask-log:empty{display:none;}
+.ab{max-width:min(78ch,92%);padding:.5rem .75rem;border-radius:12px;font-size:.88rem;line-height:1.5;border:1px solid var(--border);}
+.ab.user{align-self:flex-end;background:rgba(90,159,215,.14);border-color:rgba(90,159,215,.35);}
+.ab.agent{align-self:flex-start;background:rgba(255,255,255,.03);border-left:3px solid var(--who,var(--aegis));}
+.ab .ab-who{display:flex;align-items:center;gap:.4rem;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--who,var(--aegis));font-weight:700;margin-bottom:.15rem;}
+.ab .ab-who .response-source{margin-left:0;letter-spacing:.06em;font-weight:600;}
+.ab.thinking .ab-text{color:var(--muted);font-style:italic;}
+.chat-panel .ask-form{margin:0;}
+.eb .eb-src{display:inline-block;margin-left:.4rem;font-size:.6rem;letter-spacing:.06em;padding:0 .35rem;border-radius:6px;background:rgba(160,152,200,.15);color:var(--gene);vertical-align:middle;font-weight:600;}
 </style>
 </head>
 <body>
@@ -1208,24 +1227,20 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
     </div>
   </div>
 
-  <!-- Voice Terminal -->
-  <div class="voice-panel">
-    <div class="voice-title">Ask the agents
-      <select id="voiceSelect" class="voice-select" onchange="chooseVoice(this.value)" aria-label="AEGIS voice" title="AEGIS voice (★ = most natural available)"></select>
+  <!-- Chat with the agents (typed; the agents still answer aloud unless muted) -->
+  <div class="voice-panel chat-panel" id="ask-panel">
+    <div class="voice-title">Chat with the agents
+      <select id="voiceSelect" class="voice-select" onchange="chooseVoice(this.value)" aria-label="Voice of the selected agent" title="Voice of the selected agent (★ = most natural available)"></select>
+      <button type="button" class="mute-btn" id="muteBtn" onclick="toggleMute()" aria-pressed="false" title="Mute or unmute the agents' spoken replies">🔊</button>
+      <span class="chat-to" id="chatTo">talking to <b>AEGIS</b> · click an agent on the map to switch</span>
     </div>
-    <div class="voice-input">
-      <button class="mic-btn" id="micBtn" onclick="toggleListening()" aria-label="Activate voice input" aria-pressed="false">🎙️</button>
-      <div class="voice-status" id="voiceStatus" role="status">Tap to speak with AEGIS</div>
-    </div>
+    <div class="ask-log" id="ask-log" role="log" aria-live="polite" aria-label="Conversation with the agents"></div>
     <form class="ask-form" id="askForm" onsubmit="event.preventDefault(); submitTypedQuestion();">
       <input type="text" id="askInput" class="ask-input" maxlength="500" autocomplete="off"
-             placeholder="…or type a question, e.g. &quot;How is Nakamura's radiation?&quot;" aria-label="Type a question for the selected agent">
-      <button type="submit" class="ask-btn" aria-label="Ask">Ask</button>
+             placeholder="Message AEGIS… e.g. &quot;How is Nakamura's radiation?&quot;" aria-label="Message to the selected agent">
+      <button type="submit" class="ask-btn" aria-label="Send">Send</button>
     </form>
-    <div class="response-area" aria-live="polite">
-      <div class="response-label">AEGIS Response</div>
-      <div class="response-text" id="responseText" role="log">Awaiting your command...</div>
-    </div>
+    <span id="voiceStatus" hidden></span>
   </div>
 
   <!-- ECHO: crew companion against isolation (MIRROR detects, ECHO responds) -->
@@ -1795,6 +1810,46 @@ function playTone(freq, duration) {
 // analyses the selected crew member's CURRENT vitals and DeepSeek answers in that agent's voice
 // (rule-based answer if the model is unavailable; the canned line only if the backend is offline).
 let _askSeq = 0;
+// ── Chat log helpers ──
+function _chatScroll() { const log = document.getElementById('ask-log'); if (log) log.scrollTop = log.scrollHeight; }
+function _chatTrim() { const log = document.getElementById('ask-log'); while (log && log.children.length > 40) log.firstElementChild.remove(); }
+function chatUserBubble(text) {
+  const log = document.getElementById('ask-log'); if (!log) return;
+  const b = document.createElement('div'); b.className = 'ab user'; b.textContent = text;
+  log.appendChild(b); _chatTrim(); _chatScroll();
+}
+function chatAgentBubble(agentKey, tag) {
+  const log = document.getElementById('ask-log');
+  const think = document.getElementById('ask-thinking'); if (think) think.remove();
+  const b = document.createElement('div');
+  b.className = 'ab agent'; b.style.setProperty('--who', `var(--${AGENTS[agentKey] ? agentKey : 'aegis'})`);
+  const who = document.createElement('div'); who.className = 'ab-who';
+  who.textContent = (AGENTS[agentKey] || AGENTS.aegis).name;
+  if (tag) { const t = document.createElement('span'); t.className = 'response-source' + (tag.ai ? '' : ' rules'); t.textContent = tag.ai ? '🧠 DeepSeek' : 'rules'; t.title = tag.title || ''; who.appendChild(t); }
+  const txt = document.createElement('div'); txt.className = 'ab-text';
+  b.append(who, txt);
+  if (log) { log.appendChild(b); _chatTrim(); }
+  document.querySelector('.voice-panel')?.classList.add('has-reply');
+  const obs = new MutationObserver(_chatScroll); obs.observe(txt, { childList: true, characterData: true, subtree: true });
+  setTimeout(() => obs.disconnect(), 60000);
+  return txt;
+}
+function chatThinking(agentKey) {
+  const log = document.getElementById('ask-log'); if (!log) return;
+  document.getElementById('ask-thinking')?.remove();
+  const b = document.createElement('div'); b.id = 'ask-thinking'; b.className = 'ab agent thinking';
+  b.style.setProperty('--who', `var(--${agentKey})`);
+  b.innerHTML = `<div class="ab-who">${AGENTS[agentKey].name}</div><div class="ab-text">thinking…</div>`;
+  log.appendChild(b); _chatScroll();
+}
+function toggleMute() {
+  VOICE.muted = !VOICE.muted;
+  const b = document.getElementById('muteBtn');
+  if (b) { b.textContent = VOICE.muted ? '🔇' : '🔊'; b.setAttribute('aria-pressed', String(VOICE.muted)); }
+  if (VOICE.muted) { if ('speechSynthesis' in window) speechSynthesis.cancel(); ttsStop(); }
+  try { localStorage.setItem('aegis-muted', VOICE.muted ? '1' : '0'); } catch (e) {}
+}
+
 async function askAgent(agentKey, question, fallbackText, opts = {}) {
   const seq = ++_askSeq;                       // ignore answers to older questions
   // opts.handBackTo: agent to return the conversation to once this answer has been spoken
@@ -1802,12 +1857,9 @@ async function askAgent(agentKey, question, fallbackText, opts = {}) {
   const agent = AGENTS[agentKey] ? agentKey : 'aegis';
   const agentName = AGENTS[agent].name;
   const crewId = DASH_API.crewIdMap[selectedCrew] || 'crew-001';
-  const label = document.querySelector('.response-label');
   const askBtn = document.querySelector('.ask-btn');
-  if (label) label.textContent = `${agentName} Response`;
   if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
-  const el = document.getElementById('responseText');
-  el.textContent = `${agentName} is analysing live data…`;
+  chatThinking(agent);
   if (askBtn) askBtn.disabled = true;
   try {
     const r = await fetch(`${DASH_API.baseUrl}/api/ask`, {
@@ -1817,14 +1869,9 @@ async function askAgent(agentKey, question, fallbackText, opts = {}) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
     if (seq !== _askSeq) return;
-    if (label) {
-      label.textContent = `${data.agent || agentName} Response`;
-      const tag = document.createElement('span');
-      tag.className = 'response-source' + (data.source === 'deepseek' ? '' : ' rules');
-      tag.textContent = data.source === 'deepseek' ? '🧠 LIVE · DEEPSEEK' : 'LIVE · RULES';
-      tag.title = `Agents consulted: ${(data.agents_consulted || []).join(', ')} · ${data.latency_s}s`;
-      label.appendChild(tag);
-    }
+    VOICE.nextTag = { ai: data.source === 'deepseek',
+      title: (data.source === 'deepseek' ? 'Worded by DeepSeek from the live readings' : 'Written by the rules (DeepSeek off or unavailable)') +
+             ` · agents consulted: ${(data.agents_consulted || []).join(', ')} · ${data.latency_s}s` };
     VOICE.nextSpeaker = agent;                 // each agent answers in its own voice
     typeResponse(withIntro(agent, data.answer || fallbackText || 'No answer available.'), true, onDone);
   } catch (e) {
@@ -1854,7 +1901,8 @@ function submitTypedQuestion() {
   const q = (input.value || '').trim();
   if (q.length < 2) return;
   input.value = '';
-  processCommand(q.toLowerCase());
+  chatUserBubble(q);
+  processCommand(q);
 }
 
 // Select agent - glow the connection line
@@ -1902,7 +1950,10 @@ function selectAgent(name, opts = {}) {
   renderNodeDetail();
   playTone(400 + Math.random() * 200, 0.15);
   announce(AGENTS[name].name + ' selected');
-  document.getElementById('voiceStatus').textContent = 'Tap to speak with ' + AGENTS[name].name;
+  const ct = document.getElementById('chatTo');
+  if (ct) ct.innerHTML = `talking to <b style="color:var(--${name})">${AGENTS[name].name}</b> · click an agent on the map to switch`;
+  const ai = document.getElementById('askInput');
+  if (ai) ai.placeholder = `Message ${AGENTS[name].name}…`;
   if (typeof refreshVoicePicker === 'function') refreshVoicePicker();   // picker shows this agent's voice
   if (!opts.silent) {
     const q = name === 'aegis'
@@ -2085,10 +2136,11 @@ if ('speechSynthesis' in window) {
 // Browsers only allow speech after the user has interacted with the page. Until then answers are typed,
 // and the Voice Terminal says how to turn the voice on; the first click / key press unlocks it.
 VOICE.unlocked = false;
+try { if (localStorage.getItem('aegis-muted') === '1') setTimeout(() => toggleMute(), 0); } catch (e) {}
 function _voiceHint(show) {
   const st = document.getElementById('voiceStatus');
   if (!st) return;
-  if (show && !VOICE.unlocked) { st.textContent = '🔈 Click anywhere on the page to turn on the voice'; st.classList.add('voice-hint'); }
+  if (show && !VOICE.unlocked) { st.textContent = 'Click anywhere on the page to turn on the voice'; st.classList.add('voice-hint'); }
   else if (!show && st.classList.contains('voice-hint')) {
     st.classList.remove('voice-hint');
     st.textContent = 'Tap to speak with ' + ((typeof AGENTS !== 'undefined' && AGENTS[currentAgent]) ? AGENTS[currentAgent].name : 'AEGIS');
@@ -2214,11 +2266,6 @@ function stopVoice() {
 }
 
 function typeResponse(text, isLiveAnswer = false, onDone = null) {
-  // Scripted messages (protocol confirmations, alert read-outs) must not carry the previous "LIVE" tag
-  if (!isLiveAnswer) {
-    const label = document.querySelector('.response-label');
-    if (label && label.querySelector('.response-source')) label.textContent = 'AEGIS Response';
-  }
   stopVoice();
   document.querySelector('.voice-panel')?.classList.add('has-reply');
   const run = VOICE.run;
@@ -2227,7 +2274,8 @@ function typeResponse(text, isLiveAnswer = false, onDone = null) {
   VOICE.nextSpeaker = null;
   const sVoice = (VOICE.byAgent && VOICE.byAgent[speaker]) || VOICE.voice;
   const sRate = VOICE.rate * AGENT_VOICE[speaker].rate, sPitch = VOICE.pitch * AGENT_VOICE[speaker].pitch;
-  const el = document.getElementById('responseText');
+  const el = chatAgentBubble(speaker, isLiveAnswer ? VOICE.nextTag : null);
+  VOICE.nextTag = null;
   el.innerHTML = '';
   const cursor = document.createElement('span');
   cursor.className = 'typing-cursor';
@@ -2250,7 +2298,7 @@ function typeResponse(text, isLiveAnswer = false, onDone = null) {
     };
     step();
   };
-  if ((!('speechSynthesis' in window) && !ttsFor(speaker)) || !sentences.length) { typeRest(); return; }
+  if (VOICE.muted || (!('speechSynthesis' in window) && !ttsFor(speaker)) || !sentences.length) { typeRest(); return; }
 
   let idx = 0;
   const next = () => {
@@ -2356,62 +2404,14 @@ function speak(text) {
   ttsSayAll(text, 'aegis', { fallback: browser });
 }
 
-// Voice recognition
-function toggleListening() {
-  if (isListening) {
-    stopListening();
-  } else {
-    startListening();
-  }
-}
+// Voice input was removed: the agents are chatted with by typing. These stay as no-ops for old callers.
+function toggleListening() { document.getElementById('askInput')?.focus(); }
+function startListening() {}
+function stopListening() {}
 
-function startListening() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    typeResponse('Voice recognition not supported in this browser. Try Chrome.');
-    return;
-  }
-  
-  recognition = new SR();
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  
-  recognition.onstart = () => {
-    isListening = true;
-    document.getElementById('micBtn').classList.add('listening');
-    document.getElementById('micBtn').textContent = '🔴';
-    document.getElementById('micBtn').setAttribute('aria-pressed', 'true');
-    document.getElementById('micBtn').setAttribute('aria-label', 'Stop listening');
-    document.getElementById('voiceStatus').textContent = 'Listening...';
-    document.getElementById('voiceStatus').classList.add('listening');
-    announce('Listening for your voice command');
-  };
-  
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript.toLowerCase();
-    announce('You said: ' + transcript);
-    processCommand(transcript);
-  };
-  
-  recognition.onerror = recognition.onend = () => stopListening();
-  recognition.start();
-}
-
-function stopListening() {
-  isListening = false;
-  if (recognition) { try { recognition.stop(); } catch(e) {} }
-  document.getElementById('micBtn').classList.remove('listening');
-  document.getElementById('micBtn').textContent = '🎙️';
-  document.getElementById('micBtn').setAttribute('aria-pressed', 'false');
-  document.getElementById('micBtn').setAttribute('aria-label', 'Activate voice input');
-  document.getElementById('voiceStatus').textContent = 'Tap to speak with ' + AGENTS[currentAgent].name;
-  document.getElementById('voiceStatus').classList.remove('listening');
-}
-
-function processCommand(cmd) {
-  stopListening();
-  
-  cmd = (cmd || '').trim();
+function processCommand(raw) {
+  raw = (raw || '').trim();
+  const cmd = raw.toLowerCase();                   // routing on lower case, the question itself as typed
   // Wake word: "hey solaris, what's the dose?" → SOLARIS answers the rest.
   // A wake word on its own → that agent gives a live status report.
   const wake = cmd.match(/^(?:hey\s+|ok\s+)?(aegis|solaris|gene|pulse|mirror)\b[\s,.:!?-]*(.*)$/);
@@ -2419,7 +2419,7 @@ function processCommand(cmd) {
     const rest = wake[2].trim();
     if (rest.split(/\s+/).filter(Boolean).length >= 2) {
       selectAgent(wake[1], { silent: true });
-      askAgent(wake[1], rest);
+      askAgent(wake[1], raw.slice(raw.length - rest.length));
     } else {
       selectAgent(wake[1]);
     }
@@ -2436,10 +2436,10 @@ function processCommand(cmd) {
   if (agent !== currentAgent) {
     // AEGIS hands the question to the specialist, and takes the conversation back once it has answered
     selectAgent(agent, { silent: true });
-    askAgent(agent, cmd, undefined, { handBackTo: 'aegis' });
+    askAgent(agent, raw, undefined, { handBackTo: 'aegis' });
     return;
   }
-  askAgent(agent, cmd);
+  askAgent(agent, raw);
 }
 
 // After a routed answer has been spoken, return the conversation to AEGIS
@@ -2448,7 +2448,7 @@ function handBack(fromAgent, toAgent, seq) {
   if (seq !== _askSeq || currentAgent !== fromAgent || fromAgent === toAgent) return;
   selectAgent(toAgent, { silent: true });
   const status = document.getElementById('voiceStatus');
-  if (status) status.textContent = `${AGENTS[fromAgent].name} handed back to ${AGENTS[toAgent].name} · tap to speak`;
+  if (status) status.textContent = `${AGENTS[fromAgent].name} handed back to ${AGENTS[toAgent].name}`;
 }
 
 // Cascade animation
@@ -4526,7 +4526,8 @@ async function echoReply(promise) {
   try {
     const [d] = await Promise.all([promise, new Promise(res => setTimeout(res, 700))]);
     echoTyping(false);
-    echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
+    const eb = echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
+    if (eb && d.source === 'deepseek') { const t = document.createElement('span'); t.className = 'eb-src'; t.textContent = '🧠 DeepSeek'; t.title = 'Worded by DeepSeek, checked before it was shown'; eb.querySelector('.eb-who')?.appendChild(t); }
     if (d.alerted) echoBubble('note', `ECHO alerted ${d.alerted.name} · nothing from the chat was shared`);
     if (d.shared_with) echoBubble('note', `Shared with ${d.shared_with.name} · only that you'd like to talk`);
     echoSetMode(d.mode, d.level);
