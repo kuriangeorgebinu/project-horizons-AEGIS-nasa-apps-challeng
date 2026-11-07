@@ -101,6 +101,10 @@ jobs:
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || 'deepseek-flash' }}
         run: |
           SSH="ssh -i $HOME/.ssh/aegis -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@$IP"
+          # Neural voices: a Polly-only key kept in Parameter Store (optional; browser voices without it)
+          POLLY_ID=$(aws ssm get-parameter --name /aegis/polly/key-id --query Parameter.Value --output text 2>/dev/null || true)
+          POLLY_SECRET=$(aws ssm get-parameter --name /aegis/polly/secret --with-decryption --query Parameter.Value --output text 2>/dev/null || true)
+          if [ -n "$POLLY_SECRET" ]; then echo "::add-mask::$POLLY_SECRET"; fi
           git archive --format=tar.gz -o aegis.tgz HEAD
           scp -i ~/.ssh/aegis -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
               aegis.tgz deploy/remote-deploy.sh ubuntu@$IP:/tmp/
@@ -112,6 +116,14 @@ jobs:
             echo "AEGIS_CALLS=off"            # public site: never phone anyone
             echo "AEGIS_MISSION=mars_transit"
             echo "AEGIS_DB_PATH=/opt/aegis/shared/aegis.db"   # survives redeploys
+            if [ -n "$POLLY_ID" ] && [ -n "$POLLY_SECRET" ] && [ "$POLLY_ID" != "None" ]; then
+              echo "AWS_ACCESS_KEY_ID=${POLLY_ID}"          # Polly-only user: can do nothing but speak
+              echo "AWS_SECRET_ACCESS_KEY=${POLLY_SECRET}"
+              echo "AEGIS_TTS_REGION=${AWS_REGION}"
+              echo "AEGIS_TTS_CACHE=/opt/aegis/shared/tts_cache"
+            else
+              echo "AEGIS_TTS=off"
+            fi
           } | $SSH "sudo mkdir -p /opt/aegis/shared && sudo tee /opt/aegis/shared/.env >/dev/null && sudo chmod 600 /opt/aegis/shared/.env"
           $SSH "sudo bash /tmp/remote-deploy.sh /tmp/aegis.tgz ${GITHUB_SHA} ${HOST}"
 

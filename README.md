@@ -200,6 +200,9 @@ How it fits together:
   requirements, runs the backend under systemd, and serves only the public dashboard files.
 - **Public-site safety:** the phone alarm is always off (`AEGIS_CALLS=off`). DeepSeek is on only if the repository
   secret `DEEPSEEK_API_KEY` is set; without it AEGIS runs in rule-based mode.
+- **Natural voices:** if the Parameter Store entries `/aegis/polly/key-id` and `/aegis/polly/secret` exist (an IAM
+  user allowed only `polly:SynthesizeSpeech`), the deploy gives the server that key and the agents speak with Amazon
+  Polly's generative voices. Without them the dashboard uses the browser's built-in voices.
 
 Repository settings used: variable `AWS_ROLE_ARN` (and optionally `AWS_REGION`, default `us-east-1`), secret
 `DEEPSEEK_API_KEY` (optional).
@@ -225,6 +228,12 @@ AEGIS_ONCALL_NUMBER=          # the phone to ring (on a trial account it must be
 # AEGIS_CALL_COOLDOWN_MIN=10
 # AEGIS_CALL_MAX_PER_HOUR=4
 ```
+
+**Natural voices (Amazon Polly):** each agent has its own voice (AEGIS Ruth, SOLARIS Stephen, GENE Amy, PULSE
+Matthew, MIRROR Niamh, ECHO Danielle). The backend uses your normal AWS credentials (profile or
+`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`); audio is cached in `tts_cache/`. `AEGIS_TTS=off` turns it off, and
+`AEGIS_TTS_DAILY_CHARS` (default 200000) caps new speech per day. If Polly isn't available, the browser's voices are
+used. The voice menu in the Voice Terminal can switch any agent back to a browser voice.
 
 Without Twilio keys the alarm is logged ("would have called") instead of dialled. Test it with
 `POST /api/notify/test` in the API docs.

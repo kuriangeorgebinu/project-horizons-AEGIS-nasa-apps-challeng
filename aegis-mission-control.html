@@ -1858,6 +1858,8 @@ function bootSequence() {
 // ============================================
 let typingTimer = null;
 const VOICE = { voice: null, rate: 1.0, pitch: 1.0, run: 0, byAgent: {}, userChoice: {}, nextSpeaker: null };
+// Neural voices (Amazon Polly via /api/tts); declared early because the voice picker reads it at load
+const TTS = { on: false, voices: {}, current: null, cache: new Map(), fails: 0, MAX: 600 };
 const _VOICE_PREF = [/natural/i, /neural/i, /online/i, /google us english/i, /google uk english/i, /google/i,
                      /samantha|ava|allison|serena|karen|daniel|moira|tessa|evan|nathan/i,
                      /\bmark\b|zira/i];   // best of the built-in Windows voices (David sounds the most robotic)
@@ -1913,10 +1915,13 @@ function refreshVoicePicker() {
   const vs = englishVoices();
   const agent = (typeof currentAgent !== 'undefined' && AGENT_VOICE[currentAgent]) ? currentAgent : 'aegis';
   const mine = VOICE.byAgent && VOICE.byAgent[agent];
-  sel.innerHTML = vs.map((v, i) => `<option value="${i}">${_shortVoiceName(v)}${v === mine ? ' ★' : ''}</option>`).join('')
+  const neural = (TTS.on && TTS.voices[agent])
+    ? `<option value="neural">✨ ${TTS.voices[agent]} (natural)</option>` : '';
+  sel.innerHTML = neural + vs.map((v, i) => `<option value="${i}">${_shortVoiceName(v)}${v === mine ? ' ★' : ''}</option>`).join('')
     || '<option>Default voice</option>';
   const i = vs.indexOf(mine);
-  if (i >= 0) sel.value = String(i);
+  if (neural && ttsFor(agent)) sel.value = 'neural';
+  else if (i >= 0) sel.value = String(i);
   sel.title = `Voice for ${agent.toUpperCase()} (each agent has its own)`;
 }
 
@@ -1966,14 +1971,67 @@ function _unlockVoice() {
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, _unlockVoice, true));
 
 function chooseVoice(i) {
+  const agent = AGENT_VOICE[currentAgent] ? currentAgent : 'aegis';
+  if (i === 'neural') {                              // back to the natural (Polly) voice
+    const uc = { ...(VOICE.userChoice || {}) }; delete uc[agent]; VOICE.userChoice = uc;
+    assignAgentVoices(); refreshVoicePicker(); VOICE.nextSpeaker = agent;
+    typeResponse(`Hi, this is ${agent === 'aegis' ? 'AEGIS' : agent.toUpperCase()}. This is my natural voice.`);
+    return;
+  }
   const v = englishVoices()[Number(i)];
   if (!v) return;
-  const agent = AGENT_VOICE[currentAgent] ? currentAgent : 'aegis';
   VOICE.userChoice = { ...(VOICE.userChoice || {}), [agent]: v.name };
   assignAgentVoices();
   refreshVoicePicker();
   VOICE.nextSpeaker = agent;
   typeResponse(`Hi, this is ${agent === 'aegis' ? 'AEGIS' : agent.toUpperCase()}. This is my new voice.`);
+}
+
+// ── Neural voices: Amazon Polly through /api/tts (each agent its own voice) ───────────────────────
+// Used whenever the backend offers it; the browser's built-in voices stay as the fallback.
+fetch(AEGIS_API_ORIGIN + '/api/tts/status').then(r => r.ok ? r.json() : null).then(d => {
+  if (d && d.enabled) { TTS.on = true; TTS.voices = d.voices || {}; refreshVoicePicker(); }
+}).catch(() => {});
+function ttsFor(agent) { return TTS.on && !(VOICE.userChoice && VOICE.userChoice[agent]); }
+function ttsAudio(text, agent) {
+  const key = agent + '|' + text;
+  let a = TTS.cache.get(key);
+  if (!a) {
+    a = new Audio(AEGIS_API_ORIGIN + '/api/tts?agent=' + encodeURIComponent(agent) + '&text=' + encodeURIComponent(text));
+    a.preload = 'auto';
+    TTS.cache.set(key, a);
+    if (TTS.cache.size > 80) TTS.cache.delete(TTS.cache.keys().next().value);
+  }
+  return a;
+}
+function ttsFailed(text, agent) {
+  TTS.cache.delete(agent + '|' + text);
+  if (++TTS.fails >= 2) { TTS.on = false; refreshVoicePicker(); }
+}
+function ttsStop() {
+  const a = TTS.current; TTS.current = null;
+  if (a) { try { a.onended = a.onerror = a.onplaying = null; a.pause(); } catch (e) {} }
+}
+// Say several sentences in one agent's neural voice (no on-screen text). Calls fallback() if it can't.
+function ttsSayAll(text, agent, { onstart, onend, fallback } = {}) {
+  const parts = splitSentences(text).map(speechify).filter(Boolean);
+  if (!ttsFor(agent) || !parts.length || parts.some(p => p.length > TTS.MAX)) { fallback && fallback(); return; }
+  stopVoice();
+  const run = VOICE.run;
+  parts.forEach(p => ttsAudio(p, agent));            // fetch them all now so there are no gaps
+  let i = 0, first = true;
+  const step = () => {
+    if (run !== VOICE.run) return;
+    if (i >= parts.length) { onend && onend(); return; }
+    const p = parts[i], a = ttsAudio(p, agent);
+    a.onplaying = () => { if (first) { first = false; onstart && onstart(); } };
+    a.onended = () => { if (TTS.current === a) TTS.current = null; i++; step(); };
+    a.onerror = () => { ttsFailed(p, agent); onend && onend(); if (i === 0 && fallback) fallback(); };
+    TTS.current = a;
+    try { a.currentTime = 0; } catch (e) {}
+    a.play().catch(() => { onend && onend(); if (i === 0 && fallback) fallback(); });
+  };
+  step();
 }
 
 // Rewrite dashboard text the way a person would say it (the screen keeps the original text)
@@ -2012,6 +2070,7 @@ function splitSentences(text) {
 function stopVoice() {
   VOICE.run++;
   if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+  ttsStop();
   if ('speechSynthesis' in window) speechSynthesis.cancel();
 }
 
@@ -2051,7 +2110,7 @@ function typeResponse(text, isLiveAnswer = false, onDone = null) {
     };
     step();
   };
-  if (!('speechSynthesis' in window) || !sentences.length) { typeRest(); return; }
+  if ((!('speechSynthesis' in window) && !ttsFor(speaker)) || !sentences.length) { typeRest(); return; }
 
   let idx = 0;
   const next = () => {
@@ -2065,6 +2124,39 @@ function typeResponse(text, isLiveAnswer = false, onDone = null) {
     const advance = () => { shown += disp + ' '; idx++; render(''); next(); };
     if (!spoken) { advance(); return; }
 
+    // Neural voice: words appear in step with the audio; prefetch the next sentence to avoid gaps
+    if (ttsFor(speaker) && spoken.length <= TTS.MAX) {
+      const a = ttsAudio(spoken, speaker);
+      const nxt = sentences[idx + 1] && speechify(sentences[idx + 1]);
+      if (nxt && nxt.length <= TTS.MAX) ttsAudio(nxt, speaker);
+      let tp = null, began = false;
+      const cleanup = () => { clearInterval(tp); a.onplaying = a.onended = a.onerror = null; };
+      a.onplaying = () => {
+        began = true; clearInterval(tp);
+        tp = setInterval(() => {
+          if (run !== VOICE.run) { clearInterval(tp); return; }
+          const d = a.duration;
+          if (d && isFinite(d)) showFrac(Math.min(1, a.currentTime / d));
+        }, 60);
+      };
+      a.onended = () => { cleanup(); if (TTS.current === a) TTS.current = null; if (run === VOICE.run) advance(); };
+      a.onerror = () => { cleanup(); ttsFailed(spoken, speaker); if (run === VOICE.run) browserSay(); };
+      TTS.current = a;
+      try { a.currentTime = 0; } catch (e) {}
+      a.play().catch(err => {
+        cleanup();
+        if (run !== VOICE.run) return;
+        if (err && err.name === 'NotAllowedError') typeRest(); else browserSay();   // no click yet: just type
+      });
+      setTimeout(() => {                             // voice service too slow: use the browser voice
+        if (run === VOICE.run && !began && TTS.current === a) { cleanup(); a.pause(); TTS.current = null; browserSay(); }
+      }, 8000);
+      return;
+    }
+    browserSay();
+
+    function browserSay() {
+    if (!('speechSynthesis' in window)) { typeRest(); return; }
     const u = new SpeechSynthesisUtterance(spoken);
     if (sVoice) { u.voice = sVoice; u.lang = sVoice.lang; }
     u.rate = sRate; u.pitch = sPitch;
@@ -2095,6 +2187,7 @@ function typeResponse(text, isLiveAnswer = false, onDone = null) {
     setTimeout(() => {                               // speech never started: fall back to typing
       if (run === VOICE.run && idx === myIdx && !started) { speechSynthesis.cancel(); VOICE.run++; const r = VOICE.run; typeRestFrom(r); }
     }, 2500);
+    }
   };
   // typeRest bound to a fresh run id after a silent speech failure
   const typeRestFrom = r => {
@@ -2113,11 +2206,14 @@ function typeResponse(text, isLiveAnswer = false, onDone = null) {
 
 // Speak without changing the response text (kept for callers that only want audio)
 function speak(text) {
-  if (!('speechSynthesis' in window)) return;
-  const u = new SpeechSynthesisUtterance(speechify(text));
-  if (VOICE.voice) { u.voice = VOICE.voice; u.lang = VOICE.voice.lang; }
-  u.rate = VOICE.rate; u.pitch = VOICE.pitch;
-  speechSynthesis.speak(u);
+  const browser = () => {
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(speechify(text));
+    if (VOICE.voice) { u.voice = VOICE.voice; u.lang = VOICE.voice.lang; }
+    u.rate = VOICE.rate; u.pitch = VOICE.pitch;
+    speechSynthesis.speak(u);
+  };
+  ttsSayAll(text, 'aegis', { fallback: browser });
 }
 
 // Voice recognition
@@ -4094,7 +4190,12 @@ function echoTyping(on) {
 }
 function echoSpeak(text) {
   const panel = document.getElementById('echo-panel');
-  if (!('speechSynthesis' in window) || !VOICE.unlocked) { if (panel) { panel.classList.add('speaking'); setTimeout(() => panel.classList.remove('speaking'), 2200); } return; }
+  if ((!('speechSynthesis' in window) && !TTS.on) || !VOICE.unlocked) { if (panel) { panel.classList.add('speaking'); setTimeout(() => panel.classList.remove('speaking'), 2200); } return; }
+  const on = () => panel && panel.classList.add('speaking'), off = () => panel && panel.classList.remove('speaking');
+  ttsSayAll(text, 'echo', { onstart: on, onend: off, fallback: () => echoSpeakBrowser(text, panel) });
+}
+function echoSpeakBrowser(text, panel) {
+  if (!('speechSynthesis' in window)) return;
   try {
     stopVoice();
     const u = new SpeechSynthesisUtterance(speechify(text));

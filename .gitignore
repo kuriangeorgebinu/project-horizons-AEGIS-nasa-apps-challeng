@@ -30,3 +30,6 @@ eval/splice.py
 infra/terraform/.terraform/
 infra/terraform/*.tfstate*
 infra/terraform/.terraform.lock.hcl
+
+# Cached neural-voice audio
+tts_cache/

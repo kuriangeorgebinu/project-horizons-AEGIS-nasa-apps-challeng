@@ -22,7 +22,7 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from models import (
     CrewMember, CrewState, Vitals, HealthStatus,
@@ -42,6 +42,7 @@ import aegis_llm
 import aegis_notify
 import aegis_mission
 import aegis_echo
+import aegis_tts
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -165,6 +166,27 @@ async def root():
         "status": "operational",
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Neural voices (Amazon Polly): the dashboard falls back to browser voices on 503
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/tts/status")
+async def tts_status():
+    return aegis_tts.status()
+
+
+@app.get("/api/tts")
+async def tts(text: str = Query(..., min_length=1, max_length=aegis_tts.MAX_CHARS), agent: str = "aegis"):
+    try:
+        audio = await asyncio.to_thread(aegis_tts.synthesize, text, agent)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    return Response(content=audio, media_type="audio/mpeg",
+                    headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/health")

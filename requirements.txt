@@ -19,3 +19,6 @@ python-dotenv>=1.0.0
 
 # HTTP client: DeepSeek reasoning layer and the Twilio phone alarm
 httpx>=0.26.0
+
+# Neural voices for the agents (Amazon Polly); optional, the dashboard falls back to browser voices
+boto3>=1.34.0
