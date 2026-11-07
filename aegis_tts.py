@@ -6,7 +6,7 @@ region does not offer it, the neural engine is used instead. Audio is cached in 
 sentence is only paid for once, and a character budget caps what a public visitor can spend.
 
 Settings (environment):
-  AEGIS_TTS          polly (default) | off
+  AEGIS_TTS          off (default) | polly
   AEGIS_TTS_REGION   AWS region for Polly (default: AWS_REGION or us-east-1)
   AEGIS_TTS_CACHE    folder for cached mp3s (default: ./tts_cache next to this file)
   AEGIS_TTS_DAILY_CHARS  new characters synthesised per day before falling back to browser voices (default 200000)
@@ -44,7 +44,7 @@ _budget = {"day": "", "used": 0}
 
 
 def _mode() -> str:
-    return (os.getenv("AEGIS_TTS") or "polly").strip().lower()
+    return (os.getenv("AEGIS_TTS") or "off").strip().lower()   # opt-in: set AEGIS_TTS=polly to use it
 
 
 def _cache_dir() -> Path:
