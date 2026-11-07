@@ -835,6 +835,7 @@ body.emergency.acked .confirm-btn{animation:none;}
 .shell{grid-template-areas:
   "header header header header header header header header header header header header"
   "mission mission mission mission mission mission mission mission mission mission mission mission"
+  "story story story story story story story story story story story story"
   "crew crew crew crew crew crew crew crew crew crew crew crew"
   "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
   "alert alert alert alert alert alert alert echo echo echo echo echo"
@@ -843,12 +844,13 @@ body.emergency.acked .confirm-btn{animation:none;}
 @media (max-width:1200px){.shell{grid-template-areas:
   "header header header header header header header header header header header header"
   "mission mission mission mission mission mission mission mission mission mission mission mission"
+  "story story story story story story story story story story story story"
   "crew crew crew crew crew crew crew crew crew crew crew crew"
   "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
   "alert alert alert alert alert alert echo echo echo echo echo echo"
   "voice voice voice voice voice voice voice voice voice voice voice voice"
   "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}}
-@media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr);grid-template-areas:"header" "mission" "crew" "graph" "alert" "echo" "vitals" "voice" "nasa";}}
+@media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr);grid-template-areas:"header" "mission" "story" "crew" "graph" "alert" "echo" "vitals" "voice" "nasa";}}
 .nav-tabs[hidden]{display:none!important;}
 
 /* Slim mission bar: day, a small Earth-Mars arc, the signal delay */
@@ -934,6 +936,17 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
 
 /* Roster page (kept for old links) no longer carries its own status words */
 .crew-card .status-badge{display:none;}
+
+/* Demo bar: in the page flow under the mission bar (sticky), so it never covers the status card */
+.shell>.story-bar{grid-area:story;position:sticky;top:8px;left:auto;bottom:auto;transform:none;width:auto;z-index:60;
+  display:grid;grid-template-columns:minmax(260px,auto) minmax(0,1fr) auto;align-items:center;gap:.35rem 1rem;padding:.55rem .9rem;}
+.shell>.story-bar[hidden]{display:none;}
+.echo-panel,.alert-panel{scroll-margin-top:96px;}
+.shell>.story-bar .story-text{min-height:0;font-size:.9rem;}
+.shell>.story-bar .story-foot{display:flex;align-items:center;gap:.6rem;}
+.shell>.story-bar .story-prog{flex:0 0 110px;}
+@media (max-width:1100px){.shell>.story-bar{grid-template-columns:minmax(0,1fr) auto;}.shell>.story-bar .story-chapters{grid-column:1/-1;}}
+@media (max-width:700px){.shell>.story-bar{grid-template-columns:minmax(0,1fr);}.shell>.story-bar .story-note{display:none;}}
 </style>
 </head>
 <body>
@@ -1008,6 +1021,17 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
       <span class="mb-em-call" id="mb-em-call"></span>
     </div>
   </div>
+
+<!-- One-click story demo: chapter captions + Stop -->
+  <div class="story-bar" id="story-bar" role="status" aria-live="polite" hidden>
+  <div class="story-chapters" id="story-chapters">
+    <span data-ch="1">1 · Predict</span><span data-ch="2">2 · Prevent</span><span data-ch="3">3 · Protect</span><span data-ch="4">4 · ECHO</span>
+  </div>
+  <div class="story-text" id="story-text">Starting the demo…</div>
+  <div class="story-foot"><div class="story-prog"><i id="story-prog"></i></div><span class="story-note">Demo run · simulated readings · calls logged, not dialled</span>
+    <a href="#nasa-panel" class="story-evidence" onclick="openEvidence(event)">Evidence &amp; data</a>
+    <button type="button" class="story-stop" id="story-stop" onclick="stopStory()">■ Stop</button></div>
+</div>
 
   <!-- Crew strip: who is aboard, two headline readings each, the same four ring states as the Cascade Map -->
   <div class="crew-strip" id="crew-strip" role="group" aria-label="Crew: choose who to show">
@@ -4435,7 +4459,8 @@ function echoToggleMoods() {   // always opens (a toggle closed it when support 
 }
 function focusEcho() {
   const p = document.getElementById('echo-panel'); if (!p) return;
-  p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // During the demo, line ECHO up just under the (sticky) demo bar so the bar never covers the conversation
+  p.scrollIntoView({ behavior: 'smooth', block: (typeof STORY !== 'undefined' && STORY.on) ? 'start' : 'center' });
   p.classList.remove('spotlight'); void p.offsetWidth; p.classList.add('spotlight');
   setTimeout(() => document.getElementById('echo-input')?.focus({ preventScroll: true }), 600);
 }
@@ -4572,7 +4597,7 @@ function _storyLocalReset() {
 }
 // Two cuts, both ending on ECHO's check-in: 'short' = the 2-minute judging cut (default), 'full' = about 3 minutes
 const STORY_CUTS = {
-  short: { est: 120, warn: 5000, prevSim: 6000, averted: 7000, emergency: 6000, shelterSim: 7000, settle: 1000, solaris: 4500, echo: 7000 },
+  short: { est: 125, warn: 5000, prevSim: 6000, averted: 12000, emergency: 6000, shelterSim: 7000, settle: 1000, solaris: 4500, echo: 7000 },
   full:  { est: 175, warn: 9000, prevSim: 9000, averted: 7000, emergency: 9000, shelterSim: 13000, settle: 2500, solaris: 6500, echo: 9000 },
 };
 async function runStory(cut) {
@@ -4665,17 +4690,6 @@ function stopStory() {
   const btn = document.getElementById('run-demo-btn'); if (btn) { btn.classList.remove('on'); btn.textContent = '▶ Run demo · 2 min'; }
 }
 </script>
-
-<!-- One-click story demo: chapter captions + Stop -->
-<div class="story-bar" id="story-bar" role="status" aria-live="polite" hidden>
-  <div class="story-chapters" id="story-chapters">
-    <span data-ch="1">1 · Predict</span><span data-ch="2">2 · Prevent</span><span data-ch="3">3 · Protect</span><span data-ch="4">4 · ECHO</span>
-  </div>
-  <div class="story-text" id="story-text">Starting the demo…</div>
-  <div class="story-foot"><div class="story-prog"><i id="story-prog"></i></div><span class="story-note">Demo run · simulated readings · calls logged, not dialled</span>
-    <a href="#nasa-panel" class="story-evidence" onclick="openEvidence(event)">Evidence &amp; data</a>
-    <button type="button" class="story-stop" id="story-stop" onclick="stopStory()">■ Stop</button></div>
-</div>
 
 <!-- Emergency edge glow + live call panel (AEGIS phoning the flight surgeon) -->
 <div class="emergency-edge" aria-hidden="true"></div>
