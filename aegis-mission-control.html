@@ -2836,7 +2836,8 @@ function renderLiveAlert(a) {
     // No live alert: show the PREDICT forecast if AEGIS sees a cascade coming, otherwise all clear
     LIVE_ALERT.id = null;
     if (!EMG.acked) _setEmergency(null);
-    if (PREDICT_STATE.prevented) renderPreventedPanel(PREDICT_STATE.preventedEntry);
+    const pvNow = PREDICT_STATE.prevented;
+    if (pvNow && !(pvNow.avertedAt && PREDICT_STATE.preventedEntry && !sysAllOk(PREDICT_STATE.preventedEntry))) renderPreventedPanel(PREDICT_STATE.preventedEntry);
     else renderPredictPanel(PREDICT_STATE.top);
     return;
   }
@@ -3847,7 +3848,9 @@ async function refreshPredict() {
       PREDICT_STATE.preventedEntry = e || null;
       const inRange = e && e.out_now.length === 0 && !e.upcoming.length && sysAllOk(e) && Date.now() - pv.at > 20000;
       // After "avoided", a new strain (e.g. the solar storm) is a new event: drop the old outcome instead of showing it
-      if (pv.avertedAt && e && !sysAllOk(e)) { PREDICT_STATE.prevented = null; PREDICT_STATE.preventedEntry = null; }
+      // (only a real new event ends it: a system out of range, like the storm; a brief amber flicker while readings settle
+      //  just shows the live picture for a moment and the outcome comes back)
+      if (pv.avertedAt && e && Object.values(sysStates(e)).includes('out')) { PREDICT_STATE.prevented = null; PREDICT_STATE.preventedEntry = null; }
       if (inRange && !pv.avertedAt) {
         pv.avertedAt = Date.now();
         if (typeof playTone === 'function') { playTone(523, 0.12); setTimeout(() => playTone(659, 0.12), 150); setTimeout(() => playTone(784, 0.2), 300); }
@@ -3865,7 +3868,8 @@ async function refreshPredict() {
     syncVitalsToMap(mine);
     renderCrewStrip();
     if (!LIVE_ALERT.id && Date.now() >= LIVE_ALERT.pauseUntil) {
-      if (PREDICT_STATE.prevented) renderPreventedPanel(PREDICT_STATE.preventedEntry);
+      const pvNow = PREDICT_STATE.prevented;
+      if (pvNow && !(pvNow.avertedAt && PREDICT_STATE.preventedEntry && !sysAllOk(PREDICT_STATE.preventedEntry))) renderPreventedPanel(PREDICT_STATE.preventedEntry);
       else renderPredictPanel(PREDICT_STATE.top);
     }
     if (CM_DETAIL.agent) renderNodeDetail();
