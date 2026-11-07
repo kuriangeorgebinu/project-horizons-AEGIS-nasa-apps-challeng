@@ -407,6 +407,13 @@ body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60
 .insight-entry:last-child{border-bottom:none;}
 .insight-time{font-size:.7rem;color:var(--muted);margin-bottom:.25rem;}
 .insight-action{color:var(--text);}
+.insights-intro{grid-column:1/-1;font-size:.85rem;color:var(--muted);}
+.insight-empty{font-size:.82rem;color:var(--muted);padding:.6rem 0;}
+.insight-entry.sev-critical .insight-action{color:var(--red);font-weight:600;}
+.insight-entry.sev-warning .insight-action,.insight-entry.sev-high .insight-action{color:var(--orange);font-weight:600;}
+.insight-status.busy{background:rgba(243,192,79,.15);color:var(--yellow);}
+.insight-status.alerting{background:rgba(255,92,92,.15);color:var(--red);}
+.insight-log{max-height:260px;}
 .insight-reasoning{color:var(--muted);font-style:italic;margin-top:.25rem;padding-left:.75rem;border-left:2px solid var(--border);}
 
 .whatif-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(8px);}
@@ -593,6 +600,9 @@ body{background:radial-gradient(1200px 700px at 78% -10%,rgba(60,110,200,.16),tr
 .theme-toggle{border-radius:999px;}
 #api-status{font-family:var(--font-num);letter-spacing:.08em;}
 
+.ai-mode{font-family:var(--font-num);font-size:.66rem;letter-spacing:.08em;padding:.25rem .55rem;border-radius:12px;cursor:help;
+  border:1px solid var(--border);color:var(--muted);white-space:nowrap;}
+.ai-mode.on{border-color:rgba(182,167,255,.5);color:var(--gene);}
 /* ── Hero mission header: the Mars transit ── */
 .mission-bar{padding:.75rem 1.2rem;min-height:132px;overflow:hidden;}
 .mb-normal.hero{display:grid;grid-template-columns:minmax(160px,210px) minmax(0,1fr) minmax(220px,270px);align-items:center;gap:1.2rem;flex-wrap:nowrap;}
@@ -716,6 +726,7 @@ body.emergency.acked .confirm-btn{animation:none;}
 [data-theme="light"] .echo-chat{background:#f6f8fb;}
 .eb{max-width:88%;padding:.5rem .75rem;border-radius:14px;font-size:.86rem;line-height:1.45;animation:eb-in .35s ease-out;}
 @keyframes eb-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.eb{color:var(--text);}
 .eb.echo{align-self:flex-start;background:rgba(255,176,133,.13);border:1px solid rgba(255,176,133,.28);border-bottom-left-radius:4px;}
 .eb.crew{align-self:flex-end;background:rgba(92,180,255,.15);border:1px solid rgba(92,180,255,.32);border-bottom-right-radius:4px;}
 .eb.note{align-self:center;max-width:100%;font-size:.72rem;color:var(--muted);background:none;border:1px dashed var(--border);border-radius:999px;padding:.2rem .7rem;}
@@ -844,6 +855,7 @@ body.emergency.acked .confirm-btn{animation:none;}
     </nav>
     <div class="mission-day">Day <span id="mission-day-num">54</span></div>
     <span id="api-status" style="font-size:.7rem;padding:.25rem .5rem;border-radius:12px;background:rgba(128,128,128,.2);cursor:help;" title="Backend connection status">🔴 Offline</span>
+    <span id="ai-mode" class="ai-mode" hidden title="">AI …</span>
     <button class="run-demo-btn" id="run-demo-btn" onclick="runStory(event.shiftKey ? 'full' : 'short')" title="The 2-minute judging cut: predict, prevent, protect, and ECHO's check-in. Shift+click for the full 3-minute version. Phone calls are logged, never dialled.">▶ Run demo · 2 min</button>
     <button class="whatif-btn" onclick="openWhatIf()" aria-label="Open the What-If simulator" title="What-If simulator: try hypothetical readings for the selected crew member and see how the agents would judge them. Nothing is saved.">
       <span class="icon">🔮</span> What-If
@@ -884,7 +896,7 @@ body.emergency.acked .confirm-btn{animation:none;}
       </svg>
       <div class="hero-col hero-right">
         <div class="hero-kicker">Signal to Earth · one way</div>
-        <div class="hero-big hero-delay mb-delay" id="mb-delay"><span id="mb-oneway">--</span></div>
+        <div class="hero-big hero-delay mb-delay" id="mb-delay"><span id="mb-oneway">…</span></div>
         <div class="hero-sub"><span id="mb-later"></span></div>
         <span class="mb-pill" title="The rules that raise alerts and choose protocols run on board. The DeepSeek explanations come from a cloud service, which on a real mission would sit on the ground behind this delay.">Rules decide on board · AI explains from the ground</span>
       </div>
@@ -960,7 +972,7 @@ body.emergency.acked .confirm-btn{animation:none;}
         <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
         <circle class="cm-core" r="37"/>
         <text class="cm-icon" y="-13" text-anchor="middle">☀</text>
-        <text class="cm-val" id="cm-val-solaris" y="9" text-anchor="middle">--</text>
+        <text class="cm-val" id="cm-val-solaris" y="9" text-anchor="middle">…</text>
         <text class="cm-unit" id="cm-unit-solaris" y="22" text-anchor="middle"></text>
         <text class="cm-name" y="63" text-anchor="middle">SOLARIS</text>
         <text class="cm-state" id="cm-state-solaris" y="77" text-anchor="middle">steady</text>
@@ -973,7 +985,7 @@ body.emergency.acked .confirm-btn{animation:none;}
         <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
         <circle class="cm-core" r="37"/>
         <text class="cm-icon" y="-13" text-anchor="middle">🧬</text>
-        <text class="cm-val" id="cm-val-gene" y="9" text-anchor="middle">--</text>
+        <text class="cm-val" id="cm-val-gene" y="9" text-anchor="middle">…</text>
         <text class="cm-unit" id="cm-unit-gene" y="22" text-anchor="middle"></text>
         <text class="cm-name" y="63" text-anchor="middle">GENE</text>
         <text class="cm-state" id="cm-state-gene" y="77" text-anchor="middle">steady</text>
@@ -986,7 +998,7 @@ body.emergency.acked .confirm-btn{animation:none;}
         <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
         <circle class="cm-core" r="37"/>
         <text class="cm-icon" y="-13" text-anchor="middle">💓</text>
-        <text class="cm-val" id="cm-val-pulse" y="9" text-anchor="middle">--</text>
+        <text class="cm-val" id="cm-val-pulse" y="9" text-anchor="middle">…</text>
         <text class="cm-unit" id="cm-unit-pulse" y="22" text-anchor="middle"></text>
         <text class="cm-name" y="63" text-anchor="middle">PULSE</text>
         <text class="cm-state" id="cm-state-pulse" y="77" text-anchor="middle">steady</text>
@@ -999,7 +1011,7 @@ body.emergency.acked .confirm-btn{animation:none;}
         <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
         <circle class="cm-core" r="37"/>
         <text class="cm-icon" y="-13" text-anchor="middle">🌙</text>
-        <text class="cm-val" id="cm-val-mirror" y="9" text-anchor="middle">--</text>
+        <text class="cm-val" id="cm-val-mirror" y="9" text-anchor="middle">…</text>
         <text class="cm-unit" id="cm-unit-mirror" y="22" text-anchor="middle"></text>
         <text class="cm-name" y="63" text-anchor="middle">MIRROR</text>
         <text class="cm-state" id="cm-state-mirror" y="77" text-anchor="middle">steady</text>
@@ -1016,46 +1028,46 @@ body.emergency.acked .confirm-btn{animation:none;}
 
     <div class="vital-row" data-metric="heart_rate" onclick="openTrend('heart_rate')">
       <div class="vital-label">Heart<span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span><span class="src-tag sim" title="Simulated heart-rate feed (wearable ECG / chest strap on a real mission)">SIM</span></div>
-      <div class="vital-value" style="color:var(--yellow)" id="hr-value">68</div>
+      <div class="vital-value" style="color:var(--muted)" id="hr-value">…</div>
       <svg id="hr-sparkline" width="50" height="24" style="margin:0 8px;cursor:pointer;" onclick="event.stopPropagation();openHRGraph()" role="button" aria-label="Click to expand heart rate graph" tabindex="0" onkeydown="if(event.key==='Enter')openHRGraph()"><polyline id="spark-line" fill="none" stroke="var(--yellow)" stroke-width="1.5" points="0,12 10,14 20,10 30,16 40,12 50,8"/></svg>
-      <div class="vital-bar"><div class="vital-fill" id="hr-fill" style="width:68%;background:var(--yellow)"></div></div>
-      <div class="vital-status" style="color:var(--yellow)" id="hr-status">↑ Elevated</div>
+      <div class="vital-bar"><div class="vital-fill" id="hr-fill" style="width:0%;background:var(--green)"></div></div>
+      <div class="vital-status" style="color:var(--muted)" id="hr-status">Connecting…</div>
       <span class="trend-chip" id="trend-heart_rate" hidden></span>
     </div>
     
     <div class="vital-row" data-metric="spo2" onclick="openTrend('spo2')">
       <div class="vital-label">SpO₂<span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span><span class="src-tag sim" title="Simulated pulse-oximeter feed">SIM</span></div>
-      <div class="vital-value" style="color:var(--green)" id="spo2-value">97</div>
-      <div class="vital-bar"><div class="vital-fill" id="spo2-fill" style="width:97%;background:var(--green)"></div></div>
-      <div class="vital-status" style="color:var(--green)" id="spo2-status">Normal</div>
+      <div class="vital-value" style="color:var(--muted)" id="spo2-value">…</div>
+      <div class="vital-bar"><div class="vital-fill" id="spo2-fill" style="width:0%;background:var(--green)"></div></div>
+      <div class="vital-status" style="color:var(--muted)" id="spo2-status">Connecting…</div>
       <span class="trend-chip" id="trend-spo2" hidden></span>
     </div>
     
     <div class="vital-row" id="il6-row" data-metric="il6" onclick="openTrend('il6')" title="GENE · IL-6 inflammatory marker (pg/mL)">
       <div class="vital-label">IL-6<span class="agent-tag gene" title="Monitored by GENE">GENE</span><span class="src-tag model" title="Modelled from stress and radiation; no in-flight blood sensor">MODELLED</span></div>
-      <div class="vital-value" style="color:var(--green)" id="il6-value">--</div>
+      <div class="vital-value" style="color:var(--muted)" id="il6-value">…</div>
       <div class="vital-bar"><div class="vital-fill" id="il6-fill" style="width:0%;background:var(--green)"></div></div>
-      <div class="vital-status" style="color:var(--green)" id="il6-status">--</div>
+      <div class="vital-status" style="color:var(--muted)" id="il6-status">Connecting…</div>
       <span class="trend-chip" id="trend-il6" hidden></span>
     </div>
     
     <div class="vital-row" data-metric="sleep_quality" onclick="openTrend('sleep_quality')">
       <div class="vital-label">Sleep<span class="agent-tag mirror" title="Monitored by MIRROR">MIRROR</span><span class="src-tag sim" title="Simulated sleep-quality index (0-100), e.g. from an actigraphy watch">SIM</span></div>
-      <div class="vital-value" style="color:var(--orange)" id="sleep-value">71</div>
-      <div class="vital-bar"><div class="vital-fill" id="sleep-fill" style="width:71%;background:var(--orange)"></div></div>
-      <div class="vital-status" style="color:var(--orange)" id="sleep-status">↓ Poor</div>
+      <div class="vital-value" style="color:var(--muted)" id="sleep-value">…</div>
+      <div class="vital-bar"><div class="vital-fill" id="sleep-fill" style="width:0%;background:var(--green)"></div></div>
+      <div class="vital-status" style="color:var(--muted)" id="sleep-status">Connecting…</div>
       <span class="trend-chip" id="trend-sleep_quality" hidden></span>
     </div>
     
     <div class="radiation-section">
       <div class="rad-header">
         <span><span class="rad-icon">☢</span> Radiation Exposure <span class="agent-tag solaris" title="Monitored by SOLARIS" style="margin-left:.4rem;">SOLARIS</span><span class="src-tag sim" title="Simulated personal dosimeter, centred on the Mars-transit background measured by Curiosity RAD (1.84 mSv/day)">SIM</span></span>
-        <span style="color:var(--green)" id="rad-value">-- / 600 mSv</span>
+        <span style="color:var(--muted)" id="rad-value">… / 600 mSv</span>
       </div>
       <div class="rad-bar"><div class="rad-fill" id="rad-fill"></div></div>
       <div class="rad-sub">
         <span>Mission total vs. career limit</span>
-        <span style="cursor:pointer" onclick="openTrend('radiation_dose_24h')" title="Click for the 24 h dose trend + forecast">Last 24 h: <strong id="rad24-value" style="color:var(--green)">--</strong> <span id="rad24-status"></span><span class="trend-chip inline" id="trend-radiation_dose_24h" hidden></span></span>
+        <span style="cursor:pointer" onclick="openTrend('radiation_dose_24h')" title="Click for the 24 h dose trend + forecast">Last 24 h: <strong id="rad24-value" style="color:var(--muted)">…</strong> <span id="rad24-status"></span><span class="trend-chip inline" id="trend-radiation_dose_24h" hidden></span></span>
       </div>
     </div>
   </div>
@@ -1282,101 +1294,101 @@ body.emergency.acked .confirm-btn{animation:none;}
   <div class="page" id="page-roster">
     <div class="roster-page">
       <div class="crew-card selected" onclick="selectCrew('chen')" tabindex="0">
-        <span class="status-badge elevated">Elevated</span>
+        <span class="status-badge nominal">…</span>
         <div class="crew-avatar">👩‍🚀</div>
         <div class="crew-name">Commander Sarah Chen</div>
         <div class="crew-role">Mission Commander · MD, PhD</div>
         <div class="crew-vitals">
           <div class="crew-vital">
             <div class="crew-vital-label">Heart Rate</div>
-            <div class="crew-vital-value" style="color:var(--yellow)">68 BPM</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">SpO₂</div>
-            <div class="crew-vital-value" style="color:var(--green)">97%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">Stress</div>
-            <div class="crew-vital-value" style="color:var(--yellow)">34%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">Sleep</div>
-            <div class="crew-vital-value" style="color:var(--orange)">71%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
         </div>
       </div>
 
       <div class="crew-card" onclick="selectCrew('kowalski')" tabindex="0">
-        <span class="status-badge nominal">Nominal</span>
+        <span class="status-badge nominal">…</span>
         <div class="crew-avatar">👩‍🚀</div>
         <div class="crew-name">Dr. Anna Kowalski</div>
         <div class="crew-role">Flight Engineer · PhD Aerospace</div>
         <div class="crew-vitals">
           <div class="crew-vital">
             <div class="crew-vital-label">Heart Rate</div>
-            <div class="crew-vital-value" style="color:var(--green)">62 BPM</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">SpO₂</div>
-            <div class="crew-vital-value" style="color:var(--green)">98%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">Stress</div>
-            <div class="crew-vital-value" style="color:var(--green)">22%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">Sleep</div>
-            <div class="crew-vital-value" style="color:var(--green)">89%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
         </div>
       </div>
 
       <div class="crew-card" onclick="selectCrew('nakamura')" tabindex="0">
-        <span class="status-badge alert">Alert</span>
+        <span class="status-badge nominal">…</span>
         <div class="crew-avatar">👨‍⚕️</div>
         <div class="crew-name">Dr. Kenji Nakamura</div>
         <div class="crew-role">Medical Officer · MD, Neurology</div>
         <div class="crew-vitals">
           <div class="crew-vital">
             <div class="crew-vital-label">Heart Rate</div>
-            <div class="crew-vital-value" style="color:var(--red)">88 BPM</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">SpO₂</div>
-            <div class="crew-vital-value" style="color:var(--yellow)">95%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">Stress</div>
-            <div class="crew-vital-value" style="color:var(--red)">67%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">Sleep</div>
-            <div class="crew-vital-value" style="color:var(--red)">48%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
         </div>
       </div>
 
       <div class="crew-card" onclick="selectCrew('okonkwo')" tabindex="0">
-        <span class="status-badge nominal">Nominal</span>
+        <span class="status-badge nominal">…</span>
         <div class="crew-avatar">👨‍🔬</div>
         <div class="crew-name">Dr. David Okonkwo</div>
         <div class="crew-role">Science Officer · PhD Geology</div>
         <div class="crew-vitals">
           <div class="crew-vital">
             <div class="crew-vital-label">Heart Rate</div>
-            <div class="crew-vital-value" style="color:var(--green)">58 BPM</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">SpO₂</div>
-            <div class="crew-vital-value" style="color:var(--green)">99%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">Stress</div>
-            <div class="crew-vital-value" style="color:var(--green)">18%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
           <div class="crew-vital">
             <div class="crew-vital-label">Sleep</div>
-            <div class="crew-vital-value" style="color:var(--green)">92%</div>
+            <div class="crew-vital-value" style="color:var(--muted)">…</div>
           </div>
         </div>
       </div>
@@ -1385,117 +1397,75 @@ body.emergency.acked .confirm-btn{animation:none;}
 
   <!-- Agent Insights Page -->
   <div class="page" id="page-insights">
-    <div class="insights-page">
+    <div class="insights-page" id="insights-page">
+      <div class="insights-intro">Live activity from each agent, newest first: the alerts it raised, what it analysed and the questions it answered. <span id="insights-updated"></span></div>
       <div class="insight-card" style="--node-color:var(--aegis)">
         <div class="insight-header">
           <div class="insight-avatar" style="border-color:var(--aegis)">◈</div>
           <div>
             <div class="insight-agent-name" style="color:var(--aegis)">AEGIS</div>
-            <div class="insight-agent-role">Chief Medical Coordinator</div>
+            <div class="insight-agent-role">Coordinator · combines the four specialists</div>
           </div>
-          <span class="insight-status">Active</span>
+          <span class="insight-status" id="ins-status-aegis">…</span>
         </div>
-        <div class="insight-log">
-          <div class="insight-entry">
-            <div class="insight-time">14:32:05 UTC</div>
-            <div class="insight-action">Initiated CASCADE ALERT for Cmdr. Chen</div>
-            <div class="insight-reasoning">4-agent convergence detected: Elevated HR + Rising IL-6 + Poor Sleep + Radiation Exposure pattern matches immune stress response profile</div>
-          </div>
-          <div class="insight-entry">
-            <div class="insight-time">14:30:22 UTC</div>
-            <div class="insight-action">Requested consultation from MIRROR</div>
-            <div class="insight-reasoning">Physiological anomalies may have psychological component - need behavioral assessment</div>
-          </div>
-          <div class="insight-entry">
-            <div class="insight-time">14:28:15 UTC</div>
-            <div class="insight-action">Elevated monitoring frequency for Crew</div>
-            <div class="insight-reasoning">Solar storm approaching - preemptive measure to catch early stress indicators</div>
-          </div>
-        </div>
+        <div class="insight-log" id="ins-log-aegis"><div class="insight-empty">Loading live activity…</div></div>
       </div>
-
       <div class="insight-card" style="--node-color:var(--pulse)">
         <div class="insight-header">
           <div class="insight-avatar" style="border-color:var(--pulse)">💓</div>
           <div>
             <div class="insight-agent-name" style="color:var(--pulse)">PULSE</div>
-            <div class="insight-agent-role">Physiological Monitor</div>
+            <div class="insight-agent-role">Heart rate and blood oxygen</div>
           </div>
-          <span class="insight-status" style="background:rgba(200,180,90,.15);color:var(--yellow)">Monitoring</span>
+          <span class="insight-status" id="ins-status-pulse">…</span>
         </div>
-        <div class="insight-log">
-          <div class="insight-entry">
-            <div class="insight-time">14:31:45 UTC</div>
-            <div class="insight-action">Heart-rate trend flagged for Cmdr. Chen</div>
-            <div class="insight-reasoning">Resting heart rate rising steadily for 15+ minutes while SpO₂ holds at 97% - forecast to cross the 100 BPM threshold if the trend continues</div>
-          </div>
-          <div class="insight-entry">
-            <div class="insight-time">14:25:00 UTC</div>
-            <div class="insight-action">Detected elevated resting HR</div>
-            <div class="insight-reasoning">Baseline HR typically 62 BPM; current 68 BPM sustained - not exercise-related</div>
-          </div>
-          <div class="insight-entry">
-            <div class="insight-time">08:00:00 UTC</div>
-            <div class="insight-action">Sleep quality analysis complete</div>
-            <div class="insight-reasoning">71% sleep efficiency with fragmented REM cycles - recommend sleep protocol adjustment</div>
-          </div>
-        </div>
+        <div class="insight-log" id="ins-log-pulse"><div class="insight-empty">Loading live activity…</div></div>
       </div>
-
+      <div class="insight-card" style="--node-color:var(--gene)">
+        <div class="insight-header">
+          <div class="insight-avatar" style="border-color:var(--gene)">🧬</div>
+          <div>
+            <div class="insight-agent-name" style="color:var(--gene)">GENE</div>
+            <div class="insight-agent-role">Inflammation (IL-6, modelled)</div>
+          </div>
+          <span class="insight-status" id="ins-status-gene">…</span>
+        </div>
+        <div class="insight-log" id="ins-log-gene"><div class="insight-empty">Loading live activity…</div></div>
+      </div>
       <div class="insight-card" style="--node-color:var(--solaris)">
         <div class="insight-header">
           <div class="insight-avatar" style="border-color:var(--solaris)">☀</div>
           <div>
             <div class="insight-agent-name" style="color:var(--solaris)">SOLARIS</div>
-            <div class="insight-agent-role">Space Weather Analyst</div>
+            <div class="insight-agent-role">Radiation and space weather</div>
           </div>
-          <span class="insight-status" style="background:rgba(200,106,106,.15);color:var(--red)">Alert</span>
+          <span class="insight-status" id="ins-status-solaris">…</span>
         </div>
-        <div class="insight-log">
-          <div class="insight-entry">
-            <div class="insight-time">14:00:00 UTC</div>
-            <div class="insight-action">Solar proton event detected</div>
-            <div class="insight-reasoning">NOAA/SWPC reports M2.3 flare - particle flux elevated 40% above baseline for next 8 hours</div>
-          </div>
-          <div class="insight-entry">
-            <div class="insight-time">13:45:22 UTC</div>
-            <div class="insight-action">Updated radiation forecast</div>
-            <div class="insight-reasoning">Cumulative exposure on track to reach 150 mSv by Day 60 - within career limits but warrants monitoring</div>
-          </div>
-          <div class="insight-entry">
-            <div class="insight-time">06:00:00 UTC</div>
-            <div class="insight-action">Recommended EVA postponement</div>
-            <div class="insight-reasoning">Forecasted SPE would exceed single-event limit during planned 4-hour EVA window</div>
-          </div>
-        </div>
+        <div class="insight-log" id="ins-log-solaris"><div class="insight-empty">Loading live activity…</div></div>
       </div>
-
       <div class="insight-card" style="--node-color:var(--mirror)">
         <div class="insight-header">
-          <div class="insight-avatar" style="border-color:var(--mirror)">🪞</div>
+          <div class="insight-avatar" style="border-color:var(--mirror)">🌙</div>
           <div>
             <div class="insight-agent-name" style="color:var(--mirror)">MIRROR</div>
-            <div class="insight-agent-role">Behavioral Health Analyst</div>
+            <div class="insight-agent-role">Sleep and behavioural health</div>
           </div>
-          <span class="insight-status">Active</span>
+          <span class="insight-status" id="ins-status-mirror">…</span>
         </div>
-        <div class="insight-log">
-          <div class="insight-entry">
-            <div class="insight-time">14:31:00 UTC</div>
-            <div class="insight-action">Behavioral pattern analysis</div>
-            <div class="insight-reasoning">Communication frequency down 23% from baseline - possible early indicator of withdrawal</div>
+        <div class="insight-log" id="ins-log-mirror"><div class="insight-empty">Loading live activity…</div></div>
+      </div>
+      <div class="insight-card" style="--node-color:var(--echo)">
+        <div class="insight-header">
+          <div class="insight-avatar" style="border-color:var(--echo)">🙂</div>
+          <div>
+            <div class="insight-agent-name" style="color:var(--echo)">ECHO</div>
+            <div class="insight-agent-role">Crew companion · private by default</div>
           </div>
-          <div class="insight-entry">
-            <div class="insight-time">12:00:00 UTC</div>
-            <div class="insight-action">Cognitive assessment scheduled</div>
-            <div class="insight-reasoning">Routine weekly check - focus metrics trending 14% below optimal for Cmdr. Chen</div>
-          </div>
-          <div class="insight-entry">
-            <div class="insight-time">09:30:00 UTC</div>
-            <div class="insight-action">Crew morale index updated</div>
-            <div class="insight-reasoning">Overall crew morale at 78% - slight decline attributed to mission day 50+ milestone</div>
-          </div>
+          <span class="insight-status">Private</span>
         </div>
+        <div class="insight-log"><div class="insight-entry"><div class="insight-action">ECHO's conversations never appear here.</div>
+          <div class="insight-reasoning">Check-ins and chats stay with the crew member. The only things ever logged are that someone chose to share, or that ECHO alerted the medical officer about a risk of self-harm.</div></div>
+          <div id="ins-log-echo"></div></div>
       </div>
     </div>
   </div><!-- End Agent Insights Page -->
@@ -1517,6 +1487,89 @@ function toggleTheme() {
   }
 }
 
+
+// ============================================
+// AGENT INSIGHTS: live feed from the backend (alerts + agent events), newest first. No sample data.
+// ============================================
+const INS_AGENTS = ['aegis', 'pulse', 'gene', 'solaris', 'mirror'];
+function _insAgent(text, fallback) {
+  // Agent names are written in capitals; whole words only ("generated" is not GENE)
+  const m = String(text || '').match(/\b(SOLARIS|PULSE|GENE|MIRROR|ECHO)\b/);
+  return m ? m[1].toLowerCase() : (fallback || 'aegis');
+}
+function _insTime(ts) {
+  const t = _parseUtc(ts); if (!isFinite(t)) return '';
+  const ago = Math.max(0, Math.round((Date.now() - t) / 60000));
+  return `${new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · ${ago < 1 ? 'just now' : ago + ' min ago'}`;
+}
+const _insEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+async function refreshInsights() {
+  if (!document.getElementById('page-insights')?.classList.contains('active')) return;
+  const B = DASH_API.baseUrl;
+  try {
+    const [alerts, events] = await Promise.all([
+      fetch(`${B}/api/alerts?unacknowledged_only=false&limit=100`).then(r => r.json()),
+      fetch(`${B}/api/events?limit=200`).then(r => r.json()),
+    ]);
+    const items = { aegis: [], pulse: [], gene: [], solaris: [], mirror: [], echo: [] };
+    const open = { aegis: 0, pulse: 0, gene: 0, solaris: 0, mirror: 0 };
+    (alerts || []).forEach(a => {
+      const ag = _insAgent(String(a.source || '').toUpperCase(), 'aegis');
+      if (!items[ag]) return;
+      items[ag].push({ t: _parseUtc(a.timestamp), ts: a.timestamp, sev: a.severity,
+        action: `${a.acknowledged ? '' : '● '}Alert: ${a.title}`, why: a.message });
+      if (!a.acknowledged && open[ag] != null) open[ag]++;
+    });
+    (events || []).forEach(e => {
+      const msg = e.message || '';
+      if (/^(Demo reset|Story demo|AEGIS system initialized)/i.test(msg)) return;
+      const ag = /^ECHO/i.test(msg) ? 'echo' : _insAgent(msg, 'aegis');
+      if (!items[ag]) return;
+      const d = e.details || {};
+      const why = d.question ? `Question: "${d.question}"` + (d.source ? ` · answered by ${d.source === 'rules' ? 'the rules' : d.source}` : '')
+                : d.domains ? `Domains: ${d.domains.join(', ')}` : '';
+      items[ag].push({ t: _parseUtc(e.timestamp), ts: e.timestamp, sev: '', action: msg, why });
+    });
+    INS_AGENTS.concat(['echo']).forEach(ag => {
+      const log = document.getElementById(`ins-log-${ag}`); if (!log) return;
+      const list = items[ag].sort((x, y) => y.t - x.t).slice(0, 25);
+      log.innerHTML = list.length ? list.map(i => `<div class="insight-entry sev-${_insEsc(i.sev)}">
+          <div class="insight-time">${_insEsc(_insTime(i.ts))}</div>
+          <div class="insight-action">${_insEsc(i.action)}</div>
+          ${i.why ? `<div class="insight-reasoning">${_insEsc(i.why)}</div>` : ''}</div>`).join('')
+        : (ag === 'echo' ? '' : '<div class="insight-empty">Nothing yet. This agent is watching; its alerts and analyses will appear here.</div>');
+      const st = document.getElementById(`ins-status-${ag}`);
+      if (st) {
+        const busy = list.length && (Date.now() - list[0].t) < 120000;
+        st.textContent = open[ag] ? `${open[ag]} open alert${open[ag] > 1 ? 's' : ''}` : busy ? 'Active' : 'Monitoring';
+        st.className = 'insight-status' + (open[ag] ? ' alerting' : busy ? ' busy' : '');
+      }
+    });
+    const up = document.getElementById('insights-updated'); if (up) up.textContent = `Updated ${new Date().toLocaleTimeString()}.`;
+  } catch (e) {
+    INS_AGENTS.forEach(ag => { const log = document.getElementById(`ins-log-${ag}`); if (log && !log.querySelector('.insight-entry')) log.innerHTML = '<div class="insight-empty">Backend offline: no live activity to show.</div>'; });
+  }
+}
+setInterval(refreshInsights, 5000);
+
+
+// Honesty chip: is DeepSeek wording the explanations right now, or are they written by the rules?
+async function refreshAiMode() {
+  const el = document.getElementById('ai-mode'); if (!el) return;
+  try {
+    const d = await (await fetch(`${DASH_API.baseUrl}/api/llm/status`)).json();
+    el.hidden = false;
+    if (d.enabled) {
+      el.textContent = '🧠 AI: DeepSeek'; el.className = 'ai-mode on';
+      el.title = 'DeepSeek words the agents\' explanations, Voice Terminal answers and ordinary ECHO chat. The rules still decide every alert and protocol, and every AI reply is fact-checked before it is shown.';
+    } else {
+      el.textContent = '⚙ AI: rules only'; el.className = 'ai-mode';
+      el.title = 'The AI layer (DeepSeek) is off on this server. Every alert, protocol and recommendation still comes from the agents\' rules; explanations, Voice Terminal answers and ECHO replies are written by the rules (scripted), not by an AI model.';
+    }
+  } catch (e) { el.hidden = true; }
+}
+setTimeout(refreshAiMode, 0); setInterval(refreshAiMode, 60000);   // after DASH_API is defined
+
 // Page Navigation
 function switchPage(pageName) {
   // Hide all pages
@@ -1537,6 +1590,7 @@ function switchPage(pageName) {
   
   playTone(350, 0.1);
   announce(pageName.charAt(0).toUpperCase() + pageName.slice(1) + ' page');
+  if (pageName === 'insights') refreshInsights();
 }
 
 // H4: API configuration
@@ -1556,9 +1610,9 @@ const DASH_API = {
 
 // Crew Selection
 const CREW_DATA = {
-  chen: { name: 'Commander Sarah Chen', firstName: 'Commander Chen', hr: 68, spo2: 97, stress: 34, sleep: 71, status: 'elevated', greeting: 'Commander Chen selected. Her live readings are on the Cascade Map and in Live Vitals.' },
+  chen: { name: 'Commander Sarah Chen', firstName: 'Commander Chen', hr: 68, spo2: 97, stress: 34, sleep: 71, status: 'nominal', greeting: 'Commander Chen selected. Her live readings are on the Cascade Map and in Live Vitals.' },
   kowalski: { name: 'Dr. Anna Kowalski', firstName: 'Dr. Kowalski', hr: 62, spo2: 98, stress: 22, sleep: 89, status: 'nominal', greeting: 'Dr. Kowalski selected. Her live readings are on the Cascade Map and in Live Vitals.' },
-  nakamura: { name: 'Dr. Kenji Nakamura', firstName: 'Dr. Nakamura', hr: 88, spo2: 95, stress: 67, sleep: 48, status: 'alert', greeting: 'Dr. Nakamura selected. His live readings are on the Cascade Map and in Live Vitals.' },
+  nakamura: { name: 'Dr. Kenji Nakamura', firstName: 'Dr. Nakamura', hr: 88, spo2: 95, stress: 67, sleep: 48, status: 'nominal', greeting: 'Dr. Nakamura selected. His live readings are on the Cascade Map and in Live Vitals.' },
   okonkwo: { name: 'Dr. David Okonkwo', firstName: 'Dr. Okonkwo', hr: 58, spo2: 99, stress: 18, sleep: 92, status: 'nominal', greeting: 'Dr. Okonkwo selected. His live readings are on the Cascade Map and in Live Vitals.' }
 };
 
@@ -1582,7 +1636,8 @@ function selectCrew(crewId) {
   
   // Update vitals values (on mission page)
   const hrVal = document.getElementById('hr-value');
-  if (hrVal) hrVal.textContent = '--';      // live value arrives with the next update (no placeholder number)
+  ['hr', 'spo2', 'il6', 'sleep'].forEach(k => { const v = document.getElementById(`${k}-value`); if (v) { v.textContent = '…'; v.style.color = 'var(--muted)'; } });
+  fetchAndUpdateVitals();                    // the selected person's live readings, straight away
   
   playTone(400, 0.15);
   announce('Selected ' + crew.name);
@@ -2427,9 +2482,17 @@ async function fetchAndUpdateVitals() {
       if (sleepStatus) { sleepStatus.textContent = sleepLabel; sleepStatus.style.color = sleepColor; }
     }
   } catch (e) {
-    // Fallback to local animation if API unavailable
-    animateVitalsLocal();
+    // Backend unreachable: say so plainly instead of animating made-up numbers
+    showVitalsOffline();
   }
+}
+
+function showVitalsOffline() {
+  ['hr', 'spo2', 'il6', 'sleep'].forEach(k => {
+    const v = document.getElementById(`${k}-value`), st = document.getElementById(`${k}-status`);
+    if (v) { v.textContent = '—'; v.style.color = 'var(--muted)'; }
+    if (st) { st.textContent = 'Offline'; st.style.color = 'var(--muted)'; }
+  });
 }
 
 // Fallback local animation (original behavior)
@@ -2451,8 +2514,9 @@ function animateVitalsLocal() {
 
 // H4: Use API fetch instead of pure local animation
 setInterval(fetchAndUpdateVitals, 5000);
-// Also fetch immediately on load
-setTimeout(fetchAndUpdateVitals, 2000);
+// Also fetch immediately on load (and once more shortly after, in case the first request raced the page)
+fetchAndUpdateVitals();
+setTimeout(fetchAndUpdateVitals, 1500);
 
 // ============================================
 // E2E WIRING: live alerts, roster status, demo controls (Claude, Sep 28)
@@ -2645,15 +2709,16 @@ async function _renderCallLine(a) {
     el.className = 'alert-call ' + rec.status;
     el.textContent = rec.status === 'called' ? `📞 ${who} phoned the flight surgeon at ${t}`
       : rec.status === 'logged' ? `📞 ${who} would phone the flight surgeon now (phone not set up yet)`
-      : rec.status === 'skipped' ? `📞 Flight surgeon already called about this`
+      : rec.status === 'skipped' ? (/turned off/i.test(rec.detail || '') ? `📞 ${who} would phone the flight surgeon now (phone alarm is off on this public demo)` : `📞 Flight surgeon already called about this`)
       : `📞 Call to the flight surgeon failed: ${rec.detail}`;
     el.title = `What the call says: "${rec.message}"`;
   } catch (e) { /* notify endpoint unavailable */ }
 }
 
+// Same words as the Cascade Map and Crew at a glance, so one person never shows two different labels
 const STATUS_BADGE = {
-  nominal:  { text: 'Nominal',  cls: 'nominal'  },
-  caution:  { text: 'Elevated', cls: 'elevated' },
+  nominal:  { text: 'Steady',   cls: 'nominal'  },
+  caution:  { text: 'Watch',    cls: 'elevated' },
   warning:  { text: 'Warning',  cls: 'alert'    },
   critical: { text: 'Critical', cls: 'alert'    }
 };
@@ -2736,7 +2801,8 @@ if (new URLSearchParams(location.search).get('demo') === 'cascade') setTimeout((
 
 setInterval(refreshLiveAlerts, 5000);
 setInterval(refreshRosterStatus, 5000);
-setTimeout(() => { refreshLiveAlerts(); refreshRosterStatus(); }, 1500);
+refreshRosterStatus();
+setTimeout(() => { refreshLiveAlerts(); refreshRosterStatus(); }, 300);
 
 // Init
 bootSequence();
@@ -2801,11 +2867,27 @@ function renderAllClear() {
   const btn = document.getElementById('confirm-btn');
   if (!panel || !btn) return;
   panel.classList.remove('predict');
-  panel.style.borderColor = 'var(--green)';
-  icon.textContent = '✓';
-  title.textContent = 'All clear · no alerts';
-  title.style.color = 'var(--green)';
-  desc.textContent = "Nothing needs action right now. If anyone starts heading the wrong way, you'll see an early warning here first.";
+  // Never say "all clear" while the Cascade Map shows systems heading for their limits
+  const st = CM.prevStates || {};
+  const strained = Object.keys(st).filter(k => st[k] !== 'ok');
+  const who = (typeof _crewDisplayName === 'function') ? _crewDisplayName(DASH_API.selectedCrewId) : 'this crew member';
+  if (strained.length) {
+    const names = strained.map(k => k.toUpperCase()).join(', ');
+    panel.style.borderColor = 'var(--cm-amber)';
+    icon.textContent = '◔';
+    title.textContent = `No alerts yet · watching ${strained.length} system${strained.length > 1 ? 's' : ''}`;
+    title.style.color = 'var(--cm-amber)';
+    desc.textContent = `${names} ${strained.length > 1 ? 'are' : 'is'} heading toward ${strained.length > 1 ? 'their limits' : 'its limit'} for ${who}. ` +
+      (strained.some(k => st[k] === 'out') ? 'At least one is already out of range; the agents are confirming it on their next check. '
+                                              : 'Nothing has crossed yet. ') +
+      'If three systems are forecast to cross together, the early warning appears here.';
+  } else {
+    panel.style.borderColor = 'var(--green)';
+    icon.textContent = '✓';
+    title.textContent = 'All clear · no alerts';
+    title.style.color = 'var(--green)';
+    desc.textContent = "Nothing needs action right now. If anyone starts heading the wrong way, you'll see an early warning here first.";
+  }
   agentsEl.innerHTML = '';
   btn.style.display = 'none';
   _showPreventBtn(false);
@@ -3029,6 +3111,11 @@ function _parseUtc(ts) { return new Date(ts + (/[zZ]|[+-]\d\d:?\d\d$/.test(ts) ?
 function _setEmergency(e) {
   const body = document.body;
   if (!e) {
+    // An emergency just ended (readings recovered): ECHO checks in on that person. The story demo does its own.
+    if (EMG.level && !(typeof STORY !== 'undefined' && STORY.on) && typeof echoRefresh === 'function') {
+      const kind = EMG.level === 'protect' ? (EMG.protocol === 'SHELTER-1' ? 'shelter' : 'medical') : 'cascade';
+      setTimeout(() => { if (typeof ECHO !== 'undefined') ECHO.lastProactive = null; echoRefresh(kind); }, 1500);
+    }
     EMG.level = null; EMG.alertId = null; EMG.acked = false;
     body.classList.remove('emergency', 'cascade-alert', 'acked');
     const t = document.getElementById('alert-timer'); if (t) t.remove();
@@ -3145,7 +3232,7 @@ function _renderCallPanel(rec, others, to) {
   const proto = rec.reason === 'requested' ? 'requested from mission control' : (_CALL_PROTOCOL[plan] || plan || rec.reason);
   const title = document.getElementById('cp-title');
   title.textContent = rec.status === 'logged' ? 'SIM · AEGIS would call the flight surgeon'
-    : rec.status === 'skipped' ? 'Call held back (limit)'
+    : rec.status === 'skipped' ? (/turned off/i.test(rec.detail || '') ? 'Phone alarm off on this public demo · call logged' : 'Already called about this alert')
     : fail ? `Call to the flight surgeon: ${fail.toLowerCase()}`
     : step === 'done' ? 'Call complete: flight surgeon informed'
     : 'AEGIS is calling the flight surgeon';
@@ -3168,7 +3255,9 @@ function _renderCallPanel(rec, others, to) {
     document.getElementById('cp-transcript').textContent = '“' + CALLS.words.join(' ') + '”'; }
   if (rec.status === 'skipped') {
     const wait = rec.next_call_in_s ? ` Next call allowed in ${Math.max(1, Math.ceil(rec.next_call_in_s / 60))} min.` : '';
-    document.getElementById('cp-transcript').textContent = `Not called again: ${rec.detail || 'already called about this alert'}.${wait}`;
+    document.getElementById('cp-transcript').textContent = /turned off/i.test(rec.detail || '')
+      ? 'On a real mission AEGIS would phone the on-call flight surgeon now. Calling is switched off on this public demo, so the call is only logged.'
+      : `Not called again: ${rec.detail || 'already called about this alert'}.${wait}`;
   }
   const ago = Math.max(0, Math.round((Date.now() - _parseUtc(rec.at)) / 1000));
   const who = rec.source === 'AEGIS tool call' ? 'worded by AEGIS (DeepSeek tool call, fact-checked)' : 'rule-based wording';
@@ -3548,7 +3637,7 @@ async function drawTrend() {
 }
 
 setInterval(refreshPredict, 5000);
-setTimeout(refreshPredict, 2500);
+setTimeout(refreshPredict, 300);   // first screen fills straight away
 
 // Extended history for expanded view (last 20 readings)
 let hrHistoryExtended = [68, 67, 69, 66, 68, 70, 69, 71, 68, 67, 65, 68, 70, 72, 69, 67, 68, 66, 69, 68];
@@ -4042,7 +4131,11 @@ function echoSetMode(mode, level) {
   const feel = document.getElementById('echo-feel');
   if (feel && ECHO.mode === 'support') feel.classList.add('open');
 }
-function echoToggleMoods() { document.getElementById('echo-feel')?.classList.toggle('open'); }
+function echoToggleMoods() {   // always opens (a toggle closed it when support mode had already opened it)
+  const f = document.getElementById('echo-feel'); if (!f) return;
+  f.classList.add('open');
+  f.querySelector('.echo-moods button')?.focus({ preventScroll: true });
+}
 function focusEcho() {
   const p = document.getElementById('echo-panel'); if (!p) return;
   p.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -4171,6 +4264,7 @@ async function runStory(cut) {
   if (STORY.on) { stopStory(); return; }
   cut = STORY_CUTS[cut] ? cut : (new URLSearchParams(location.search).get('demo') === 'full' ? 'full' : 'short');
   const T = STORY_CUTS[cut]; STORY.est = T.est; STORY.cut = cut;
+  const _sb = document.getElementById('story-stop'); if (_sb) _sb.style.visibility = '';
   const run = ++STORY.run;
   STORY.on = true; STORY.t0 = Date.now(); STORY.allowEcho = false;
   const btn = document.getElementById('run-demo-btn'); if (btn) { btn.classList.add('on'); btn.textContent = '■ Stop demo'; }
@@ -4234,12 +4328,21 @@ async function runStory(cut) {
   if (btn) { btn.classList.remove('on'); btn.textContent = '▶ Run demo · 2 min'; }
 }
 function stopStory() {
-  if (!STORY.on) { document.getElementById('story-bar').hidden = true; return; }
+  const bar = document.getElementById('story-bar');
+  if (!STORY.on) { if (bar) bar.hidden = true; return; }
   STORY.on = false; STORY.run++; STORY.allowEcho = true;
-  closeSimModal();
-  fetch(`${DASH_API.baseUrl}/api/demo/story/stop`, { method: 'POST' }).catch(() => {});
-  storyCaption(1, 'Demo stopped. Everyone is back to normal readings.');
-  setTimeout(() => { if (!STORY.on) document.getElementById('story-bar').hidden = true; }, 2500);
+  closeSimModal(); closeCallPanel();
+  const stopBtn = document.getElementById('story-stop'); if (stopBtn) stopBtn.style.visibility = 'hidden';
+  storyCaption(1, 'Demo stopped. Resetting the ship to a clean start…');
+  // Stop the story AND reset, so nothing is left drifting after "stop"
+  fetch(`${DASH_API.baseUrl}/api/demo/story/stop`, { method: 'POST' })
+    .then(() => fetch(`${DASH_API.baseUrl}/api/demo/reset`, { method: 'POST' }))
+    .catch(() => {})
+    .finally(() => {
+      _storyLocalReset();
+      storyCaption(1, 'Demo stopped. The ship is back to a clean start.');
+      setTimeout(() => { if (!STORY.on && bar) { bar.hidden = true; if (stopBtn) stopBtn.style.visibility = ''; } }, 2500);
+    });
   const btn = document.getElementById('run-demo-btn'); if (btn) { btn.classList.remove('on'); btn.textContent = '▶ Run demo · 2 min'; }
 }
 </script>

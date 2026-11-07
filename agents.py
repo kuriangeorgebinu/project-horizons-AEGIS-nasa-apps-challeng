@@ -1379,7 +1379,8 @@ class AEGISAgent(BaseAgent):
                 answer = f"Here's what I'm seeing for the {role(member)}: " + "; ".join(
                     f.get("message", "") for f in findings[:3]) + "."
             else:
-                answer = f"Good news: everything I track for the {role(member)} looks normal right now."
+                answer = (f"Good news: everything I track for the {role(member)} looks normal right now. "
+                          + self._rules_readout(agent_name, member))
 
         self._log_analysis(f"Q&A answered by {agent_name} ({source}) for {member.id}",
                            {"question": question[:200], "source": source})
@@ -1395,6 +1396,25 @@ class AEGISAgent(BaseAgent):
             "latency_s": round(time.time() - t0, 2),
             **({"_context": prompt, "_first_check": first_check} if return_context else {}),
         }
+
+    def _rules_readout(self, agent_name: str, member) -> str:
+        """Rule-based answers quote the agent's own live readings (with units), not just "all normal"."""
+        v = member.vitals
+        if v is None:
+            return ""
+        th = aegis_mission.radiation_thresholds()
+        parts = []
+        if agent_name in ("SOLARIS", "AEGIS") and v.radiation_dose_24h is not None:
+            parts.append(f"Radiation: {v.radiation_dose_24h:.2f} mSv in the last 24 hours against a normal "
+                         f"{th['background']:.2f} mSv/day background, and {member.cumulative_radiation or 0:.0f} mSv "
+                         f"for the mission so far, out of the {aegis_mission.CAREER_LIMIT_MSV:.0f} mSv career limit.")
+        if agent_name in ("PULSE", "AEGIS"):
+            parts.append(f"Heart rate {v.heart_rate} bpm, blood oxygen {v.spo2:.0f} percent.")
+        if agent_name in ("MIRROR", "AEGIS") and v.sleep_quality is not None:
+            parts.append(f"Sleep score {v.sleep_quality:.0f} out of 100.")
+        if agent_name in ("GENE",):
+            parts.append("The modelled IL-6 inflammation marker is inside this person's own normal range.")
+        return " ".join(parts)
 
     # ── What-If simulator: real agent rules on hypothetical dashboard values (no DB writes) ──
     def what_if(self, values: dict, crew_id: Optional[str] = None, explain: bool = True) -> dict:

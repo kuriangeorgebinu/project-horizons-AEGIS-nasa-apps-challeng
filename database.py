@@ -556,7 +556,14 @@ def reset_demo_data() -> dict:
             cur.execute(f"SELECT COUNT(*) FROM {table}")
             removed[table] = cur.fetchone()[0]
             cur.execute(f"DELETE FROM {table}")
-    init_default_crew()                     # back to the canonical crew, day 54, starting radiation dose
+    # A dose already received can't be undone: keep each person's mission total (never lower it on a reset)
+    received = {m.id: (m.cumulative_radiation or 0.0) for m in get_all_crew()}
+    init_default_crew()                     # back to the canonical crew, day 54, starting readings
+    with get_db() as conn:
+        cur = conn.cursor()
+        for crew_id, dose in received.items():
+            cur.execute("UPDATE crew_state SET cumulative_radiation = MAX(cumulative_radiation, ?) WHERE id = ?",
+                        (dose, crew_id))
     return removed
 
 

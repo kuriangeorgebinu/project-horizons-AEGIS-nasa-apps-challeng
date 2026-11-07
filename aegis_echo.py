@@ -151,6 +151,7 @@ def _set_support(crew_id: str, reason: str, level: str = "support") -> None:
     s = _st(crew_id)
     with _lock:
         s["support"] = {"reason": reason, "level": level, "since": _now()}
+        s["dismissed_until"] = 0.0          # a new reason to check in overrides an earlier "I'm okay"
 
 
 def _support_active(crew_id: str) -> Optional[dict]:
@@ -173,7 +174,9 @@ def status(crew_id: str, event: Optional[str] = None) -> dict:
     f = _facts(m)
     addr = _address(m)
     esc = escalation(crew_id)
-    emergency = _recent_emergency(crew_id)
+    # ECHO checks in after an emergency only when the dashboard reports that one has just ended (event=...).
+    # It doesn't infer it from old alerts, so a new visitor never lands in someone else's leftover support mode.
+    emergency = None
     if event in ("shelter", "medical", "cascade"):
         emergency = {"kind": event, "at": datetime.utcnow().isoformat(), "open": False}
     dismissed = s["dismissed_until"] > _now()

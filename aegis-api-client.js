@@ -381,12 +381,15 @@ const AEGIS_API = {
   },
   
   updateConnectionStatus(connected) {
+    // Only show Offline after two failed checks in a row: one slow request shouldn't flash "Offline"
+    if (!connected) { this._misses = (this._misses || 0) + 1; if (this._misses < 2) return; }
+    else this._misses = 0;
     const indicator = document.getElementById('api-status');
     if (indicator) {
       indicator.textContent = connected ? '🟢 Live' : '🔴 Offline';
       indicator.title = connected 
         ? 'Connected to AEGIS backend' 
-        : 'Backend not responding - using demo data';
+        : 'Backend not responding: readings are paused until it reconnects';
     }
   },
   
