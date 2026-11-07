@@ -214,6 +214,27 @@ Repository settings used: variable `AWS_ROLE_ARN` (and optionally `AWS_REGION`, 
 
 ---
 
+## Monitoring (Prometheus + Grafana)
+
+The AWS server also runs a small monitoring stack, viewable at **`https://<host>/grafana/`** (read-only for visitors;
+the dashboard "AEGIS · Backend & Model" opens by default).
+
+- **Backend metrics** (`aegis_metrics.py`, `GET /metrics`): HTTP requests, errors and latency per route; every DeepSeek
+  call by outcome (`ok`, `timeout`, `busy` for 503/429 "too busy", `http_error`, `empty`, `error`) and latency; how many
+  replies to the crew came from DeepSeek vs the rules (chat with the agents and ECHO); agent analysis passes and time
+  since the last one; open alerts, pending recommendations, crew status, demo scenario; phone alarm attempts.
+- **Prometheus** scrapes the backend and the server (node exporter) every 15 s, keeps 7 days, and evaluates alert rules
+  (`deploy/monitoring/aegis-alerts.yml`): backend down, DeepSeek failing / busy / slow, agents stalled, server errors,
+  low memory, disk almost full. Firing alerts show on the dashboard.
+- **Grafana** is provisioned from `deploy/monitoring/grafana/` (datasource + dashboard), served under `/grafana`.
+  Prometheus and `/metrics` are not public: they listen on the server only. The Grafana admin password is generated on the
+  server (`/opt/aegis/shared/grafana-admin-password`, root only).
+
+Everything is installed and updated by `deploy/remote-deploy.sh` on each deploy, so the one-button workflow sets it up.
+Locally, `http://127.0.0.1:8000/metrics` shows the raw metrics.
+
+---
+
 ## Configuration
 
 `.env` (never commit it; it is in `.gitignore`):

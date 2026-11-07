@@ -164,6 +164,11 @@ def call(message: str, key: str, reason: str = "alert", source: str = "rules") -
     with _lock:
         HISTORY.insert(0, rec)
         del HISTORY[30:]
+    try:
+        import aegis_metrics
+        aegis_metrics.phone_alarm(rec.get("status"))
+    except Exception:
+        pass
     if rec.get("call_sid"):
         threading.Thread(target=_track, args=(rec,), daemon=True, name="aegis-call-track").start()
     return rec

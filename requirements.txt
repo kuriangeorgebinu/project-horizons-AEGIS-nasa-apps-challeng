@@ -22,3 +22,6 @@ httpx>=0.26.0
 
 # Neural voices for the agents (Amazon Polly); optional, the dashboard falls back to browser voices
 boto3>=1.34.0
+
+# Prometheus metrics endpoint (/metrics) for the Grafana monitoring stack
+prometheus-client>=0.20.0

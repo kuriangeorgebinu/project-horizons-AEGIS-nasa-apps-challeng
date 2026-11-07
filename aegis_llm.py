@@ -98,6 +98,11 @@ def status() -> dict:
 
 
 def _record(ok: bool, latency: float, error: Optional[str] = None):
+    try:
+        import aegis_metrics
+        aegis_metrics.llm_call(ok, latency, error)
+    except Exception:
+        pass
     with _lock:
         _stats["calls"] += 1
         _stats["ok" if ok else "errors"] += 1

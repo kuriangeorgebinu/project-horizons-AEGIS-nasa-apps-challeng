@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
@@ -43,6 +43,8 @@ import aegis_notify
 import aegis_mission
 import aegis_echo
 import aegis_tts
+import aegis_metrics
+import time as _time
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -108,9 +110,12 @@ async def lifespan(app: FastAPI):
                 continue
             # Run on schedule, or immediately when a scenario starts (e.g. demo just started)
             if now - last_run >= interval or scenario != last_scenario:
+                t_a = _time.perf_counter()
                 try:
                     await asyncio.to_thread(analyze_all_crew)
+                    aegis_metrics.analysis(_time.perf_counter() - t_a, True)
                 except Exception as e:
+                    aegis_metrics.analysis(_time.perf_counter() - t_a, False)
                     print(f"Auto-analysis error: {e}")
                 last_run = loop.time()
                 last_scenario = scenario
@@ -157,6 +162,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Prometheus: request count/latency per route template (e.g. /api/crew/{crew_id}), not per raw URL
+@app.middleware("http")
+async def _metrics_middleware(request: Request, call_next):
+    t0 = _time.perf_counter()
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        return response
+    finally:
+        route = request.scope.get("route")
+        path = getattr(route, "path", None) or "unmatched"
+        if path != "/metrics":
+            aegis_metrics.http(request.method, path, status, _time.perf_counter() - t0)
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    """Prometheus scrape endpoint. Not routed by the public web server: only the Prometheus on the box reads it."""
+    body, ctype = await asyncio.to_thread(aegis_metrics.render)
+    return Response(content=body, media_type=ctype)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -340,7 +368,9 @@ async def ask_agent(req: AskRequest):
     agent = req.agent.strip().upper()
     if agent not in {"AEGIS", "SOLARIS", "GENE", "PULSE", "MIRROR"}:
         raise HTTPException(status_code=400, detail="agent must be AEGIS, SOLARIS, GENE, PULSE or MIRROR")
-    return await asyncio.to_thread(get_coordinator().answer_question, req.question.strip(), agent, req.crew_id)
+    result = await asyncio.to_thread(get_coordinator().answer_question, req.question.strip(), agent, req.crew_id)
+    aegis_metrics.answer("ask", (result or {}).get("source") if isinstance(result, dict) else None)
+    return result
 
 
 class WhatIfRequest(_BaseModel):
@@ -401,7 +431,9 @@ async def echo_checkin(crew_id: str, req: EchoCheckin):
 async def echo_chat(crew_id: str, req: EchoChat):
     """Talk to ECHO. Crisis detection is rule-based; DeepSeek may word ordinary replies (checked, role only)."""
     _echo_member(crew_id)
-    return await asyncio.to_thread(aegis_echo.chat, crew_id, req.message)
+    result = await asyncio.to_thread(aegis_echo.chat, crew_id, req.message)
+    aegis_metrics.answer("echo", (result or {}).get("source"))
+    return result
 
 
 @app.post("/api/echo/{crew_id}/share")
