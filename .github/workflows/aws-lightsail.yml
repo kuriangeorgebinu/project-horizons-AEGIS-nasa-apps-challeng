@@ -99,6 +99,11 @@ jobs:
           HOST: ${{ steps.tf.outputs.host }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || 'deepseek-flash' }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          AEGIS_ONCALL_NUMBER: ${{ secrets.AEGIS_ONCALL_NUMBER }}
+          PUBLIC_CALLS: ${{ vars.AEGIS_PUBLIC_CALLS || 'on' }}
         run: |
           SSH="ssh -i $HOME/.ssh/aegis -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@$IP"
           # Neural voices: a Polly-only key kept in Parameter Store (optional; browser voices without it)
@@ -113,7 +118,19 @@ jobs:
             echo "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}"
             echo "DEEPSEEK_MODEL=${DEEPSEEK_MODEL}"
             if [ -z "${DEEPSEEK_API_KEY}" ]; then echo "AEGIS_LLM=off"; fi
-            echo "AEGIS_CALLS=off"            # public site: never phone anyone
+            # Phone alarm (owner turned it on): only when all four Twilio secrets are set and the repo variable
+            # AEGIS_PUBLIC_CALLS isn't "off" (kill switch). Limits: one call per alert per 10 min, at most 4 an hour.
+            if [ -n "$TWILIO_ACCOUNT_SID" ] && [ -n "$TWILIO_AUTH_TOKEN" ] && [ -n "$TWILIO_FROM_NUMBER" ] && [ -n "$AEGIS_ONCALL_NUMBER" ] && [ "$PUBLIC_CALLS" != "off" ]; then
+              echo "TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}"
+              echo "TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}"
+              echo "TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}"
+              echo "AEGIS_ONCALL_NUMBER=${AEGIS_ONCALL_NUMBER}"
+              echo "AEGIS_CALLS=on"
+              echo "AEGIS_CALL_COOLDOWN_MIN=10"
+              echo "AEGIS_CALL_MAX_PER_HOUR=4"
+            else
+              echo "AEGIS_CALLS=off"
+            fi
             echo "AEGIS_MISSION=mars_transit"
             echo "AEGIS_DB_PATH=/opt/aegis/shared/aegis.db"   # survives redeploys
             if [ -n "$POLLY_ID" ] && [ -n "$POLLY_SECRET" ] && [ "$POLLY_ID" != "None" ]; then
