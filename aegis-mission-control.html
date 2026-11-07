@@ -830,6 +830,110 @@ body.emergency.acked .confirm-btn{animation:none;}
   body.emergency .mission-bar::before,body.emergency .confirm-btn{animation:none!important;}
   .cm-comet.on{display:none;}
 }
+
+/* ── Layout v3 (Nova's density pass): the story on the first screen, one status voice, the rest one click down ── */
+.shell{grid-template-areas:
+  "header header header header header header header header header header header header"
+  "mission mission mission mission mission mission mission mission mission mission mission mission"
+  "crew crew crew crew crew crew crew crew crew crew crew crew"
+  "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
+  "alert alert alert alert alert alert alert echo echo echo echo echo"
+  "voice voice voice voice voice voice voice voice voice voice voice voice"
+  "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}
+@media (max-width:1200px){.shell{grid-template-areas:
+  "header header header header header header header header header header header header"
+  "mission mission mission mission mission mission mission mission mission mission mission mission"
+  "crew crew crew crew crew crew crew crew crew crew crew crew"
+  "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
+  "alert alert alert alert alert alert echo echo echo echo echo echo"
+  "voice voice voice voice voice voice voice voice voice voice voice voice"
+  "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}}
+@media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr);grid-template-areas:"header" "mission" "crew" "graph" "alert" "echo" "vitals" "voice" "nasa";}}
+.nav-tabs[hidden]{display:none!important;}
+
+/* Slim mission bar: day, a small Earth-Mars arc, the signal delay */
+.mission-bar{padding:.35rem 1rem;min-height:0;}
+.mb-normal.hero{display:flex;align-items:center;gap:1.1rem;flex-wrap:nowrap;}
+.hero-left{flex-direction:row;align-items:baseline;gap:.7rem;flex:0 1 auto;}
+.hero-left .hero-kicker{display:none;}
+.hero-big{font-size:1.45rem;} .hero-of{font-size:.8rem;}
+.hero-arc{height:46px;width:auto;flex:1 1 220px;max-width:340px;min-width:140px;}
+.hero-planet,.hero-ship-label{display:none;}
+.hero-right{flex-direction:row;align-items:baseline;gap:.55rem;margin-left:auto;flex:0 1 auto;text-align:left;}
+.hero-right .hero-kicker{white-space:nowrap;}
+.hero-delay{font-size:1.15rem;}
+.hero-right .hero-sub{display:none;}
+.hero-right .mb-pill{font-size:.66rem;padding:.1rem .5rem;}
+@media (max-width:1100px){.hero-right .mb-pill{display:none;}}
+@media (max-width:900px){.mb-normal.hero{flex-wrap:wrap;gap:.3rem .9rem;}.hero-arc{display:none;}.hero-right{margin-left:0;}.hero-big{font-size:1.25rem;}.hero-delay{font-size:1rem;}}
+
+/* Crew strip (replaces the Crew Roster page): names, roles, two headline readings, the four ring states */
+.crew-strip{grid-area:crew;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;min-width:0;}
+.cs-chip{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.65rem;padding:.5rem .8rem;border-radius:12px;
+  background:var(--glass);border:1px solid var(--border);box-shadow:var(--panel-shadow);cursor:pointer;text-align:left;color:var(--text);font:inherit;min-width:0;transition:border-color .2s,box-shadow .2s;}
+.cs-chip:hover{border-color:var(--aegis);}
+.cs-chip.selected{border-color:var(--aegis);box-shadow:inset 0 0 0 1px var(--aegis),var(--panel-shadow);}
+.cs-av{font-size:1.35rem;line-height:1;}
+.cs-id{display:flex;flex-direction:column;min-width:0;}
+.cs-id b{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cs-id small{font-size:.68rem;color:var(--muted);white-space:nowrap;}
+.cs-v{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;font-family:var(--font-num);font-size:.74rem;color:var(--muted);white-space:nowrap;}
+.cs-v .cg-dots{gap:.28rem;} .cs-v .cg-dot{width:.55rem;height:.55rem;}
+@media (max-width:900px){.crew-strip{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:420px){.cs-av{display:none;}.cs-chip{grid-template-columns:minmax(0,1fr) auto;padding:.45rem .6rem;}}
+
+/* Map: What-If sits next to the map; click a system for its detail (replaces the Agent Insights page) */
+.cm-head .whatif-btn{margin-left:auto;padding:.3rem .7rem;font-size:.78rem;}
+.cm-hint{font-size:.72rem;color:var(--muted);text-align:center;margin:0;}
+.cm-detail{border:1px solid var(--border);border-left:3px solid var(--node,var(--aegis));border-radius:10px;padding:.65rem .8rem;background:rgba(255,255,255,.025);font-size:.82rem;line-height:1.45;}
+.cm-detail .cd-head{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.3rem;}
+.cm-detail .cd-name{font-weight:700;letter-spacing:.06em;color:var(--node,var(--aegis));}
+.cm-detail .cd-state{font-size:.72rem;color:var(--muted);}
+.cm-detail .cd-close{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;line-height:1;}
+.cm-detail .cd-reading{color:var(--text);}
+.cm-detail ul{list-style:none;margin:.45rem 0 0;padding:0;display:grid;gap:.3rem;}
+.cm-detail li{font-size:.76rem;color:var(--muted);display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:.4rem;}
+.cm-detail li b{font-weight:500;color:var(--text);}
+.cm-detail .cd-empty{font-size:.76rem;color:var(--muted);margin-top:.35rem;}
+
+/* One status stack: what's happening (alert / early warning / steady) and what we're doing (recommended actions) */
+.status-kicker{margin-bottom:.45rem;}
+.alert-panel .alert-body{flex:0 0 auto;}
+.alert-panel{justify-content:flex-start;}
+.voice-panel .response-area{flex:none;min-height:0;}
+.alert-panel .recs-panel{grid-area:auto;background:none;border:none;box-shadow:none;border-radius:0;padding:.75rem 0 0;margin-top:.85rem;border-top:1px solid var(--border);}
+.alert-panel .recs-title{margin-bottom:.55rem;font-size:.68rem;}
+.alert-panel .recs-list{grid-template-columns:minmax(0,1fr);gap:.55rem;padding:0;}
+.alert-panel .recs-list:not(.all) .rec-card:nth-child(n+3){display:none;}
+.alert-panel .rec-card{padding:.7rem .8rem;}
+.recs-more{align-self:flex-start;margin-top:.5rem;font:inherit;font-size:.75rem;background:none;border:1px solid var(--border);border-radius:999px;color:var(--aegis);padding:.2rem .7rem;cursor:pointer;}
+.recs-resolved{display:grid;gap:.3rem;margin-top:.45rem;}
+.rec-resolved{font-size:.74rem;color:var(--muted);padding:.35rem .6rem;border:1px dashed var(--border);border-radius:8px;}
+.rec-resolved b{color:var(--green);font-weight:600;}
+
+/* Ask row (the Voice Terminal, demoted): one line, the reply opens under it */
+.voice-panel{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:.4rem .8rem;padding:.6rem 1rem;}
+.voice-panel .voice-title{margin:0;display:flex;align-items:center;gap:.5rem;white-space:nowrap;}
+.voice-panel .voice-input{margin:0;gap:.5rem;}
+.voice-panel .voice-status{display:none;}
+.voice-panel .mic-btn{width:38px;height:38px;font-size:1rem;}
+.voice-panel .ask-form{margin:0;min-width:0;}
+.voice-panel .response-area{grid-column:1/-1;padding:.55rem .8rem;font-size:.88rem;max-height:7.5em;}
+.voice-panel:not(.has-reply) .response-area{display:none;}
+@media (max-width:700px){.voice-panel{grid-template-columns:auto minmax(0,1fr);}.voice-panel .voice-title{grid-column:1/-1;}}
+
+/* Evidence & data: closed by default, one click away */
+details.nasa-panel>summary{list-style:none;cursor:pointer;margin:0;align-items:center;}
+details.nasa-panel>summary::-webkit-details-marker{display:none;}
+details.nasa-panel:not([open]){padding:.7rem 1.25rem;}
+details.nasa-panel[open]>summary{margin-bottom:.6rem;}
+.nasa-open{font-size:.75rem;color:var(--aegis);border:1px solid var(--border);border-radius:999px;padding:.2rem .7rem;white-space:nowrap;}
+details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa-open::after{content:'Hide ▴';font-size:.75rem;}
+.nasa-report-row{display:flex;justify-content:flex-end;margin:-.2rem 0 .7rem;}
+.story-evidence{font-size:.72rem;color:var(--aegis);white-space:nowrap;}
+
+/* Roster page (kept for old links) no longer carries its own status words */
+.crew-card .status-badge{display:none;}
 </style>
 </head>
 <body>
@@ -842,7 +946,7 @@ body.emergency.acked .confirm-btn{animation:none;}
   <!-- Header -->
   <header class="header">
     <div class="logo" title="Autonomous Expert Group for Integrated Space Health">◈ AEGIS</div>
-    <nav class="nav-tabs" role="tablist">
+    <nav class="nav-tabs" role="tablist" hidden>
       <button class="nav-tab active" onclick="switchPage('mission')" role="tab" aria-selected="true" id="tab-mission">
         <span class="icon">🎯</span> Mission Control
       </button>
@@ -857,9 +961,6 @@ body.emergency.acked .confirm-btn{animation:none;}
     <span id="api-status" style="font-size:.7rem;padding:.25rem .5rem;border-radius:12px;background:rgba(128,128,128,.2);cursor:help;" title="Backend connection status">🔴 Offline</span>
     <span id="ai-mode" class="ai-mode" hidden title="">AI …</span>
     <button class="run-demo-btn" id="run-demo-btn" onclick="runStory(event.shiftKey ? 'full' : 'short')" title="The 2-minute judging cut: predict, prevent, protect, and ECHO's check-in. Shift+click for the full 3-minute version. Phone calls are logged, never dialled.">▶ Run demo · 2 min</button>
-    <button class="whatif-btn" onclick="openWhatIf()" aria-label="Open the What-If simulator" title="What-If simulator: try hypothetical readings for the selected crew member and see how the agents would judge them. Nothing is saved.">
-      <span class="icon">🔮</span> What-If
-    </button>
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Light / dark mode">🌙</button>
   </header>
 
@@ -908,13 +1009,22 @@ body.emergency.acked .confirm-btn{animation:none;}
     </div>
   </div>
 
+  <!-- Crew strip: who is aboard, two headline readings each, the same four ring states as the Cascade Map -->
+  <div class="crew-strip" id="crew-strip" role="group" aria-label="Crew: choose who to show">
+    <button type="button" class="cs-chip selected" data-key="chen" onclick="selectCrew('chen')"><span class="cs-av">👩‍🚀</span><span class="cs-id"><b>Commander Chen</b><small>Commander</small></span><span class="cs-v">…</span></button>
+    <button type="button" class="cs-chip" data-key="okonkwo" onclick="selectCrew('okonkwo')"><span class="cs-av">👨‍🚀</span><span class="cs-id"><b>Dr. Okonkwo</b><small>Science officer</small></span><span class="cs-v">…</span></button>
+    <button type="button" class="cs-chip" data-key="kowalski" onclick="selectCrew('kowalski')"><span class="cs-av">👩‍🚀</span><span class="cs-id"><b>Dr. Kowalski</b><small>Flight engineer</small></span><span class="cs-v">…</span></button>
+    <button type="button" class="cs-chip" data-key="nakamura" onclick="selectCrew('nakamura')"><span class="cs-av">👨‍⚕️</span><span class="cs-id"><b>Dr. Nakamura</b><small>Medical officer</small></span><span class="cs-v">…</span></button>
+  </div>
+
   <!-- Mission Control Page -->
   <div class="page active" id="page-mission">
   <!-- Cascade Map (hero): live state of the four specialists around AEGIS -->
   <div class="graph-panel" aria-label="Cascade map">
     <div class="cm-head">
       <div class="graph-title">Cascade Map · <span id="cm-crew">Commander Chen</span></div>
-      <div class="cm-legend" aria-hidden="true"><span><i style="background:var(--green)"></i>Steady</span><span><i style="background:var(--yellow)"></i>Heading for its limit</span><span><i style="background:var(--red)"></i>Out of range</span></div>
+      <div class="cm-legend" aria-hidden="true"><span><i style="background:var(--green)"></i>Steady</span><span><i style="background:var(--yellow)"></i>Heading for limit</span><span><i style="background:var(--red)"></i>Out of range</span></div>
+      <button class="whatif-btn" onclick="openWhatIf()" aria-label="Open the What-If simulator" title="What-If simulator: try hypothetical readings for the selected crew member and see how the agents would judge them. Nothing is saved."><span class="icon">🔮</span> What-If</button>
     </div>
     <svg class="cm-svg" id="cascade-map" viewBox="0 0 640 336" role="img" aria-labelledby="cm-caption">
       <defs>
@@ -1018,6 +1128,8 @@ body.emergency.acked .confirm-btn{animation:none;}
       </g>
     </svg>
     <p class="cm-caption" id="cm-caption" aria-live="polite">Reading the crew's live data…</p>
+    <div class="cm-detail" id="cm-detail" hidden aria-live="polite"></div>
+    <p class="cm-hint" id="cm-hint">Click a system for its reading, its limit and what that agent has done.</p>
   </div>
 
   <!-- Vitals Panel -->
@@ -1074,7 +1186,7 @@ body.emergency.acked .confirm-btn{animation:none;}
 
   <!-- Voice Terminal -->
   <div class="voice-panel">
-    <div class="voice-title">Voice Terminal
+    <div class="voice-title">Ask the agents
       <select id="voiceSelect" class="voice-select" onchange="chooseVoice(this.value)" aria-label="AEGIS voice" title="AEGIS voice (★ = most natural available)"></select>
     </div>
     <div class="voice-input">
@@ -1153,6 +1265,7 @@ body.emergency.acked .confirm-btn{animation:none;}
 
   <!-- Alert Panel -->
   <div class="alert-panel" id="alert-panel">
+    <div class="panel-kicker status-kicker">Status · what's happening and what we're doing</div>
     <div class="alert-header">
       <span class="alert-icon" id="alert-icon">⚡</span>
       <span class="alert-title" id="alert-title">CASCADE ALERT · Day 54</span>
@@ -1168,90 +1281,24 @@ body.emergency.acked .confirm-btn{animation:none;}
     </div>
     <button class="confirm-btn" id="confirm-btn" onclick="confirmProtocol()" aria-describedby="alert-desc">Start recovery plan</button>
     <button class="confirm-btn prevent-btn" id="prevent-btn" onclick="startPrevention()" aria-describedby="alert-desc" style="display:none">🛡️ Start prevention plan</button>
-  </div>
-
-  <!-- Recommendations Panel (PREVENT Tier) -->
-  <div class="recs-panel">
-    <div class="recs-title"><span class="icon">🛡️</span> Active Recommendations · Tier 2 PREVENT<span class="recs-count" id="recs-count"></span></div>
-    <div class="recs-list">
-      
-      <!-- Recommendation 1: PULSE → AEGIS -->
-      <div class="rec-card urgent">
-        <div class="rec-header">
-          <div class="rec-agents">
-            <span class="rec-agent" style="background:rgba(200,136,136,.2);color:var(--pulse);">💓 PULSE</span>
-            <span class="rec-arrow">→</span>
-            <span class="rec-agent" style="background:rgba(90,159,215,.2);color:var(--aegis);">◈ AEGIS</span>
-          </div>
-          <div class="rec-target">👩‍🚀 Cmdr. Chen</div>
-        </div>
-        <div class="rec-body">
-          <div class="rec-detection">"Elevated cortisol trend detected: +12% over 3 days, correlating with reduced sleep quality (71%)"</div>
-          <div class="rec-intervention">↳ Recommendation: Adjust sleep schedule +30 minutes</div>
-          <div class="rec-evidence">Evidence: HRP Protocol 4.2.1 — Stress Countermeasures</div>
-        </div>
-        <div class="rec-actions">
-          <button class="rec-btn accept" onclick="acceptRec(1)">✓ Accept</button>
-          <button class="rec-btn defer" onclick="deferRec(1)">◷ Defer</button>
-          <button class="rec-btn dismiss" onclick="dismissRec(1)">✕ Dismiss</button>
-        </div>
-      </div>
-
-      <!-- Recommendation 2: SOLARIS → AEGIS -->
-      <div class="rec-card">
-        <div class="rec-header">
-          <div class="rec-agents">
-            <span class="rec-agent" style="background:rgba(200,176,112,.2);color:var(--solaris);">☀️ SOLARIS</span>
-            <span class="rec-arrow">→</span>
-            <span class="rec-agent" style="background:rgba(90,159,215,.2);color:var(--aegis);">◈ AEGIS</span>
-          </div>
-          <div class="rec-target">👥 All Crew</div>
-        </div>
-        <div class="rec-body">
-          <div class="rec-detection">"CME arrival predicted in 18 hours. Expected Kp index: 6 (moderate storm)"</div>
-          <div class="rec-intervention">↳ Recommendation: Reschedule EVA-7 from Day 55 to Day 57</div>
-          <div class="rec-evidence">Evidence: NOAA SWPC Forecast + NASA EVA Radiation Limits (50 mSv/EVA)</div>
-        </div>
-        <div class="rec-actions">
-          <button class="rec-btn accept" onclick="acceptRec(2)">✓ Accept</button>
-          <button class="rec-btn defer" onclick="deferRec(2)">◷ Defer</button>
-          <button class="rec-btn dismiss" onclick="dismissRec(2)">✕ Dismiss</button>
-        </div>
-      </div>
-
-      <!-- Recommendation 3: MIRROR → AEGIS -->
-      <div class="rec-card">
-        <div class="rec-header">
-          <div class="rec-agents">
-            <span class="rec-agent" style="background:rgba(122,173,154,.2);color:var(--mirror);">🪞 MIRROR</span>
-            <span class="rec-arrow">→</span>
-            <span class="rec-agent" style="background:rgba(90,159,215,.2);color:var(--aegis);">◈ AEGIS</span>
-          </div>
-          <div class="rec-target">👨‍🚀 Dr. Okonkwo</div>
-        </div>
-        <div class="rec-body">
-          <div class="rec-detection">"Social interaction frequency decreased 23% this week. Voice sentiment analysis shows mild fatigue markers."</div>
-          <div class="rec-intervention">↳ Recommendation: Schedule optional group activity session</div>
-          <div class="rec-evidence">Evidence: Mars Comm Delays Study — Crew Autonomy Protocols</div>
-        </div>
-        <div class="rec-actions">
-          <button class="rec-btn accept" onclick="acceptRec(3)">✓ Accept</button>
-          <button class="rec-btn defer" onclick="deferRec(3)">◷ Defer</button>
-          <button class="rec-btn dismiss" onclick="dismissRec(3)">✕ Dismiss</button>
-        </div>
-      </div>
-
+    <div class="recs-panel" id="recs-panel">
+      <div class="recs-title"><span class="icon">🛡️</span> Recommended actions<span class="recs-count" id="recs-count"></span></div>
+      <div class="recs-list"><div class="recs-empty">Loading the agents' recommendations…</div></div>
+      <button type="button" class="recs-more" id="recs-more" hidden onclick="toggleRecs()">Show all</button>
+      <div class="recs-resolved" id="recs-resolved"></div>
     </div>
   </div>
+
   <!-- Real NASA data: the datasets behind the numbers, each with its test result -->
-  <section class="nasa-panel" aria-labelledby="nasa-title">
-    <div class="nasa-head">
+  <details class="nasa-panel" id="nasa-panel">
+    <summary class="nasa-head">
       <div>
-        <div class="panel-kicker">Grounded in real data</div>
+        <div class="panel-kicker">Evidence &amp; data</div>
         <h2 class="nasa-title" id="nasa-title">Real NASA Data <span>· what the numbers come from, and how each rule was tested against it</span></h2>
       </div>
-      <a class="nasa-report" href="artifacts/AEGIS-Accuracy-Report.html" target="_blank" rel="noopener">Full accuracy report ↗</a>
-    </div>
+      <span class="nasa-open" aria-hidden="true">Show ▾</span>
+    </summary>
+    <div class="nasa-report-row"><a class="nasa-report" href="artifacts/AEGIS-Accuracy-Report.html" target="_blank" rel="noopener">Full accuracy report ↗</a></div>
     <div class="nasa-grid">
       <article class="nd-card" style="--c:var(--gene)">
         <div class="nd-src">NASA OSDR · OSD-575 / OSD-569</div>
@@ -1286,7 +1333,7 @@ body.emergency.acked .confirm-btn{animation:none;}
         <a class="nd-link" href="https://humanresearchroadmap.nasa.gov/" target="_blank" rel="noopener">humanresearchroadmap.nasa.gov ↗</a>
       </article>
     </div>
-  </section>
+  </details>
 
   </div><!-- End Mission Control Page -->
 
@@ -1626,9 +1673,10 @@ function selectCrew(crewId) {
   DASH_API.selectedCrewId = DASH_API.crewIdMap[crewId] || 'crew-001';
   if (typeof refreshPredict === 'function') setTimeout(refreshPredict, 0);   // trend chips for the new crew member
   
-  // Update card selection
-  document.querySelectorAll('.crew-card').forEach(card => card.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
+  // Update selection everywhere a crew member can be picked (crew strip, roster cards)
+  document.querySelectorAll('.crew-card').forEach(card => card.classList.toggle('selected', (card.getAttribute('onclick') || '').includes(`'${crewId}'`)));
+  document.querySelectorAll('.cs-chip').forEach(chip => chip.classList.toggle('selected', chip.dataset.key === crewId));
+  if (typeof renderCrewStrip === 'function') renderCrewStrip();
   
   // Update vitals panel title
   const vitalsTitle = document.querySelector('.vitals-title');
@@ -1645,10 +1693,31 @@ function selectCrew(crewId) {
   // Switch to mission page and have AEGIS respond
   setTimeout(() => {
     switchPage('mission');
+    if (typeof STORY !== 'undefined' && STORY.on) return;      // the demo narrates itself
     setTimeout(() => {
       askAgent(currentAgent, 'Summarise this crew member\'s current status in two sentences.', crew.greeting);
     }, 300);
   }, 200);
+}
+
+function toggleRecs() {
+  const list = document.querySelector('.alert-panel .recs-list'); if (!list) return;
+  list.classList.toggle('all'); _updateRecsMore();
+}
+function _updateRecsMore() {
+  const list = document.querySelector('.alert-panel .recs-list'), btn = document.getElementById('recs-more');
+  if (!list || !btn) return;
+  const n = list.querySelectorAll('.rec-card').length;
+  btn.hidden = n <= 2;
+  btn.textContent = list.classList.contains('all') ? 'Show fewer' : `Show all ${n}`;
+}
+new MutationObserver(_updateRecsMore).observe(document.querySelector('.alert-panel .recs-list') || document.body, { childList: true });
+
+// Evidence & data: open the expander and bring it into view (linked from the demo bar)
+function openEvidence(ev) {
+  if (ev) ev.preventDefault();
+  const d = document.getElementById('nasa-panel'); if (!d) return;
+  d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Accessibility: Screen reader announcements
@@ -1804,6 +1873,8 @@ function selectAgent(name, opts = {}) {
     });
   }
   
+  CM_DETAIL.agent = name === 'aegis' ? null : name;
+  renderNodeDetail();
   playTone(400 + Math.random() * 200, 0.15);
   announce(AGENTS[name].name + ' selected');
   document.getElementById('voiceStatus').textContent = 'Tap to speak with ' + AGENTS[name].name;
@@ -1815,6 +1886,49 @@ function selectAgent(name, opts = {}) {
     askAgent(name, q, AGENTS[name].greeting);
   }
 }
+
+// Click a system on the map: its reading and limit, plus what that agent has done lately (was the Agent Insights page)
+const CM_DETAIL = { agent: null, items: [], fetchedAt: 0 };
+const CD_DOMAIN = { solaris: 'radiation', gene: 'inflammation (IL-6, modelled)', pulse: 'heart and oxygen', mirror: 'sleep' };
+async function _cdFetch() {
+  const B = DASH_API.baseUrl;
+  const [alerts, events] = await Promise.all([
+    fetch(`${B}/api/alerts?unacknowledged_only=false&limit=60`).then(r => r.json()).catch(() => []),
+    fetch(`${B}/api/events?limit=120`).then(r => r.json()).catch(() => []),
+  ]);
+  const items = [];
+  (alerts || []).forEach(a => items.push({ ag: _insAgent(String(a.source || '').toUpperCase(), 'aegis'), t: _parseUtc(a.timestamp), ts: a.timestamp,
+    crew: a.crew_member_id, text: `Alert: ${String(a.title || '').replace(/^🔺\s*/, '')}${a.acknowledged ? ' (handled)' : ''}` }));
+  (events || []).forEach(e => { const m = e.message || ''; if (/^(Demo reset|Story demo|AEGIS system initialized)/i.test(m)) return;
+    items.push({ ag: _insAgent(m, 'aegis'), t: _parseUtc(e.timestamp), ts: e.timestamp, crew: e.crew_member_id, text: m }); });
+  CM_DETAIL.items = items; CM_DETAIL.fetchedAt = Date.now();
+}
+async function renderNodeDetail() {
+  const box = document.getElementById('cm-detail'), ag = CM_DETAIL.agent;
+  if (!box) return;
+  if (!ag || ag === 'aegis') { box.hidden = true; document.getElementById('cm-hint')?.removeAttribute('hidden'); return; }
+  if (Date.now() - CM_DETAIL.fetchedAt > 5000) { try { await _cdFetch(); } catch (e) {} }
+  const mine = CM.last && (CM.last.crew || []).find(c => c.crew_member_id === DASH_API.selectedCrewId);
+  const ts = mine ? CM_AGENTS[ag].map(m => mine.metrics[m]).filter(Boolean) : [];
+  const state = sysState(ts);
+  const reading = ts.map(t => `${t.label} <b>${t.value}</b> ${_insEsc(t.unit || '')} · limit ${t.threshold}`).join(' · ') || 'Waiting for readings…';
+  const pct = ts.length ? Math.round(Math.min(1, Math.max(...ts.map(_cmStrain))) * 100) : 0;
+  const name = _crewDisplayName(DASH_API.selectedCrewId);
+  const sel = DASH_API.selectedCrewId;
+  const about = i => i.crew ? i.crew === sel : (!/crew-00\d/.test(i.text) || i.text.includes(sel));   // this crew member only
+  const recent = CM_DETAIL.items.filter(i => i.ag === ag && about(i)).sort((a, b) => b.t - a.t).slice(0, 4)
+    .map(i => ({ ...i, text: i.text.replace(/\bfor crew-00\d\b/g, '').replace(/\s+/g, ' ').trim() }));
+  const hhmm = t => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  box.style.setProperty('--node', `var(--${ag})`);
+  box.innerHTML = `<div class="cd-head"><span class="cd-name">${ag.toUpperCase()}</span><span class="cd-state">${CD_DOMAIN[ag]} · ${name} · ${SYS_WORD[state]}</span>
+      <button type="button" class="cd-close" onclick="closeNodeDetail()" aria-label="Close">×</button></div>
+    <div class="cd-reading">${reading} · ${pct}% of the way to the limit</div>
+    ${recent.length ? `<ul>${recent.map(i => `<li><span>${_insEsc(hhmm(i.t))}</span><b>${_insEsc(i.text)}</b></li>`).join('')}</ul>`
+                    : '<div class="cd-empty">No alerts or analyses from this agent for this crew member yet. It is watching.</div>'}`;
+  box.hidden = false;
+  document.getElementById('cm-hint')?.setAttribute('hidden', '');
+}
+function closeNodeDetail() { CM_DETAIL.agent = null; renderNodeDetail(); if (typeof selectAgent === 'function') selectAgent('aegis', { silent: true }); }
 
 // WOW: Particle burst animation
 function createParticleBurst(node) {
@@ -2081,6 +2195,7 @@ function typeResponse(text, isLiveAnswer = false, onDone = null) {
     if (label && label.querySelector('.response-source')) label.textContent = 'AEGIS Response';
   }
   stopVoice();
+  document.querySelector('.voice-panel')?.classList.add('has-reply');
   const run = VOICE.run;
   // Who is talking: set by askAgent / alerts via VOICE.nextSpeaker (AEGIS by default)
   const speaker = AGENT_VOICE[VOICE.nextSpeaker] ? VOICE.nextSpeaker : 'aegis';
@@ -2336,7 +2451,7 @@ function confirmProtocol() {
   // PREDICT: the crew member is now recovering under the protocol; don't re-forecast from the trend tail
   if (typeof PREDICT_STATE !== 'undefined') PREDICT_STATE.suppress[DASH_API.crewIdMap[ackCrewKey] || 'crew-001'] = Date.now() + 90000;
   // Show the protocol being carried out on board (spacecraft sim pop-up)
-  setTimeout(() => openSimForProtocol(ackProtocol, ackCrewKey), 1700);
+  if (!(typeof STORY !== 'undefined' && STORY.on)) setTimeout(() => openSimForProtocol(ackProtocol, ackCrewKey), 1700);
   if (ackId) {
     const B = DASH_API.baseUrl;
     const ack = id => fetch(`${B}/api/alerts/${encodeURIComponent(id)}/acknowledge`, { method: 'POST' });
@@ -2576,6 +2691,9 @@ async function fetchAndUpdateVitals() {
       sleepEl.style.color = sleepColor;
       if (sleepFill) sleepFill.style.background = sleepColor;
       if (sleepStatus) { sleepStatus.textContent = sleepLabel; sleepStatus.style.color = sleepColor; }
+    }
+    if (Date.now() - VITALS_SYNCED_AT < 8000 && CM.last) {
+      syncVitalsToMap((CM.last.crew || []).find(c => c.crew_member_id === DASH_API.selectedCrewId));
     }
   } catch (e) {
     // Backend unreachable: say so plainly instead of animating made-up numbers
@@ -2963,7 +3081,7 @@ function renderAllClear() {
   const btn = document.getElementById('confirm-btn');
   if (!panel || !btn) return;
   panel.classList.remove('predict');
-  // Never say "all clear" while the Cascade Map shows systems heading for their limits
+  // Same rule as the rings (sysState): never say "all clear" while the map shows systems heading for their limits
   const st = CM.prevStates || {};
   const strained = Object.keys(st).filter(k => st[k] !== 'ok');
   const who = (typeof _crewDisplayName === 'function') ? _crewDisplayName(DASH_API.selectedCrewId) : 'this crew member';
@@ -2971,7 +3089,7 @@ function renderAllClear() {
     const names = strained.map(k => k.toUpperCase()).join(', ');
     panel.style.borderColor = 'var(--cm-amber)';
     icon.textContent = '◔';
-    title.textContent = `No alerts yet · watching ${strained.length} system${strained.length > 1 ? 's' : ''}`;
+    title.textContent = `Watching ${strained.length} system${strained.length > 1 ? 's' : ''} · no alert yet`;
     title.style.color = 'var(--cm-amber)';
     desc.textContent = `${names} ${strained.length > 1 ? 'are' : 'is'} heading toward ${strained.length > 1 ? 'their limits' : 'its limit'} for ${who}. ` +
       (strained.some(k => st[k] === 'out') ? 'At least one is already out of range; the agents are confirming it on their next check. '
@@ -2980,15 +3098,23 @@ function renderAllClear() {
   } else {
     panel.style.borderColor = 'var(--green)';
     icon.textContent = '✓';
-    title.textContent = 'All clear · no alerts';
+    title.textContent = `Steady · no alerts · ${who}`;
     title.style.color = 'var(--green)';
-    desc.textContent = "Nothing needs action right now. If anyone starts heading the wrong way, you'll see an early warning here first.";
+    // Rings can sit past halfway at rest (e.g. a light sleeper): say so, so the words match what the map shows
+    const mine = CM.last && (CM.last.crew || []).find(c => c.crew_member_id === DASH_API.selectedCrewId);
+    const near = [];
+    if (mine) Object.entries(CM_AGENTS).forEach(([a, ms]) => {
+      const k = Math.max(0, ...ms.map(m => mine.metrics[m]).filter(Boolean).map(_cmStrain));
+      if (k >= 0.6) near.push(`${PLAIN_DOMAIN[a.toUpperCase()]} (${Math.round(Math.min(k, 1) * 100)}% of the way)`);
+    });
+    desc.textContent = 'All four systems are inside their limits and none is moving toward one. ' +
+      (near.length ? `Closest to a limit: ${plainList(near)}, holding steady. ` : '') +
+      "If anything starts heading the wrong way, the early warning appears here first.";
   }
   agentsEl.innerHTML = '';
   btn.style.display = 'none';
   _showPreventBtn(false);
   _renderAiNote('');
-  renderCrewGlance();
 }
 
 function _showPreventBtn(show) {
@@ -3013,7 +3139,7 @@ async function startPrevention() {
     PREDICT_STATE.lastCrew = null;
     if (typeof playTone === 'function') { playTone(523, 0.12); setTimeout(() => playTone(784, 0.15), 150); }
     const crewKey = CREW_KEY_BY_ID[crewId] || 'chen';
-    setTimeout(() => openSimForProtocol('PREVENT-1', crewKey), 900);
+    if (!(typeof STORY !== 'undefined' && STORY.on)) setTimeout(() => openSimForProtocol('PREVENT-1', crewKey), 900);
     if (typeof typeResponse === 'function') {
       typeResponse(`Prevention plan started for ${_crewDisplayName(crewId)}. We're fixing their ${plainDomains(d.domains)} early, before anything piles up. I'll keep an eye on how it goes.`);
     }
@@ -3044,7 +3170,7 @@ function renderPreventedPanel(entry) {
   title.title = 'Protocol PREVENT-1';
   const outNow = entry && entry.out_now ? entry.out_now : [];
   desc.textContent = averted
-    ? `Everything is back in a healthy range. We spotted it early, acted, and it never turned into a cascade.`
+    ? `All four systems are steady again. We spotted it early, acted, and it never turned into a cascade.`
     : `Small fixes started early.${outNow.length ? ` ${name}'s ${plainDomains(outNow)} ${outNow.length > 1 ? 'are' : 'is'} still out of range, so` : ''} I'll keep watching until everything is back to normal.`;
   desc.title = 'Demo scenario: the simulator reverses the drift once PREVENT-1 is accepted. With real telemetry AEGIS only reports whether readings recover.';
   agentsEl.innerHTML = `<ol class="prevent-steps">${pv.actions.map(a => `<li>${String(a).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</li>`).join('')}</ol>` +
@@ -3396,6 +3522,27 @@ function _cmStrain(t) {
   return Math.max(0, Math.min(1.15, s));
 }
 function _cmToward(t) { return t.risk_direction === 'up' ? t.direction === 'rising' : t.direction === 'falling'; }
+// THE status rule. The Cascade Map rings, the status card, Live Vitals, the crew strip and the captions all use it,
+// so the dashboard speaks with one voice: out of range > limit forecast > moving toward the limit > steady.
+const CM_DRIFT_AT = 0.35;                         // a third of the way to the limit AND moving toward it
+function sysState(ts) {
+  if (!ts || !ts.length) return 'ok';
+  if (ts.some(t => t.out_of_range)) return 'out';
+  if (ts.some(t => t.eta_min !== null && t.eta_min !== undefined)) return 'watch';
+  if (ts.some(t => _cmToward(t) && _cmStrain(t) > CM_DRIFT_AT)) return 'watch';
+  // Radiation and IL-6 are measured from each person's own baseline (they sit near 0 % at rest), so past halfway
+  // to the limit is already worth watching, even before the trend fit has enough points to call a direction
+  if (ts.some(t => t.baseline != null && _cmStrain(t) >= 0.5)) return 'watch';
+  return 'ok';
+}
+function sysStates(entry) {
+  const st = {};
+  if (!entry || !entry.metrics) return st;
+  Object.entries(CM_AGENTS).forEach(([a, ms]) => { const ts = ms.map(m => entry.metrics[m]).filter(Boolean); if (ts.length) st[a] = sysState(ts); });
+  return st;
+}
+const sysAllOk = entry => { const st = sysStates(entry); return Object.keys(st).length > 0 && Object.values(st).every(v => v === 'ok'); };
+const SYS_WORD = { ok: 'Steady', watch: 'Heading for limit', out: 'Out of range' };
 
 function renderCascadeMap(fc) {
   const svg = document.getElementById('cascade-map');
@@ -3409,8 +3556,8 @@ function renderCascadeMap(fc) {
     const strain = Math.max(...ts.map(_cmStrain));
     const out = ts.find(t => t.out_of_range);
     const eta = ts.filter(t => t.eta_min !== null).sort((a, b) => a.eta_min - b.eta_min)[0];
-    const drift = ts.find(t => _cmToward(t) && _cmStrain(t) > 0.6);
-    const state = out ? 'out' : (eta || drift) ? 'watch' : 'ok';
+    const drift = ts.find(t => _cmToward(t) && _cmStrain(t) > CM_DRIFT_AT);
+    const state = sysState(ts);
     states[agent] = state;
     const node = document.getElementById('node-' + agent);
     node.dataset.state = state;
@@ -3424,7 +3571,8 @@ function renderCascadeMap(fc) {
     document.getElementById('cm-gauge-' + agent).setAttribute('stroke-dasharray',
       `${(Math.min(strain, 1) * CM_CIRC).toFixed(1)} ${CM_CIRC}`);
     const word = out ? 'out of range' : eta ? `limit in ${fmtEta(eta.eta_min)}` :
-                 drift ? (main.risk_direction === 'up' ? 'climbing ↗' : 'dropping ↘') : 'steady';
+                 drift ? (main.risk_direction === 'up' ? 'climbing ↗' : 'dropping ↘') :
+                 state === 'watch' ? `${Math.round(Math.min(strain, 1) * 100)}% to limit` : 'steady';
     document.getElementById('cm-state-' + agent).textContent = word;
     const tip = document.getElementById('cm-tip-' + agent);
     if (tip) tip.textContent = ts.map(t => `${t.label}: ${t.value} ${t.unit} (limit ${t.threshold})`).join(' · ') +
@@ -3464,7 +3612,8 @@ function renderCascadeMap(fc) {
   }
   // Mode, in priority order: live alert for this person > prevention plan > forecast cascade > watching > steady
   const key = CREW_KEY_BY_ID[fc.crew_member_id];
-  const pv = PREDICT_STATE.prevented && PREDICT_STATE.prevented.crew === fc.crew_member_id ? PREDICT_STATE.prevented : null;
+  let pv = PREDICT_STATE.prevented && PREDICT_STATE.prevented.crew === fc.crew_member_id ? PREDICT_STATE.prevented : null;
+  if (pv && pv.avertedAt && Object.values(states).some(v => v !== 'ok')) pv = null;   // never claim "healthy" over strained rings
   let mode, big, sub, cap;
   const outDom = Object.keys(states).filter(a => states[a] === 'out').map(a => a.toUpperCase());
   const watchDom = Object.keys(states).filter(a => states[a] === 'watch').map(a => a.toUpperCase());
@@ -3481,7 +3630,7 @@ function renderCascadeMap(fc) {
     mode = pv.avertedAt ? 'averted' : 'prevent';
     big = pv.avertedAt ? 'Avoided' : 'Fixing';
     sub = pv.avertedAt ? 'CASCADE ✓' : 'PREVENTION ON';
-    cap = (pv.avertedAt ? `<b>Cascade avoided.</b> ${name} is back in a healthy range. We acted before it happened.`
+    cap = (pv.avertedAt ? `<b>Cascade avoided.</b> All four of ${name}'s systems are steady again. We acted before it happened.`
                         : `<b>Prevention plan running for ${name}.</b> Watch the rings come back down.`) +
           ` <span class="demo-note" title="In this demo the simulator is scripted to reverse the drift once PREVENT-1 is accepted. On a mission AEGIS would only report whether the readings actually recover.">Demo: the simulated readings are scripted to recover after PREVENT-1</span>`;
   } else if (fc.risk === 'cascade' && fc.cascade_eta_min !== null &&
@@ -3584,11 +3733,7 @@ function renderCrewGlance() {
   const order = ['solaris', 'gene', 'pulse', 'mirror'];
   const rows = (CM.last.crew || []).map(c => {
     const key = CREW_KEY_BY_ID[c.crew_member_id];
-    const st = {};
-    order.forEach(a => {
-      const ts = CM_AGENTS[a].map(m => c.metrics[m]).filter(Boolean);
-      st[a] = ts.some(t => t.out_of_range) ? 'out' : ts.some(t => t.eta_min !== null) ? 'watch' : 'ok';
-    });
+    const st = sysStates(c);
     const worst = Object.values(st).includes('out') ? 'out' : Object.values(st).includes('watch') ? 'watch' : 'ok';
     const off = order.filter(a => st[a] === 'out').map(a => a.toUpperCase());
     const word = c.risk === 'cascade' ? `cascade ${fmtEta(c.cascade_eta_min)}` :
@@ -3601,11 +3746,54 @@ function renderCrewGlance() {
       <span class="cg-state ${worst}">${word}</span></button>`;
   }).join('');
   host.innerHTML = `<div class="crew-glance"><div class="cg-head">Crew at a glance · radiation · inflammation · heart · sleep</div>${rows}</div>`;
-  host.querySelectorAll('.cg-row').forEach(b => b.addEventListener('click', () => {
-    const card = document.querySelector(`.crew-card[onclick*="'${b.dataset.key}'"]`);
-    if (card) card.click();
-  }));
+  host.querySelectorAll('.cg-row').forEach(b => b.addEventListener('click', () => { if (b.dataset.key) selectCrew(b.dataset.key); }));
 }
+
+// Crew strip: names, roles, heart rate and sleep, and the four ring states, from the same data as the Cascade Map
+function renderCrewStrip() {
+  const host = document.getElementById('crew-strip');
+  if (!host || !CM.last) return;
+  const order = ['solaris', 'gene', 'pulse', 'mirror'];
+  (CM.last.crew || []).forEach(c => {
+    const key = CREW_KEY_BY_ID[c.crew_member_id];
+    const chip = host.querySelector(`.cs-chip[data-key="${key}"]`); if (!chip) return;
+    const st = sysStates(c), m = c.metrics || {};
+    const hr = m.heart_rate ? Math.round(m.heart_rate.value) : '–', sl = m.sleep_quality ? Math.round(m.sleep_quality.value) : '–';
+    chip.querySelector('.cs-v').innerHTML = `<span>${hr} bpm · sleep ${sl}</span><span class="cg-dots">${order.map(a =>
+      `<i class="cg-dot ${st[a] || 'ok'}" title="${a.toUpperCase()}: ${SYS_WORD[st[a] || 'ok']}"></i>`).join('')}</span>`;
+    const off = order.filter(a => st[a] && st[a] !== 'ok');
+    chip.title = `${_crewDisplayName(c.crew_member_id)}: ` + (off.length ? off.map(a => `${a.toUpperCase()} ${SYS_WORD[st[a]].toLowerCase()}`).join(', ') : 'all four systems steady') + ' · click to show';
+    chip.classList.toggle('selected', c.crew_member_id === DASH_API.selectedCrewId);
+  });
+}
+
+// Live Vitals: the values and words come from the same trend data and rule as the rings (one voice)
+const VITAL_ROWS = { heart_rate: 'hr', spo2: 'spo2', il6: 'il6', sleep_quality: 'sleep' };
+function syncVitalsToMap(entry) {
+  if (!entry || !entry.metrics) return;
+  const col = { ok: 'var(--green)', watch: 'var(--yellow)', out: 'var(--red)' };
+  Object.entries(VITAL_ROWS).forEach(([metric, k]) => {
+    const t = entry.metrics[metric]; if (!t) return;
+    const state = sysState([t]);
+    const v = document.getElementById(`${k}-value`), fill = document.getElementById(`${k}-fill`), stEl = document.getElementById(`${k}-status`);
+    const val = metric === 'heart_rate' ? Math.round(t.value) : metric === 'spo2' ? `${Math.round(t.value)}%`
+              : metric === 'il6' ? Number(t.value).toFixed(1)
+              : `${Math.round(t.value) === t.threshold && t.value < t.threshold ? Number(t.value).toFixed(1) : Math.round(t.value)}%`;
+    const word = state === 'out' ? 'Out of range' : t.eta_min !== null && t.eta_min !== undefined ? `Limit in ${fmtEta(t.eta_min)}`
+               : state === 'watch' ? (_cmToward(t) ? (t.risk_direction === 'up' ? 'Rising ↗' : 'Falling ↘') : `${Math.round(Math.min(1, _cmStrain(t)) * 100)}% to limit`) : 'Steady';
+    if (v) { v.textContent = val; v.style.color = col[state]; }
+    if (fill) { fill.style.width = `${Math.round(Math.min(1, _cmStrain(t)) * 100)}%`; fill.style.background = col[state]; }
+    if (stEl) { stEl.textContent = word; stEl.style.color = col[state]; stEl.title = `${t.label}: ${t.value} ${t.unit || ''} · limit ${t.threshold} · ${Math.round(Math.min(1, _cmStrain(t)) * 100)}% of the way to the limit`; }
+  });
+  const r = entry.metrics.radiation_dose_24h, r24 = document.getElementById('rad24-value'), r24s = document.getElementById('rad24-status');
+  if (r && r24) {
+    const state = sysState([r]);
+    r24.textContent = `${Number(r.value).toFixed(2)} mSv`; r24.style.color = col[state];
+    if (r24s) { r24s.textContent = `· ${state === 'out' ? (r.value >= MISSION.shelter ? 'SHELTER' : 'Out of range') : state === 'watch' ? 'Heading for limit' : 'Steady'} (${(r.value / MISSION.background).toFixed(1)}× background)`; r24s.style.color = col[state]; }
+  }
+  VITALS_SYNCED_AT = Date.now();
+}
+let VITALS_SYNCED_AT = 0;
 
 async function refreshPredict() {
   try {
@@ -3631,11 +3819,11 @@ async function refreshPredict() {
     if (pv) {
       const e = (d.crew || []).find(c => c.crew_member_id === pv.crew);
       PREDICT_STATE.preventedEntry = e || null;
-      const inRange = e && e.out_now.length === 0 && !e.upcoming.length && Date.now() - pv.at > 20000;
+      const inRange = e && e.out_now.length === 0 && !e.upcoming.length && sysAllOk(e) && Date.now() - pv.at > 20000;
       if (inRange && !pv.avertedAt) {
         pv.avertedAt = Date.now();
         if (typeof playTone === 'function') { playTone(523, 0.12); setTimeout(() => playTone(659, 0.12), 150); setTimeout(() => playTone(784, 0.2), 300); }
-        if (typeof typeResponse === 'function') typeResponse(`Good news: ${_crewDisplayName(pv.crew)} is back in a healthy range across the board. The prevention plan worked, and we avoided a bigger problem.`);
+        if (typeof typeResponse === 'function') typeResponse(`Good news: all four of ${_crewDisplayName(pv.crew)}'s systems are steady again. The prevention plan worked, and we avoided a bigger problem.`);
       }
       // Keep the outcome on screen for 45 s, then return to normal monitoring (failsafe: 8 min)
       if ((pv.avertedAt && Date.now() - pv.avertedAt > 45000) || Date.now() - pv.at > 8 * 60000) {
@@ -3644,11 +3832,15 @@ async function refreshPredict() {
         PREDICT_STATE.suppress[pv.crew] = Date.now() + 60000;
       }
     }
+    // The map first: the status card reads the ring states it sets, so both always describe the same moment
+    renderCascadeMap(mine);
+    syncVitalsToMap(mine);
+    renderCrewStrip();
     if (!LIVE_ALERT.id && Date.now() >= LIVE_ALERT.pauseUntil) {
       if (PREDICT_STATE.prevented) renderPreventedPanel(PREDICT_STATE.preventedEntry);
       else renderPredictPanel(PREDICT_STATE.top);
     }
-    renderCascadeMap(mine);
+    if (CM_DETAIL.agent) renderNodeDetail();
     if (TREND_OPEN) drawTrend();
   } catch (e) { /* backend offline: keep current display */ }
 }
@@ -4164,7 +4356,7 @@ document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.tar
 // ECHO: crew companion against isolation. MIRROR detects, ECHO responds as a presence.
 // Modes (set by the backend rules): companion · checkin · support (crisis). Private by default.
 // ============================================
-const ECHO = { crew: null, mode: null, level: null, reason: null, lastProactive: null, busy: false, esc: null, ready: false };
+const ECHO = { crew: null, mode: null, level: null, reason: null, lastProactive: null, busy: false, esc: null, ready: false, chats: {}, pickedAt: 0 };
 const ECHO_MOOD_FACE = { 1: '😣 Rough', 2: '😔 Low', 3: '😐 Okay', 4: '🙂 Good', 5: '😄 Great' };
 const _echoEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function echoCrewId() { return DASH_API.selectedCrewId || 'crew-001'; }
@@ -4230,7 +4422,7 @@ function echoSetMode(mode, level) {
   panel.querySelectorAll('.echo-mode').forEach(m => m.classList.toggle('on', m.dataset.m === ECHO.mode));
   const mini = document.getElementById('node-echo'); if (mini) mini.dataset.mode = ECHO.mode;
   const feel = document.getElementById('echo-feel');
-  if (feel && ECHO.mode === 'support') feel.classList.add('open');
+  if (feel && ECHO.mode === 'support' && Date.now() - ECHO.pickedAt > 60000) feel.classList.add('open');
 }
 function echoToggleMoods() {   // always opens (a toggle closed it when support mode had already opened it)
   const f = document.getElementById('echo-feel'); if (!f) return;
@@ -4254,12 +4446,17 @@ async function echoRefresh(event, opts = {}) {
     if (crew !== echoCrewId()) return null;
     const withEl = document.getElementById('echo-with');
     if (withEl) withEl.textContent = `with ${d.name} · Day ${d.facts.mission_day} of ${d.facts.mission_days} · private`;
-    if (ECHO.crew !== crew) {                       // switched person: fresh conversation, greeting ritual
+    if (ECHO.crew !== crew) {                       // switched person: their own conversation comes back
+      const chat = document.getElementById('echo-chat');
+      if (ECHO.crew && chat) ECHO.chats[ECHO.crew] = chat.innerHTML;
       ECHO.crew = crew; ECHO.lastProactive = d.reason;
-      const chat = document.getElementById('echo-chat'); if (chat) chat.innerHTML = '';
-      echoBubble('note', `Daily check-in · Day ${d.facts.mission_day}`);
-      echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
-      if (ECHO.ready && opts.speak) echoSpeak(d.text);
+      if (ECHO.chats[crew] && chat) { chat.innerHTML = ECHO.chats[crew]; chat.scrollTop = chat.scrollHeight; }
+      else {
+        if (chat) chat.innerHTML = '';
+        echoBubble('note', `Daily check-in · Day ${d.facts.mission_day}`);
+        echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
+        if (ECHO.ready && opts.speak) echoSpeak(d.text);
+      }
       ECHO.ready = true;
     } else if (d.reason && d.reason !== ECHO.lastProactive && ['after_emergency', 'poor_sleep'].includes(d.reason)) {
       ECHO.lastProactive = d.reason;
@@ -4296,6 +4493,7 @@ async function echoReply(promise) {
   }
 }
 function echoCheckin(mood) {
+  ECHO.pickedAt = Date.now();
   document.getElementById('echo-feel')?.classList.remove('open');
   echoBubble('crew', ECHO_MOOD_FACE[mood]);
   echoReply(echoPost('checkin', { mood }));
@@ -4354,7 +4552,7 @@ function _storyLocalReset() {
   Object.assign(PREDICT_STATE, { top: null, announcedKey: null, lastCrew: null, suppress: {}, prevented: null, preventedEntry: null });
   LIVE_ALERT.id = null; LIVE_ALERT.pauseUntil = 0;
   CM.etaEnd = null; CM.prevStates = null;
-  ECHO.crew = null; ECHO.lastProactive = null;
+  ECHO.crew = null; ECHO.lastProactive = null; ECHO.chats = {}; ECHO.pickedAt = 0;
 }
 // Two cuts, both ending on ECHO's check-in: 'short' = the 2-minute judging cut (default), 'full' = about 3 minutes
 const STORY_CUTS = {
@@ -4374,7 +4572,7 @@ async function runStory(cut) {
     switchPage('mission');
     storyCaption(1, 'Resetting the ship to a clean start…');
     _storyLocalReset();
-    if (selectedCrew !== 'chen') { const card = document.querySelector(`.crew-card[onclick*="'chen'"]`); selectedCrew = 'chen'; DASH_API.selectedCrewId = 'crew-001'; document.querySelectorAll('.crew-card').forEach(c => c.classList.toggle('selected', c === card)); const vt = document.querySelector('.vitals-title'); if (vt) vt.textContent = 'Live Vitals · Commander Chen'; }
+    if (selectedCrew !== 'chen') selectCrew('chen');
     const r = await fetch(`${DASH_API.baseUrl}/api/demo/story/start?cut=${cut}`, { method: 'POST' });
     if (!r.ok) throw new Error('backend ' + r.status);
     setTimeout(() => { if (STORY.run === run) echoRefresh(); }, 6000);   // ECHO's daily greeting, once the first readings are in
@@ -4389,9 +4587,11 @@ async function runStory(cut) {
     if (PREDICT_STATE.lastCrew) await startPrevention();
     await _sleep(T.prevSim); _storyAlive(run); closeSimModal();
     storyCaption(2, '<b>PREVENT.</b> Watch the rings come back down…');
-    await _storyWait(run, () => PREDICT_STATE.prevented && PREDICT_STATE.prevented.avertedAt, 70000);
-    storyCaption(2, '<b>Cascade avoided.</b> Every ring is back to green. AEGIS acted before anything went wrong.');
+    const averted = await _storyWait(run, () => PREDICT_STATE.prevented && PREDICT_STATE.prevented.avertedAt, 70000);
+    storyCaption(2, averted ? '<b>Cascade avoided.</b> Every ring is back to green. AEGIS acted before anything went wrong.'
+                            : '<b>PREVENT.</b> The prevention plan is still bringing the readings down. The cascade never formed.');
     await _sleep(T.averted); _storyAlive(run);
+    PREDICT_STATE.prevented = null; PREDICT_STATE.preventedEntry = null;   // the next chapter is a new event
     storyCaption(3, '<b>PROTECT.</b> A solar storm hits the whole crew. You can\'t prevent space weather, only protect against it.');
     await setDemoScenario('spe_event');
     await _storyWait(run, () => LIVE_ALERT.id && String(LIVE_ALERT.protocol || '').startsWith('SHELTER'), 60000);
@@ -4405,13 +4605,15 @@ async function runStory(cut) {
     await _sleep(T.shelterSim); _storyAlive(run); closeSimModal();
     await _storyWait(run, () => !EMG.level && !LIVE_ALERT.id, 60000);
     storyCaption(3, '<b>The storm passes.</b> Doses fall back toward the normal background…');
-    await _storyWait(run, () => CM.last && (CM.last.crew || []).every(c => !(c.metrics.radiation_dose_24h || {}).out_of_range), 45000);
+    const safe = await _storyWait(run, () => CM.last && (CM.last.crew || []).every(c => !(c.metrics.radiation_dose_24h || {}).out_of_range), 45000);
     await _sleep(T.settle); _storyAlive(run);
     closeCallPanel(); CALLS.since = Date.now();
     VOICE.nextSpeaker = 'solaris';
-    typeResponse("The storm has passed. Everyone's dose is back near the normal background, and the crew can leave the shelter.");
+    typeResponse(safe ? "The storm has passed. Everyone's dose is back below the warning line, and the crew can leave the shelter."
+                      : "The storm is easing. Doses are falling but not all are below the warning line yet, so the crew stays sheltered a little longer.");
     await _sleep(T.solaris); _storyAlive(run);
-    storyCaption(4, '<b>ECHO.</b> The storm is over and every reading is safe. AEGIS looked after the body. <b>ECHO checks on the person.</b>');
+    storyCaption(4, (safe ? '<b>ECHO.</b> The storm is over and the doses are back below the warning line. '
+                          : '<b>ECHO.</b> The worst of the storm is over. ') + 'AEGIS looked after the body. <b>ECHO checks on the person.</b>');
     STORY.allowEcho = true;
     focusEcho();
     await _sleep(900);
@@ -4455,6 +4657,7 @@ function stopStory() {
   </div>
   <div class="story-text" id="story-text">Starting the demo…</div>
   <div class="story-foot"><div class="story-prog"><i id="story-prog"></i></div><span class="story-note">Demo run · simulated readings · calls logged, not dialled</span>
+    <a href="#nasa-panel" class="story-evidence" onclick="openEvidence(event)">Evidence &amp; data</a>
     <button type="button" class="story-stop" id="story-stop" onclick="stopStory()">■ Stop</button></div>
 </div>
 
@@ -4472,7 +4675,7 @@ function stopStory() {
 </aside>
 
 <!-- AEGIS API Client - connects frontend to backend -->
-<script src="aegis-api-client.js?v=10"></script>
+<script src="aegis-api-client.js?v=11"></script>
 
 </body>
 </html>

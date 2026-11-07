@@ -106,6 +106,9 @@ const AEGIS_API = {
   async actOnGroup(kind, idsCsv) {
     const fn = { accept: 'acceptRecommendation', defer: 'deferRecommendation', dismiss: 'dismissRecommendation' }[kind];
     const ids = String(idsCsv || '').split(',').filter(Boolean);
+    // Remember what the crew did, so the card can say "Accepted" instead of vanishing silently
+    this._recActed = this._recActed || {};
+    (this._recPrev || new Map()).forEach((r, title) => { if (r._all.some(x => ids.includes(String(x.id)))) this._recActed[title] = kind; });
     await Promise.all(ids.map(id => this[fn](id).catch(() => null)));
     return this.updateDashboard();
   },
@@ -286,6 +289,24 @@ const AEGIS_API = {
       });
     const unique = [...groups.values()];
     const MAX_SHOWN = 8;
+    // Lifecycle: a recommendation that leaves the list stays visible for two minutes as one line saying why
+    // (accepted / deferred / dismissed by the crew, or resolved because the reading went back to normal)
+    const now = Date.now(), cur = new Map(unique.map(r => [r.title, r]));
+    this._recGone = (this._recGone || []).filter(g => now - g.at < 120000 && !cur.has(g.title));
+    if (this._recPrev) this._recPrev.forEach((r, title) => {
+      if (cur.has(title)) return;
+      const how = (this._recActed || {})[title];
+      this._recGone.unshift({ title, at: now, how });
+      if (this._recActed) delete this._recActed[title];
+    });
+    this._recPrev = cur;
+    const goneEl = document.getElementById('recs-resolved');
+    if (goneEl) {
+      const escG = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const label = { accept: 'Accepted', defer: 'Deferred', dismiss: 'Dismissed' };
+      goneEl.innerHTML = this._recGone.slice(0, 3).map(g => `<div class="rec-resolved"><b>${g.how ? label[g.how] : '✓ Resolved'}</b> · ${escG(g.title)}` +
+        `${g.how ? '' : ' · the reading that raised it is back within range'} · ${new Date(g.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`).join('');
+    }
     const countEl = document.getElementById('recs-count');
     if (countEl) {
       countEl.textContent = unique.length > MAX_SHOWN
@@ -293,7 +314,7 @@ const AEGIS_API = {
         : (unique.length ? `${unique.length} active` : '');
     }
     if (unique.length === 0) {
-      recsList.innerHTML = '<div class="recs-empty">No pending recommendations. AEGIS agents are monitoring the crew.</div>';
+      recsList.innerHTML = '<div class="recs-empty">Nothing to do right now. The agents will add actions here when a reading needs one.</div>';
       return;
     }
     
