@@ -85,19 +85,24 @@ PREVENT-1 in the build-up demo is scripted and labelled as such.
 
 ## The dashboard at a glance
 
+The first screen tells the story (crew health, the agents predict, the cascade is avoided, ECHO checks in) and
+speaks with **one voice**: the rings, the status card, Live Vitals, the crew strip and the demo captions all use the
+same rule (out of range, a forecast crossing, or moving toward the limit), so they never disagree. Everything else is
+one click away.
+
 | Feature | What it does |
 |---|---|
-| **Mission header** | The ship's position on the Earth-Mars transfer arc, the mission day and the one-way signal delay to Earth (about 1 min 15 s on day 54, about 13 min by arrival, 3-22 min at Mars), with a pulse travelling back to Earth. It turns into the emergency banner during an alert. |
-| **Cascade Map** | The four specialists around AEGIS for one crew member. Each ring fills as a reading approaches its agent's limit; when a system starts to strain, a pulse fires from it into AEGIS and its neighbours, and comets flow along links where strain is spreading. The centre counts down to a predicted cascade (three systems out of range together). ECHO rides beside MIRROR. |
-| **Live Vitals** | Heart rate, oxygen, modelled IL-6, sleep and radiation for the selected person, tagged SIM or MODELLED; click a reading for its trend and forecast. |
-| **ECHO** | The crew companion: chat, daily check-in and support mode (see above). |
-| **Alerts and crew at a glance** | The live alert with its one-click protocol, or, when all is clear, one row per crew member with a dot per system. |
-| **Voice Terminal** | Ask any agent a question by voice or text; it answers from the live readings, in its own voice. |
-| **Recommendations** | Rule-approved PREVENT actions, worded by DeepSeek, fact-checked, with sources; accept, defer or dismiss. |
-| **Real NASA Data** | The datasets behind the numbers (Inspiration4 IL-6, Curiosity RAD and Chang'e-4 radiation, NASA limits and risks), each with its source link and the result of testing the rule against it. |
-| **What-If simulator** | Sliders for hypothetical readings (heart rate, oxygen, IL-6, sleep, 24 h radiation) for the selected crew member. The real agent rules judge them exactly as they would live and say which protocol AEGIS would choose; nothing is saved and no alert is raised. |
+| **Mission bar** | A slim strip: mission day, a small Earth-Mars arc with the ship, and the one-way signal delay to Earth (about 1 min 15 s on day 54, about 13 min by arrival, 3-22 min at Mars). It turns into the emergency banner during an alert. |
+| **Crew strip** | The four crew members with heart rate, sleep and one dot per system (the same states as the rings). Click to show someone. |
+| **Cascade Map** | The four specialists around AEGIS for one crew member. Each ring fills as a reading approaches its agent's limit; when a system starts to strain, a pulse fires from it into AEGIS and its neighbours, and comets flow along links where strain is spreading. The centre counts down to a predicted cascade (three systems out of range together). ECHO rides beside MIRROR. Click a system for its reading, its limit and what that agent has done lately. |
+| **Live Vitals** | Heart rate, oxygen, modelled IL-6, sleep and radiation for the selected person, tagged SIM or MODELLED, with the same values and words as the rings; click a reading for its trend and forecast. |
+| **Status** | One card for what's happening and what we're doing: the live alert with its one-click protocol, the early warning with the prevention plan, or "Steady", then the recommended actions (rule-approved, worded by DeepSeek, fact-checked, with sources; accept, defer or dismiss). An action that leaves the list stays for two minutes saying why (accepted, or resolved because the reading went back within range). |
+| **ECHO** | The crew companion: chat, daily check-in and support mode (see above). Each crew member keeps their own conversation. |
+| **Ask the agents** | One row: ask any agent a question by voice or text; it answers from the live readings, in its own voice. |
+| **Evidence & data** | Closed by default: the datasets behind the numbers (Inspiration4 IL-6, Curiosity RAD and Chang'e-4 radiation, NASA limits and risks), each with its source link and the result of testing the rule against it, plus the full accuracy report. Linked from the demo bar. |
+| **What-If simulator** | Next to the map. Sliders for hypothetical readings (heart rate, oxygen, IL-6, sleep, 24 h radiation) for the selected crew member. The real agent rules judge them exactly as they would live and say which protocol AEGIS would choose; nothing is saved and no alert is raised. |
 | **Run demo** | One click plays the story end to end in 2 minutes (the judging cut; Shift+click, or `?demo=full` in the URL, for the full 3-minute version), with chapter captions and a Stop button: radiation creeps up, AEGIS predicts a cascade, the prevention plan avoids it, a solar storm forces the storm shelter, and ECHO checks in on the Commander afterwards. Calls are logged, never dialled, during the run. |
-| **Spacecraft simulation** | A 2D view of the ship that shows a confirmed protocol being carried out on board. |
+| **Spacecraft simulation** | Outside the judging path: a separate 2D view of the ship that shows a confirmed protocol being carried out on board (opens when a protocol is confirmed by hand, not during the demo). |
 | **Phone alarm** | On critical alerts AEGIS phones the on-call flight surgeon (Twilio) and shows the call live on screen. |
 
 **Keeping the AI honest** - the rules decide *when* to act; DeepSeek only explains and words the advice.
@@ -233,7 +238,7 @@ AEGIS_ONCALL_NUMBER=          # the phone to ring (on a trial account it must be
 Matthew, MIRROR Niamh, ECHO Danielle). The backend uses your normal AWS credentials (profile or
 `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`); audio is cached in `tts_cache/`. `AEGIS_TTS=off` turns it off, and
 `AEGIS_TTS_DAILY_CHARS` (default 200000) caps new speech per day. If Polly isn't available, the browser's voices are
-used. The voice menu in the Voice Terminal can switch any agent back to a browser voice.
+used. The voice menu in the Ask row can switch any agent back to a browser voice.
 
 Without Twilio keys the alarm is logged ("would have called") instead of dialled. Test it with
 `POST /api/notify/test` in the API docs.
@@ -256,7 +261,7 @@ project-horizons-AEGIS-nasa-apps-challeng/
 ├── database.py                   # SQLite storage (aegis.db, created on first run)
 ├── models.py                     # Pydantic models
 ├── setup_chromadb.py             # Builds the knowledge base into chroma_db/
-├── aegis-mission-control.html    # Dashboard (Cascade Map, vitals, voice terminal, alerts, recommendations)
+├── aegis-mission-control.html    # Dashboard (crew strip, Cascade Map, vitals, status + actions, ECHO, ask row, evidence)
 ├── aegis-api-client.js           # Dashboard ↔ backend client
 ├── aegis-spacecraft-sim-2d.html  # 2D spacecraft: protocols carried out on board
 ├── chroma_db/                    # Vector database (knowledge base)
