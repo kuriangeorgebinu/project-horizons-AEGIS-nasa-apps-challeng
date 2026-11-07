@@ -6,6 +6,7 @@ SQLite-based state persistence for crew state, recommendations, and events.
 """
 
 import json
+import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
@@ -20,7 +21,9 @@ from models import (
 )
 
 # Database path
-DB_PATH = Path(__file__).parent / "aegis.db"
+# AEGIS_DB_PATH lets a server keep the database outside the code folder, so a redeploy keeps the mission's
+# history (e.g. each person's received radiation dose) instead of starting a fresh database.
+DB_PATH = Path(os.getenv("AEGIS_DB_PATH") or (Path(__file__).parent / "aegis.db"))
 
 
 def get_connection() -> sqlite3.Connection:
