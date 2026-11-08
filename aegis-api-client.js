@@ -290,7 +290,8 @@ const AEGIS_API = {
     if (!recsList) return;
     
     // The list follows the crew member selected on the dashboard; cards for others are counted, not shown.
-    const sel = (window.DASH_API && DASH_API.selectedCrewId) || null;
+    // DASH_API is a top-level const in the page (not a window property), so test it with typeof
+    const sel = (typeof DASH_API !== 'undefined' && DASH_API.selectedCrewId) || null;
     const mineRecs = sel ? recs.filter(r => r.crew_member_id === sel) : recs;
     const othersN = recs.length - mineRecs.length;
     // One card per recommendation type (merged if the same advice applies more than once). Most urgent first.

@@ -1720,7 +1720,7 @@ function selectCrew(crewId) {
   if (mineNow) { try { renderCascadeMap(mineNow); renderTrendChips(mineNow); } catch (x) {} }
   if (typeof refreshPredict === 'function') setTimeout(refreshPredict, 0);
   if (typeof refreshLiveAlerts === 'function') setTimeout(refreshLiveAlerts, 0);
-  if (window.AEGIS_API && AEGIS_API._lastRecs) AEGIS_API.updateRecommendationsUI(AEGIS_API._lastRecs);
+  if (typeof AEGIS_API !== 'undefined' && AEGIS_API._lastRecs) AEGIS_API.updateRecommendationsUI(AEGIS_API._lastRecs);   // const global, not on window
   
   // Update selection everywhere a crew member can be picked (crew strip, roster cards)
   document.querySelectorAll('.crew-card').forEach(card => card.classList.toggle('selected', (card.getAttribute('onclick') || '').includes(`'${crewId}'`)));
