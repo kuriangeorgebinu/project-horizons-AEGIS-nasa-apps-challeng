@@ -123,7 +123,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 .header{grid-area:header;display:flex;justify-content:space-between;align-items:center;padding:.5rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:background .3s;}
 .logo{font-size:1.5rem;font-weight:700;color:var(--aegis);letter-spacing:2px;}
 .mission-day{color:var(--muted);font-size:.9rem;}
-.mission-day span{color:var(--yellow);font-weight:600;}
+.mission-day span{color:var(--text);font-weight:600;}
 .theme-toggle{background:rgba(128,128,128,.15);border:1px solid var(--border);border-radius:20px;padding:.4rem .8rem;font-size:1rem;cursor:pointer;transition:all .3s;}
 .theme-toggle:hover{background:rgba(128,128,128,.25);}
 
@@ -1041,7 +1041,7 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
 }
 
 /* ── Base ── */
-body{background:radial-gradient(ellipse 120% 90% at 50% 38%,#0A1120 0%,#070C18 52%,#04060C 100%) fixed,#04060C;}
+body{background:radial-gradient(ellipse 95% 80% at 50% 36%,#13213D 0%,#0A1428 34%,#060A16 66%,#020309 100%) fixed,#020309;}
 .space-bg{background:none;z-index:-2;}
 .space-bg::after{content:"";position:absolute;inset:0;          /* faint starfield / dust */
   background-image:
@@ -1049,7 +1049,12 @@ body{background:radial-gradient(ellipse 120% 90% at 50% 38%,#0A1120 0%,#070C18 5
     radial-gradient(1.4px 1.4px at 260px 170px,#dbeafe 50%,transparent 51%),radial-gradient(1px 1px at 330px 40px,#fff 50%,transparent 51%),
     radial-gradient(1px 1px at 80px 210px,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 200px 260px,#fff 50%,transparent 51%),
     radial-gradient(1px 1px at 300px 280px,#fff 50%,transparent 51%),radial-gradient(1px 1px at 10px 150px,#fff 50%,transparent 51%);
-  background-size:360px 300px;opacity:.28;}
+  background-size:360px 300px;opacity:.8;}
+.space-bg::before{content:"";position:absolute;inset:0;opacity:.6;   /* second, sparser layer of brighter stars */
+  background-image:radial-gradient(1.6px 1.6px at 70px 60px,#fff 50%,transparent 51%),radial-gradient(1.3px 1.3px at 410px 190px,#e0f2fe 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 250px 330px,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 520px 40px,#fff 50%,transparent 51%);
+  background-size:600px 420px;}
+[data-theme="light"] .space-bg::before{display:none;}
 [data-theme="light"] body{background:
     linear-gradient(rgba(30,58,95,.035) 1px,transparent 1px) 0 0/28px 28px,          /* blueprint grid */
     linear-gradient(90deg,rgba(30,58,95,.035) 1px,transparent 1px) 0 0/28px 28px,
@@ -1088,11 +1093,15 @@ body{background:radial-gradient(ellipse 120% 90% at 50% 38%,#0A1120 0%,#070C18 5
 /* ── Brand accent: Mars rust, only here ── */
 .logo{background:linear-gradient(90deg,var(--accent-soft),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;}
 [data-theme="light"] .logo{background:none;color:var(--accent);}
-.hg-a{stop-color:#C9D6EA;} .hg-b{stop-color:#FF6B35;}
-[data-theme="light"] .hg-a{stop-color:#64748B;} [data-theme="light"] .hg-b{stop-color:#C2410C;}
+.hg-a{stop-color:#FFB08A;} .hg-b{stop-color:#FF6B35;}
+[data-theme="light"] .hg-a{stop-color:#EA580C;} [data-theme="light"] .hg-b{stop-color:#C2410C;}
+.hero-done{stroke-width:3.5;}
+.hero-orbit{stroke:rgba(255,107,53,.32);}
+[data-theme="light"] .hero-orbit{stroke:rgba(194,65,12,.32);}
 .hero-mars-glow{fill:rgba(255,107,53,.22);}
 [data-theme="light"] .hero-mars-glow{fill:rgba(194,65,12,.16);}
-.hero-signal{fill:var(--accent);}
+.hero-signal{fill:#FFD0B8;stroke:rgba(255,107,53,.6);stroke-width:5;paint-order:stroke;}   /* hot rust core, rust halo: stands out on the arc */
+[data-theme="light"] .hero-signal{fill:#9A3412;stroke:rgba(255,255,255,.95);stroke-width:3;filter:none;}
 .hero-earth-glow{fill:rgba(201,214,234,.14);}
 /* the one-way delay is live data */
 .hero-delay,[data-theme="light"] .hero-delay{color:var(--live);}
@@ -1122,7 +1131,7 @@ body.cascade-alert:not(.emergency)::before{opacity:.75;animation:room-temp 7s ea
 body.acked::before{animation:none;opacity:.35;}
 [data-theme="light"] body::before{background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 45%,rgba(185,28,28,.10) 78%,rgba(185,28,28,.24) 100%);}
 [data-theme="light"] body.cascade-alert:not(.emergency)::before{background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 50%,rgba(180,83,9,.08) 80%,rgba(180,83,9,.18) 100%);}
-@keyframes room-temp{0%,100%{opacity:.55;}50%{opacity:1;}}
+@keyframes room-temp{0%,100%{opacity:.3;}50%{opacity:1;}}
 @media (prefers-reduced-motion:reduce){body.emergency::before,body.cascade-alert::before{animation:none;opacity:.8;}}
 
 /* light mode: source tags and ECHO's active mode keep their contrast on white */
@@ -1183,7 +1192,7 @@ body.acked::before{animation:none;opacity:.35;}
         <circle cx="600" cy="96" r="9" fill="url(#hg-mars)"/>
         <text class="hero-planet" x="40" y="121" text-anchor="middle">EARTH</text>
         <text class="hero-planet" x="600" y="121" text-anchor="middle">MARS</text>
-        <circle class="hero-signal" id="hero-signal" r="3.2" cx="40" cy="96"/>
+        <circle class="hero-signal" id="hero-signal" r="4.6" cx="40" cy="96"/>
         <g id="hero-ship" class="hero-ship" transform="translate(320,30)">
           <circle r="11" class="hero-ship-halo"/>
           <path d="M-8,-4 L9,0 L-8,4 L-5,0 Z" class="hero-ship-body"/>
