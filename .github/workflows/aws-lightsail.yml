@@ -103,7 +103,8 @@ jobs:
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
           AEGIS_ONCALL_NUMBER: ${{ secrets.AEGIS_ONCALL_NUMBER }}
-          PUBLIC_CALLS: ${{ vars.AEGIS_PUBLIC_CALLS || 'on' }}
+          PUBLIC_CALLS: ${{ vars.AEGIS_PUBLIC_CALLS || 'off' }}
+          ADMIN_TOKEN: ${{ secrets.AEGIS_ADMIN_TOKEN }}
         run: |
           SSH="ssh -i $HOME/.ssh/aegis -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@$IP"
           # Neural voices: a Polly-only key kept in Parameter Store (optional; browser voices without it)
@@ -118,9 +119,12 @@ jobs:
             echo "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}"
             echo "DEEPSEEK_MODEL=${DEEPSEEK_MODEL}"
             if [ -z "${DEEPSEEK_API_KEY}" ]; then echo "AEGIS_LLM=off"; fi
-            # Phone alarm (owner turned it on): only when all four Twilio secrets are set and the repo variable
-            # AEGIS_PUBLIC_CALLS isn't "off" (kill switch). Limits: one call per alert per 10 min, at most 4 an hour.
-            if [ -n "$TWILIO_ACCOUNT_SID" ] && [ -n "$TWILIO_AUTH_TOKEN" ] && [ -n "$TWILIO_FROM_NUMBER" ] && [ -n "$AEGIS_ONCALL_NUMBER" ] && [ "$PUBLIC_CALLS" != "off" ]; then
+            # Public deployment: admin endpoints off, the rest rate-limited, no /docs (aegis_guard.py)
+            echo "AEGIS_PUBLIC=1"
+            if [ -n "$ADMIN_TOKEN" ]; then echo "AEGIS_ADMIN_TOKEN=${ADMIN_TOKEN}"; fi
+            # Phone alarm: OFF by default. It dials only when the owner opts in with the repo variable
+            # AEGIS_PUBLIC_CALLS=on AND all four Twilio secrets are set. Limits: one call per alert per 10 min, 4 an hour.
+            if [ "$PUBLIC_CALLS" = "on" ] && [ -n "$TWILIO_ACCOUNT_SID" ] && [ -n "$TWILIO_AUTH_TOKEN" ] && [ -n "$TWILIO_FROM_NUMBER" ] && [ -n "$AEGIS_ONCALL_NUMBER" ]; then
               echo "TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}"
               echo "TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}"
               echo "TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}"

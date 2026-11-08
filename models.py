@@ -7,7 +7,7 @@ Data models for API request/response schemas and database entities.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -137,6 +137,9 @@ class Recommendation(BaseModel):
     # Tracking
     confidence: float = Field(default=0.85, ge=0, le=1)
     risk_if_ignored: Optional[str] = None
+    # Lifecycle: when and why it left the list (accepted / deferred / dismissed by the crew, or resolved)
+    resolved_at: Optional[datetime] = None
+    resolution: Optional[str] = None
 
 
 class Alert(BaseModel):
@@ -219,12 +222,16 @@ class AnalysisResponse(BaseModel):
 # Simulation Control
 # ─────────────────────────────────────────────────────────────────────────────
 
+SCENARIOS = ("spe_event", "medical_emergency", "cascade_demo", "buildup_demo")
+
+
 class SimulationConfig(BaseModel):
     """Configuration for vitals simulator."""
-    speed_multiplier: float = Field(default=1.0, ge=0.1, le=100)
-    scenario: Optional[str] = None  # "nominal" | "spe_event" | "medical_emergency"
+    speed_multiplier: float = Field(default=1.0, ge=0.25, le=10)
+    scenario: Optional[Literal["spe_event", "medical_emergency", "cascade_demo", "buildup_demo", "prevent_recovery"]] = None
     inject_anomaly: Optional[str] = None  # "cardiac" | "radiation" | "injury"
-    inject_crew_id: Optional[str] = None  # H0/M1: Target crew for anomaly (None = all)
+    inject_crew_id: Optional[str] = None  # the scenario's crew member (cascade / build-up / medical)
+    anomaly_crew_id: Optional[str] = None  # an injected anomaly's own target (None = all), kept apart from the scenario
 
 
 class SimulationState(BaseModel):

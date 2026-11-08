@@ -296,10 +296,18 @@ class BaseAgent:
             "thing the crew should confirm in the next few minutes."
         )
         text = aegis_llm.chat(prompt, persona=self.agent_type.value, words=50)
-        if text:
+        if not text:
+            return
+        # Same grounding rules as recommendations: numbers bound to the readings, no medicine or dose,
+        # spec units only, no instruction outside the alert's own protocol text. Otherwise the alert keeps
+        # only its rule-based text.
+        context = f"{self._crew_context(crew_member)}\n{alert.title}. {alert.message}\n{self._findings_text(findings)}"
+        check = aegis_verify.verify_note(text, context, menu=[alert.message or "", alert.title])
+        if check["ok"]:
             db.update_alert_message(alert.id, f"{alert.message}\n\n{aegis_llm.AI_MARKER} ({self.agent_type.value}): {text}")
-            self._log_analysis(f"DeepSeek assessment added to alert {alert.id}",
-                               {"model": aegis_llm.model(), "alert_id": alert.id})
+        self._log_analysis(f"DeepSeek assessment {'added to' if check['ok'] else 'rejected for'} alert {alert.id}",
+                           {"model": aegis_llm.model(), "alert_id": alert.id, "verified": check["ok"],
+                            "problems": check["problems"][:4]})
 
     def _query_knowledge_base(self, query: str, n_results: int = 3) -> list[dict]:
         """Query the knowledge base for relevant information."""
@@ -768,8 +776,8 @@ class GENEAgent(BaseAgent):
         v = crew_member.vitals
         if not v:
             return None
-        il6 = aegis_mission.il6_model(v.stress_index, v.radiation_dose_24h)
         base = aegis_mission.il6_baseline(crew_member.id)
+        il6 = aegis_mission.il6_model(v.stress_index, v.radiation_dose_24h, baseline=base)
         limit = aegis_mission.il6_personal_limit(base)
         if il6 >= limit or il6 > cls.IL6_WARNING:
             status = "elevated"
@@ -1021,15 +1029,24 @@ class AEGISAgent(BaseAgent):
         self._cascade_fired = set()
         # Crew members who already got a PREDICT (pre-cascade) warning in the current scenario run
         self._predict_fired = set()
-    
+        # One lock for all coordinator state (cascade / forecast memory, history, stale-recommendation counters):
+        # the background analysis loop, manual /api/analyze, prevention and resets can run at the same time.
+        self._lock = threading.RLock()
+        self._rec_misses = {}
+
     def analyze_crew_member(self, crew_member: CrewMember) -> dict:
+        with self._lock:
+            return self._analyze_crew_member(crew_member)
+
+    def _analyze_crew_member(self, crew_member: CrewMember) -> dict:
         """
         Run all specialist agents on a crew member and aggregate results.
         Includes cascade detection (T1), deduplication (T8), and alert routing (T9).
         """
         all_findings = []
         all_recommendations = []
-        
+        errored_agents = set()            # a specialist that failed this pass can't vouch that its readings are fine
+
         for agent in self.specialists:
             try:
                 findings = agent.analyze(crew_member)
@@ -1045,37 +1062,17 @@ class AEGISAgent(BaseAgent):
                         {"findings": len(findings), "recommendations": len(recs)}
                     )
             except Exception as e:
+                errored_agents.add(agent.agent_type)
                 self._log_analysis(
                     f"Error in {agent.agent_type.value}: {str(e)}",
                     {"error": str(e)}
                 )
-        
-        # T8: Deduplicate recommendations - skip if pending rec with same crew + title exists
-        existing_recs = db.get_recommendations(crew_id=crew_member.id, status=RecommendationStatus.PENDING)
 
-        # Resolve stale recommendations: if the rule that raised a pending recommendation no longer fires
-        # (the reading is back to normal), close it, so the panel only shows what still needs doing.
-        current_titles = {r.title for r in all_recommendations}
-        now_utc = datetime.utcnow()
-        misses = getattr(self, "_rec_misses", None)
-        if misses is None:
-            misses = self._rec_misses = {}
-        for r in existing_recs:
-            if r.agent == AgentType.AEGIS or r.title in current_titles:
-                misses.pop(r.id, None)
-                continue
-            created = r.created_at.replace(tzinfo=None) if r.created_at else now_utc
-            if (now_utc - created).total_seconds() < 60:
-                continue                      # give a brand-new recommendation a minute before resolving it
-            misses[r.id] = misses.get(r.id, 0) + 1
-            if misses[r.id] < 2:              # normal on two analysis passes in a row: avoids flapping at a threshold
-                continue
-            misses.pop(r.id, None)
-            db.update_recommendation_status(r.id, RecommendationStatus.COMPLETED)
-            self._log_analysis(f"Resolved for {crew_member.name}: '{r.title}' (reading back to normal)",
-                               {"recommendation_id": r.id, "auto_resolved": True})
-        existing_titles = {r.title for r in db.get_recommendations(crew_id=crew_member.id,
-                                                                     status=RecommendationStatus.PENDING)}
+        self._resolve_stale_recommendations(crew_member, all_findings, all_recommendations, errored_agents)
+        # T8 dedupe: don't recreate what the crew already has or already decided on. Pending and accepted
+        # cards block a duplicate while the condition lasts; a deferred card blocks it until its 4-hour timer runs
+        # out; a dismissed one for 30 minutes.
+        existing_titles = db.active_recommendation_titles(crew_member.id)
         
         # R2: Also deduplicate alerts - skip if unacknowledged alert with same crew + title exists
         existing_alerts = db.get_alerts()
@@ -1183,6 +1180,59 @@ class AEGISAgent(BaseAgent):
             "cascade_alert": cascade_alert
         }
     
+    _CONCERN = ("warning", "critical", "caution")
+
+    def _resolve_stale_recommendations(self, crew_member: CrewMember, findings: list[dict],
+                                       new_recs: list[Recommendation], errored_agents: set):
+        """Close recommendations whose reason has gone, based on the agent's readings this pass:
+          - the agent failed this pass               -> leave everything alone (no unchecked resolving);
+          - same title raised again                  -> still needed;
+          - same agent raised a different card        -> the old one is superseded (e.g. severity changed);
+          - the agent still reports an out-of-range
+            reading in its domain (PREVENT/PROTECT)   -> still needed, even if the title wording changed;
+          - otherwise, on two passes in a row         -> resolved: the reading is back within range.
+        Accepted plans finish the same way, deferred cards end when their 4-hour timer runs out."""
+        now_utc = datetime.utcnow()
+        titles_now = {r.title for r in new_recs}
+        by_agent_now: dict = {}
+        for r in new_recs:
+            by_agent_now.setdefault(r.agent, set()).add(r.title)
+        concerned = set()
+        for f in findings:
+            if f.get("type") in self._CONCERN:
+                a = self._metric_to_agent(f.get("metric", ""))
+                if a:
+                    concerned.add(a)
+        db.expire_deferred_recommendations(crew_member.id)
+        for r in db.get_recommendations(crew_id=crew_member.id, limit=200):
+            if r.status not in (RecommendationStatus.PENDING, RecommendationStatus.ACCEPTED):
+                continue
+            if r.agent == AgentType.AEGIS or r.agent in errored_agents:
+                self._rec_misses.pop(r.id, None)
+                continue
+            if r.title in titles_now:
+                self._rec_misses.pop(r.id, None)
+                continue
+            other = by_agent_now.get(r.agent, set()) - {r.title}
+            reason = None
+            if other and r.status == RecommendationStatus.PENDING:
+                reason = f"superseded by '{sorted(other)[0]}'"
+            elif r.pillar != RecommendationPillar.PREDICT and r.agent.value in concerned:
+                self._rec_misses.pop(r.id, None)        # still out of range in this agent's domain
+                continue
+            created = r.created_at.replace(tzinfo=None) if r.created_at else now_utc
+            if (now_utc - created).total_seconds() < 60:
+                continue                                 # a brand-new card gets a minute before it can close
+            self._rec_misses[r.id] = self._rec_misses.get(r.id, 0) + 1
+            if self._rec_misses[r.id] < 2:              # two passes in a row: no flapping at a threshold
+                continue
+            self._rec_misses.pop(r.id, None)
+            reason = reason or ("plan finished: the reading is back within range" if r.status == RecommendationStatus.ACCEPTED
+                                else "the reading that raised it is back within range")
+            db.update_recommendation_status(r.id, RecommendationStatus.COMPLETED, reason=reason)
+            self._log_analysis(f"Resolved for {crew_member.name}: '{r.title}' ({reason})",
+                               {"recommendation_id": r.id, "auto_resolved": True, "reason": reason})
+
     def _update_cascade_tracking(self, crew_member: CrewMember, findings: list[dict]):
         """Track agent findings for cascade detection."""
         crew_id = crew_member.id
@@ -1353,25 +1403,29 @@ class AEGISAgent(BaseAgent):
             "Use only these units with numbers: mSv, pg/mL, bpm, percent, hours, minutes, days. "
             "If you don't have the data for it, say so simply and share what you do know."
         )
-        answer = aegis_llm.chat(prompt, persona=agent_name, words=60, mode="chat", timeout=15) or \
-                 aegis_llm.chat(prompt, persona=agent_name, words=60, mode="chat", timeout=15)   # one retry if slow
+        answer = aegis_llm.chat(prompt, persona=agent_name, words=60, mode="chat", timeout=20)   # 20 s total, retries included
         source = "deepseek"
         # Grounding: every number in a spoken answer must come from the data in the prompt (aegis_verify).
         num_check, first_check = None, None
         # Also: only whitelisted units, and no medicine or dose that is not in the data given to the model.
+        voice_menu = [f.get("message", "") for f in findings] + [a for a in alerts_txt.split("; ") if a and a != "none"] + \
+                     ["Talk to the flight surgeon", "Keep monitoring the readings", "Rest", "Drink water"]
         def _voice_check(txt):
             n = aegis_verify.check_numbers(txt, prompt)
             u = aegis_verify.check_units(txt)
             m = aegis_verify.check_medicine(txt, prompt)
-            bad = n["unsupported"] + u["unsupported"] + m["unsupported"]
-            return {**n, "units_ok": u["ok"], "medicine_ok": m["ok"], "unsupported": bad, "ok": not bad}
+            pa = aegis_verify.check_prose_actions(txt, voice_menu)
+            bad = n["unsupported"] + u["unsupported"] + m["unsupported"] + pa["unsupported"]
+            return {**n, "units_ok": u["ok"], "medicine_ok": m["ok"], "actions_ok": pa["ok"],
+                    "unsupported": bad, "ok": not bad}
         if answer:
             num_check = first_check = _voice_check(answer)
             if not num_check["ok"]:
                 retry = aegis_llm.chat(prompt + "\n\nYour previous reply failed an automatic check ("
                                        + ", ".join(num_check["unsupported"]) + "). Answer again using only numbers "
-                                       "that appear above (or none), only the allowed units, and no medicines or doses.",
-                                       persona=agent_name, words=60, mode="chat")
+                                       "that appear above (or none), only the allowed units, no medicines or doses, "
+                                       "and no instruction that isn't already in the findings or alerts.",
+                                       persona=agent_name, words=60, mode="chat", timeout=15)
                 num_check = _voice_check(retry or "")
                 answer = retry if (retry and num_check["ok"]) else None
         if not answer:
@@ -1564,10 +1618,17 @@ class AEGISAgent(BaseAgent):
             "and why tackling them together with the recovery plan works better than one at a time."
         )
         text = aegis_llm.chat(prompt, persona="AEGIS", words=50)
-        if text:
+        if not text:
+            return
+        menu = ["Enhanced monitoring", "Reduced workload", "Hydration and antioxidant support",
+                "Daily biomarker check-ins", "Follow the recovery plan RECOVER-3"]
+        context = f"{self._crew_context(crew_member)}\n{alert.message}\n{lines}"
+        check = aegis_verify.verify_note(text, context, menu=menu)
+        if check["ok"]:
             db.update_alert_message(alert.id, f"{alert.message}\n\n{aegis_llm.AI_MARKER} (AEGIS): {text}")
-            self._log_analysis(f"DeepSeek cascade explanation added to {alert.id}",
-                               {"model": aegis_llm.model(), "alert_id": alert.id})
+        self._log_analysis(f"DeepSeek cascade explanation {'added to' if check['ok'] else 'rejected for'} {alert.id}",
+                           {"model": aegis_llm.model(), "alert_id": alert.id, "verified": check["ok"],
+                            "problems": check["problems"][:4]})
 
     # PREVENT-1: countermeasures per domain, started when mission control acts on a PREDICT forecast
     _PREVENT_ACTIONS = {
@@ -1578,6 +1639,10 @@ class AEGISAgent(BaseAgent):
     }
 
     def start_prevention(self, crew_member: CrewMember) -> dict:
+        with self._lock:
+            return self._start_prevention(crew_member)
+
+    def _start_prevention(self, crew_member: CrewMember) -> dict:
         """
         PREDICT -> PREVENT: mission control acts on a forecast before the cascade happens.
         Records an accepted PREVENT-1 plan (one countermeasure per domain that is out of range or forecast to
@@ -1640,12 +1705,21 @@ class AEGISAgent(BaseAgent):
             "the single preventive step to take now, before the cascade."
         )
         text = aegis_llm.chat(prompt, persona="AEGIS", words=40)
-        if text:
+        if not text:
+            return
+        check = aegis_verify.verify_note(text, prompt, menu=list(self._PREVENT_ACTIONS.values()) +
+                                         ["Start the prevention plan PREVENT-1"])
+        if check["ok"]:
             aegis_trends.NOTES[crew_member.id] = {"text": text, "at": datetime.utcnow().isoformat()}
-            self._log_analysis(f"DeepSeek PREDICT note for {crew_member.id}", {"chars": len(text)})
+        self._log_analysis(f"DeepSeek PREDICT note for {crew_member.id} {'added' if check['ok'] else 'rejected'}",
+                           {"chars": len(text), "verified": check["ok"], "problems": check["problems"][:4]})
 
     def rearm_cascades(self):
         """Allow cascades to fire again (called when a new scenario starts, e.g. cascade_demo)."""
+        with self._lock:
+            self._rearm_cascades()
+
+    def _rearm_cascades(self):
         self._cascade_fired.clear()
         self._predict_fired.clear()
         aegis_trends.NOTES.clear()
@@ -1653,8 +1727,9 @@ class AEGISAgent(BaseAgent):
 
     def reset_state(self):
         """Clean demo start: forget cascade / forecast / stale-recommendation memory (the DB is cleared separately)."""
-        self.rearm_cascades()
-        self._rec_misses = {}
+        with self._lock:
+            self._rearm_cascades()
+            self._rec_misses = {}
 
     def _check_cascade(self, crew_member: CrewMember) -> Optional[dict]:
         """

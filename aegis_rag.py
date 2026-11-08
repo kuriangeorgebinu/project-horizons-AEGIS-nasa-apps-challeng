@@ -245,6 +245,33 @@ class AEGISKnowledgeBase:
         
         return "".join(context_parts)
     
+    def ensure_indexed(self) -> dict:
+        """Fill the protocols collection (and the knowledge-base countermeasures) if they are empty, so protocol
+        evidence actually grounds recommendations on every deployment. Returns what was added. Empty collections
+        are reported instead of silently skipped."""
+        self._setup()
+        added = {}
+        try:
+            import json as _json
+            import setup_chromadb as sc
+            kb = _json.loads((Path(__file__).parent / "data" / "aegis_knowledge_base.json").read_text(encoding="utf-8"))
+            if self._collections["protocols"].count() == 0:
+                added["protocols"] = sc.index_protocols(self._collections["protocols"], kb)
+            existing = set(self._collections["countermeasures"].get(include=[])["ids"])
+            docs, metas, ids = sc.countermeasure_documents(kb)
+            missing = [i for i, x in enumerate(ids) if x not in existing]
+            if missing:
+                self._collections["countermeasures"].upsert(documents=[docs[i] for i in missing],
+                                                            metadatas=[metas[i] for i in missing],
+                                                            ids=[ids[i] for i in missing])
+                added["countermeasures"] = len(missing)
+        except Exception as e:
+            print(f"   ⚠ knowledge base indexing check failed: {type(e).__name__}: {e}")
+        for name, col in self._collections.items():
+            if col.count() == 0:
+                print(f"   ⚠ knowledge base collection '{name}' is EMPTY: its evidence can't ground recommendations")
+        return added
+
     def get_stats(self) -> dict:
         """Get statistics about the knowledge base."""
         self._setup()
@@ -270,7 +297,7 @@ def _source_label(collection: str, doc: str, meta: dict) -> tuple[str, Optional[
     elif collection == "citations":
         label = re.sub(r"^\d+\.\s*", "", doc.split(". NTRS title:")[0]).strip()[:140]
     else:
-        m = re.match(r"(?:Risk|Protocol|Medication):\s*([^.]+)", doc)
+        m = re.match(r"(?:Risk|Protocol|Medication|Emergency protocol|Intervention protocol|Countermeasure):\s*([^.]+)", doc)
         label = f"{source or 'AEGIS Knowledge Base'} — {m.group(1).strip() if m else collection}"
     if not url:
         mu = re.search(r"https?://[^\s)\]]+", doc)

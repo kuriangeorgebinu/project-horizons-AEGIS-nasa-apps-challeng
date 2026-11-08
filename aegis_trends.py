@@ -41,9 +41,10 @@ METRICS = {
 NOTES: dict = {}
 
 
-def _il6(v: dict) -> float:
-    """IL-6 as GENE models it (aegis_mission.il6_model): modelled from stress and dose vs background."""
-    return aegis_mission.il6_model(v.get("stress_index"), v.get("radiation_dose_24h"))
+def _il6(v: dict, crew_id: Optional[str] = None) -> float:
+    """IL-6 exactly as GENE models it (aegis_mission.il6_model), centred on this crew member's own baseline."""
+    base = aegis_mission.il6_baseline(crew_id) if crew_id else None
+    return aegis_mission.il6_model(v.get("stress_index"), v.get("radiation_dose_24h"), baseline=base)
 
 
 def _thresholds(crew_id: str) -> dict:
@@ -68,7 +69,7 @@ def _recent(crew_id: str, n: int) -> list[tuple[datetime, dict]]:
     out = []
     for r in reversed(rows):
         v = json.loads(r["vitals_json"])
-        v["il6"] = _il6(v)
+        v["il6"] = _il6(v, crew_id)
         out.append((_parse_ts(r["timestamp"]), v))
     # Keep only the latest contiguous run: a gap means the feed restarted (new baselines), and fitting a
     # trend across it would forecast a jump that never happened.
@@ -102,7 +103,10 @@ def _trend(metric: str, pts: list[tuple[datetime, dict]], threshold: Optional[fl
     t_end = pts[-1][0]
     cur = float(pts[-1][1])
     up = meta["dir"] == "up"
-    out_of_range = cur > meta["threshold"] if up else cur < meta["threshold"]
+    # Same comparison as the agents: IL-6 and radiation fire AT the limit (>=), heart rate above it (>),
+    # SpO2 and sleep below it (<). So exactly 3.68 mSv counts toward a cascade here as it does for SOLARIS.
+    inclusive = metric in ("il6", "radiation_dose_24h")
+    out_of_range = (cur >= meta["threshold"] if inclusive else cur > meta["threshold"]) if up else cur < meta["threshold"]
     res = {"metric": metric, "agent": meta["agent"], "label": meta["label"], "unit": meta["unit"],
            "value": round(cur, 2), "threshold": meta["threshold"], "risk_direction": meta["dir"],
            "out_of_range": out_of_range, "direction": "steady", "slope_per_min": None,
@@ -128,9 +132,12 @@ def _trend(metric: str, pts: list[tuple[datetime, dict]], threshold: Optional[fl
     res["reversing"] = reversing
     if direction != "steady" and toward and not reversing and not out_of_range and r2 >= MIN_R2:
         eta = (meta["threshold"] - now) / slope
-        eta = max(eta, 0.25)       # fitted line already past it but the latest reading isn't: imminent
-        if eta <= HORIZON_MIN:
-            res["eta_min"] = round(eta, 1)
+        if eta < 0:
+            # The fitted line is already past the limit but the latest reading isn't: no forecast time to
+            # report (a negative ETA is not "imminent"); flag it so the dashboard can say "at the limit".
+            res["at_limit"] = True
+        elif eta <= HORIZON_MIN:
+            res["eta_min"] = round(max(eta, 0.1), 1)
     return res
 
 

@@ -910,6 +910,8 @@ body.emergency.acked .confirm-btn{animation:none;}
 .alert-panel .rec-card{padding:.7rem .8rem;}
 .recs-more{align-self:flex-start;margin-top:.5rem;font:inherit;font-size:.75rem;background:none;border:1px solid var(--border);border-radius:999px;color:var(--aegis);padding:.2rem .7rem;cursor:pointer;}
 .recs-resolved{display:grid;gap:.3rem;margin-top:.45rem;}
+.recs-note{font-size:.74rem;color:var(--yellow);}.recs-note:empty{display:none;}
+.rec-raised{font-size:.66rem;color:var(--muted);margin:.1rem 0 .25rem;}
 .rec-resolved{font-size:.74rem;color:var(--muted);padding:.35rem .6rem;border:1px dashed var(--border);border-radius:8px;}
 .rec-resolved b{color:var(--green);font-weight:600;}
 
@@ -990,7 +992,7 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
       </button>
     </nav>
     <div class="mission-day">Day <span id="mission-day-num">54</span></div>
-    <span id="api-status" style="font-size:.7rem;padding:.25rem .5rem;border-radius:12px;background:rgba(128,128,128,.2);cursor:help;" title="Backend connection status">🔴 Offline</span>
+    <span id="api-status" style="font-size:.7rem;padding:.25rem .5rem;border-radius:12px;background:rgba(128,128,128,.2);cursor:help;" title="Backend connection status">⏳ Connecting…</span>
     <span id="ai-mode" class="ai-mode" hidden title="">AI …</span>
     <button class="run-demo-btn" id="run-demo-btn" onclick="runStory(event.shiftKey ? 'full' : 'short')" title="The 2-minute judging cut: predict, prevent, protect, and ECHO's check-in. Shift+click for the full 3-minute version. Phone calls are logged, never dialled.">▶ Run demo · 2 min</button>
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Light / dark mode">🌙</button>
@@ -1222,7 +1224,7 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
       <div class="rad-bar"><div class="rad-fill" id="rad-fill"></div></div>
       <div class="rad-sub">
         <span>Mission total vs. career limit</span>
-        <span style="cursor:pointer" onclick="openTrend('radiation_dose_24h')" title="Click for the 24 h dose trend + forecast">Last 24 h: <strong id="rad24-value" style="color:var(--muted)">…</strong> <span id="rad24-status"></span><span class="trend-chip inline" id="trend-radiation_dose_24h" hidden></span></span>
+        <span style="cursor:pointer" onclick="openTrend('radiation_dose_24h')" title="Click for the 24 h dose trend + forecast">Dose rate (24 h): <strong id="rad24-value" style="color:var(--muted)">…</strong> <span id="rad24-status"></span><span class="trend-chip inline" id="trend-radiation_dose_24h" hidden></span></span>
       </div>
     </div>
   </div>
@@ -1325,6 +1327,7 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
       <div class="recs-list"><div class="recs-empty">Loading the agents' recommendations…</div></div>
       <button type="button" class="recs-more" id="recs-more" hidden onclick="toggleRecs()">Show all</button>
       <div class="recs-resolved" id="recs-resolved"></div>
+      <div class="recs-note" id="recs-note" role="status" aria-live="polite"></div>
     </div>
   </div>
 
@@ -1710,7 +1713,14 @@ function selectCrew(crewId) {
   
   // H4: Set API crew ID for live vitals fetch
   DASH_API.selectedCrewId = DASH_API.crewIdMap[crewId] || 'crew-001';
-  if (typeof refreshPredict === 'function') setTimeout(refreshPredict, 0);   // trend chips for the new crew member
+  hrHistory.length = 0;
+  // Re-draw the map, status card, trend chips and strip for the new person from the last forecast straight away,
+  // then fetch a fresh one (no waiting for the next 5-second refresh)
+  const mineNow = CM.last && (CM.last.crew || []).find(c => c.crew_member_id === DASH_API.selectedCrewId);
+  if (mineNow) { try { renderCascadeMap(mineNow); renderTrendChips(mineNow); } catch (x) {} }
+  if (typeof refreshPredict === 'function') setTimeout(refreshPredict, 0);
+  if (typeof refreshLiveAlerts === 'function') setTimeout(refreshLiveAlerts, 0);
+  if (window.AEGIS_API && AEGIS_API._lastRecs) AEGIS_API.updateRecommendationsUI(AEGIS_API._lastRecs);
   
   // Update selection everywhere a crew member can be picked (crew strip, roster cards)
   document.querySelectorAll('.crew-card').forEach(card => card.classList.toggle('selected', (card.getAttribute('onclick') || '').includes(`'${crewId}'`)));
@@ -1825,7 +1835,7 @@ function chatAgentBubble(agentKey, tag) {
   b.className = 'ab agent'; b.style.setProperty('--who', `var(--${AGENTS[agentKey] ? agentKey : 'aegis'})`);
   const who = document.createElement('div'); who.className = 'ab-who';
   who.textContent = (AGENTS[agentKey] || AGENTS.aegis).name;
-  if (tag) { const t = document.createElement('span'); t.className = 'response-source' + (tag.ai ? '' : ' rules'); t.textContent = tag.ai ? '🧠 DeepSeek' : 'rules'; t.title = tag.title || ''; who.appendChild(t); }
+  if (tag) { const t = document.createElement('span'); t.className = 'response-source' + (tag.ai ? '' : ' rules'); t.textContent = tag.label || (tag.ai ? '🧠 DeepSeek' : 'rules'); t.title = tag.title || ''; who.appendChild(t); }
   const txt = document.createElement('div'); txt.className = 'ab-text';
   b.append(who, txt);
   if (log) { log.appendChild(b); _chatTrim(); }
@@ -2604,10 +2614,12 @@ function dismissRec(id) {
 // H4: Fetch live vitals from API for selected crew member
 let hrHistory = [68, 67, 69, 66, 68, 70];
 async function fetchAndUpdateVitals() {
+  const forCrew = DASH_API.selectedCrewId;     // a reply for the previously selected person must not overwrite the tiles
   try {
-    const response = await fetch(`${DASH_API.baseUrl}/api/crew/${DASH_API.selectedCrewId}`);
+    const response = await fetch(`${DASH_API.baseUrl}/api/crew/${forCrew}`);
     if (!response.ok) throw new Error('API unavailable');
     const crew = await response.json();
+    if (forCrew !== DASH_API.selectedCrewId) return;
     const vitals = crew.vitals;
     if (!vitals) return;
     
@@ -2638,8 +2650,8 @@ async function fetchAndUpdateVitals() {
     
     // GENE: modelled IL-6 from the backend (the exact value and personal-baseline limit the GENE agent uses)
     try {
-      const br = await fetch(`${DASH_API.baseUrl}/api/crew/${DASH_API.selectedCrewId}/biomarkers`);
-      if (br.ok) {
+      const br = await fetch(`${DASH_API.baseUrl}/api/crew/${forCrew}/biomarkers`);
+      if (br.ok && forCrew === DASH_API.selectedCrewId) {
         const bm = await br.json();
         const il6El = document.getElementById('il6-value');
         const il6Fill = document.getElementById('il6-fill');
@@ -2682,7 +2694,9 @@ async function fetchAndUpdateVitals() {
           : d >= MISSION.warning ? `· Elevated (${ratio.toFixed(1)}× background)` : `· Normal background`;
         rad24Status.style.color = c;
         rad24Status.title = `${MISSION.label}: normal background ${MISSION.background} mSv/day (${MISSION.source}). ` +
-          `SOLARIS warns at ${MISSION.warning} and orders the shelter at ${MISSION.shelter} mSv/24 h.`;
+          `SOLARIS warns at ${MISSION.warning} and orders the shelter at ${MISSION.shelter} mSv/24 h. ` +
+          'This is the current dose rate (mSv per 24 h), so it falls again once a solar storm passes; the mission total dose above only ever goes up.';
+        rad24El.title = rad24Status.title;
       }
     }
     
@@ -2885,8 +2899,8 @@ function renderLiveAlert(a) {
     const pct = (ruleMsg.match(/(\d+(?:\.\d+)?)\s*%/) || [])[1];
     const bpm = (ruleMsg.match(/(\d+)\s*BPM/i) || [])[1];
     plain = /oxygen|spo2|hypox/i.test(cleanTitle + ruleMsg) && pct
-      ? `${name}'s oxygen level is ${Math.round(pct) === 90 && Number(pct) < 90 ? Number(pct).toFixed(1) : Math.round(pct)}%, below the safe line of 90%. They need extra oxygen and a check-up right away.`
-      : bpm ? `${name}'s heart rate is ${bpm} beats per minute, which is in the danger zone. They should stop what they're doing and get checked now.`
+      ? `${name}'s oxygen level was ${Math.round(pct) === 90 && Number(pct) < 90 ? Number(pct).toFixed(1) : Math.round(pct)}%, below the safe line of 90%. They need extra oxygen and a check-up right away.`
+      : bpm ? `${name}'s heart rate was ${bpm} beats per minute when this was raised, which is in the danger zone. They should stop what they're doing and get checked now.`
             : `${name} has a reading in the danger zone. They need to be checked right away.`;
     headline = `${cleanTitle.charAt(0) + cleanTitle.slice(1).toLowerCase()} · ${name}`;
     spoken = plain + ' I recommend starting a medical response.';
@@ -2897,7 +2911,9 @@ function renderLiveAlert(a) {
   }
   title.textContent = headline;
   title.title = cleanTitle + (LIVE_ALERT.protocol ? ` · Protocol ${LIVE_ALERT.protocol}` : ''); desc.title = '';
-  desc.textContent = plain;
+  const raisedAt = _parseUtc(a.timestamp);
+  const raisedTxt = isNaN(raisedAt) ? '' : new Date(raisedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  desc.textContent = plain + (raisedTxt ? ` (Raised ${raisedTxt}; numbers are the readings at that moment, Live Vitals shows them now.)` : '');
   _renderAiNote(aiMsg);
   agentsEl.innerHTML = agents.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('');
 
@@ -2993,14 +3009,23 @@ async function refreshRosterStatus() {
 
 // Demo controls: Shift+B slow build-up (PREDICT -> PREVENT), Shift+D the cascade demo, Shift+S a solar particle
 // event (SHELTER-1), Shift+M a medical emergency (MEDIC-1), Shift+N returns to nominal
+// The backend's reason when it refuses (public demo rate limit 429, switched-off 403), else a network message
+async function _apiRefusal(r, what) {
+  if (!r) return `Could not reach the AEGIS backend to ${what}.`;
+  let d = ''; try { d = (await r.json()).detail || ''; } catch (x) {}
+  if (r.status === 429) return d || 'The public demo is limiting how often this can run. Please wait a minute and try again.';
+  if (r.status === 403) return d || 'That control is switched off on the public demo.';
+  return `The backend could not ${what} (${d || 'HTTP ' + r.status}).`;
+}
 async function setDemoScenario(name) {
+  let r = null;
   try {
     // Single-person demos happen to the crew member selected on the dashboard; the solar storm hits everyone
     const perPerson = ['cascade_demo', 'buildup_demo', 'medical_emergency'].includes(name);
     const crewId = DASH_API.selectedCrewId || 'crew-001';
     const who = _crewDisplayName(crewId);
     const qs = perPerson ? `?crew_id=${encodeURIComponent(crewId)}` : '';
-    const r = await fetch(`${DASH_API.baseUrl}/api/simulation/scenario/${name}${qs}`, { method: 'POST' });
+    r = await fetch(`${DASH_API.baseUrl}/api/simulation/scenario/${name}${qs}`, { method: 'POST' });
     if (!r.ok) throw new Error(r.status);
     const label = { cascade_demo: `Demo: several of ${who}'s readings are about to go wrong at once. Watch what happens.`,
                     buildup_demo: `Demo: ${who}'s readings will slowly drift over the next few minutes. Let's see if I can spot it before it becomes a problem.`,
@@ -3009,31 +3034,33 @@ async function setDemoScenario(name) {
                     nominal: "Back to normal. Everyone's readings are settling down." }[name] || `Scenario ${name} set.`;
     if (typeof typeResponse === 'function') typeResponse(label);
   } catch (e) {
-    if (typeof typeResponse === 'function') typeResponse('Could not reach the AEGIS backend to change the scenario.');
+    const msg = await _apiRefusal(r && !r.ok ? r : null, 'change the scenario');
+    if (typeof typeResponse === 'function') typeResponse(msg);
   }
 }
 document.addEventListener('keydown', (e) => {
   if (!e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
   const tag = (e.target && e.target.tagName) || '';
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-  if (e.key === 'D') setDemoScenario('cascade_demo');
-  else if (e.key === 'S') setDemoScenario('spe_event');
-  else if (e.key === 'B') setDemoScenario('buildup_demo');
-  else if (e.key === 'M') setDemoScenario('medical_emergency');
-  else if (e.key === 'N') setDemoScenario('nominal');
-  else if (e.key === 'R') resetDemo();
+  if (e.repeat || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) return;
+  // Physical key (e.code), so the shortcuts work with Caps Lock on and on keyboard layouts/automation that report a lowercase key
+  const k = /^Key[A-Z]$/.test(e.code || '') ? e.code.slice(3) : String(e.key || '').toUpperCase();
+  const act = { D: () => setDemoScenario('cascade_demo'), S: () => setDemoScenario('spe_event'), B: () => setDemoScenario('buildup_demo'),
+                M: () => setDemoScenario('medical_emergency'), N: () => setDemoScenario('nominal'), R: () => resetDemo() }[k];
+  if (act) { e.preventDefault(); act(); }
 });
 
 // Shift+R: clean, repeatable demo start (clears alerts, cards, history and agent memory; fixed crew baselines)
 async function resetDemo() {
-  _setEmergency(null); closeCallPanel(); CALLS.dismissed.clear(); CALLS.since = Date.now();
+  let r = null;
   try {
-    const r = await fetch(`${DASH_API.baseUrl}/api/demo/reset`, { method: 'POST' });
+    r = await fetch(`${DASH_API.baseUrl}/api/demo/reset`, { method: 'POST' });
     if (!r.ok) throw new Error(r.status);
+    _setEmergency(null); closeCallPanel(); CALLS.dismissed.clear(); CALLS.since = Date.now();
     if (typeof typeResponse === 'function') typeResponse('Demo reset. Clean start: no alerts, everyone back to their normal readings.');
     setTimeout(() => location.reload(), 1800);
   } catch (e) {
-    if (typeof typeResponse === 'function') typeResponse('Could not reach the AEGIS backend to reset the demo.');
+    const msg = await _apiRefusal(r && !r.ok ? r : null, 'reset the demo');
+    if (typeof typeResponse === 'function') typeResponse(msg);
   }
 }
 // Also allow ?demo=cascade in the URL
@@ -3111,6 +3138,13 @@ function renderAllClear() {
   const st = CM.prevStates || {};
   const strained = Object.keys(st).filter(k => st[k] !== 'ok');
   const who = (typeof _crewDisplayName === 'function') ? _crewDisplayName(DASH_API.selectedCrewId) : 'this crew member';
+  if (CM.resetting) {
+    panel.style.borderColor = 'var(--cm-amber)'; icon.textContent = '⟳';
+    title.textContent = 'Resetting to a clean start…'; title.style.color = 'var(--cm-amber)';
+    desc.textContent = 'The demo was stopped. Readings are settling back to normal; this card will say Steady once two fresh checks agree.';
+    if (agentsEl) agentsEl.innerHTML = ''; btn.style.display = 'none';
+    return;
+  }
   if (strained.length) {
     const names = strained.map(k => k.toUpperCase()).join(', ');
     panel.style.borderColor = 'var(--cm-amber)';
@@ -3393,6 +3427,7 @@ function _tickEmergency() {
   const b = document.getElementById('alert-timer'); if (b) { b.textContent = txt; b.title = 'Time since the alert was raised'; }
 }
 setInterval(_tickEmergency, 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) _tickEmergency(); });
 // Confirming a protocol acknowledges the alert; the strip stays (steady, not pulsing) until the readings that
 // triggered it are back in a safe range, because a confirmed plan is not yet a solved problem.
 function _ackEmergency() {
@@ -3680,6 +3715,10 @@ function renderCascadeMap(fc) {
     mode = 'none'; big = 'Steady'; sub = 'ALL SYSTEMS';
     cap = `All four systems are steady for ${name}. Each ring shows how close a reading is to its limit.`;
   }
+  if (CM.resetting) {        // Stop / reset in progress: the readings are still settling, so don't call them steady yet
+    mode = 'watch'; big = 'RESET'; sub = 'SETTLING';
+    cap = 'Resetting to a clean start… The readings are settling back to normal; the map will say Steady once two fresh checks agree.';
+  }
   const centre = document.getElementById('node-aegis');
   centre.dataset.mode = mode;
   const bigEl = document.getElementById('cm-big');
@@ -3823,12 +3862,19 @@ function syncVitalsToMap(entry) {
 let VITALS_SYNCED_AT = 0;
 
 async function refreshPredict() {
+  const t0 = Date.now();
+  if (typeof _tickEmergency === 'function') _tickEmergency();
   try {
     const r = await fetch(`${DASH_API.baseUrl}/api/predict`);
     if (!r.ok) return;
     const d = await r.json();
     CM.last = d;
     const now = Date.now();
+    if (CM.resetting) {
+      const allOk = (d.crew || []).every(c => sysAllOk(c) && c.risk !== 'cascade' && c.risk !== 'converged');
+      if (CM.resetting.doneAt && t0 > CM.resetting.doneAt) CM.resetting.fresh = allOk ? CM.resetting.fresh + 1 : 0;
+      if (CM.resetting.fresh >= 2 || now - CM.resetting.started > 90000) CM.resetting = null;
+    }
     let top = (d.crew || [])
       .filter(c => c.risk === 'cascade' && !((PREDICT_STATE.suppress[c.crew_member_id] || 0) > now))
       .sort((a, b) => a.cascade_eta_min - b.cascade_eta_min)[0] || null;
@@ -4109,6 +4155,12 @@ function openWhatIf() {
   const crew = CREW_DATA[selectedCrew];
   document.getElementById('whatif-title').textContent = `What-If Simulator · ${crew ? crew.firstName : 'Crew'}`;
   document.getElementById('whatifModal').classList.add('open');
+  _whatifSeq++;                         // drop any verdict still in flight from the last time the simulator was open
+  const st = document.getElementById('status-text');
+  if (st) st.innerHTML = '<strong>Checking with the agents…</strong> loading this crew member\'s current readings';
+  const dot = document.getElementById('status-dot'); if (dot) dot.className = 'status-dot';
+  document.querySelectorAll('[id^="wi-status-"]').forEach(el => { el.textContent = '…'; el.className = 'step-status'; });
+  const rb = document.getElementById('aegis-rec'); if (rb) rb.style.display = 'none';
   resetSliders();
   announce('What-If Scenario Simulator opened');
 }
@@ -4145,7 +4197,10 @@ function updateSlider(key, skipEvaluate) {
 
 function _scheduleWhatIf() {
   if (cascadeTimeout) clearTimeout(cascadeTimeout);
-  document.getElementById('status-text').innerHTML = '<strong>Evaluating…</strong> agents are checking the new values';
+  document.getElementById('status-text').innerHTML = '<strong>Checking with the agents…</strong> the verdict appears when they answer';
+  const dot = document.getElementById('status-dot'); if (dot) dot.className = 'status-dot';
+  WHATIF_AGENTS.forEach(a => { const st = document.getElementById('wi-status-' + a.key); if (st) { st.textContent = '…'; st.className = 'step-status'; } });
+  const ast = document.getElementById('wi-status-AEGIS'); if (ast) { ast.textContent = 'Checking…'; ast.className = 'step-status'; }
   cascadeTimeout = setTimeout(evaluateWhatIf, 700);
 }
 
@@ -4201,7 +4256,9 @@ async function evaluateWhatIf() {
         : data.protocol === 'MEDIC-1' ? "that would be a medical emergency, so I'd start a medical response right away."
         : data.verdict === 'CASCADE' ? "several problems would be stacking up at once, so I'd start the recovery plan."
         : "that would need someone to take a closer look.";
-      typeResponse(data.explanation ? `If that happened: ${data.explanation}` : `If that happened, ${plainVerdict}`);
+      // Clearly marked as a hypothetical in the chat log, so nobody reads it as a live reading
+      VOICE.nextTag = { label: 'What-If · hypothetical', ai: false, title: 'Answer to slider values in the What-If simulator. Nothing here is a live reading.' };
+      typeResponse(data.explanation ? `What-If (hypothetical): if that happened, ${data.explanation}` : `What-If (hypothetical): if that happened, ${plainVerdict}`, true);
     }
   }
   _whatifLastRank = rank;
@@ -4305,7 +4362,7 @@ async function resetSliders() {
     
     <div class="live-status">
       <div class="status-dot" id="status-dot"></div>
-      <div class="status-text" id="status-text"><strong>Normal</strong> — All vitals within acceptable range</div>
+      <div class="status-text" id="status-text"><strong>Checking with the agents…</strong> the verdict appears when they answer</div>
     </div>
     
     <p class="whatif-intro">Move a slider to try a hypothetical reading. The real agents evaluate it with the same rules as the live dashboard; nothing is saved. <em>Reset</em> loads this crew member's current readings.</p>
@@ -4498,7 +4555,7 @@ async function echoRefresh(event, opts = {}) {
       if (ECHO.chats[crew] && chat) { chat.innerHTML = ECHO.chats[crew]; chat.scrollTop = chat.scrollHeight; }
       else {
         if (chat) chat.innerHTML = '';
-        echoBubble('note', `Daily check-in · Day ${d.facts.mission_day}`);
+        echoBubble('note', `Daily check-in · Day ${d.facts.mission_day} · readings as of ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (Live Vitals has the current values)`);
         echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
         if (ECHO.ready && opts.speak) echoSpeak(d.text);
       }
@@ -4551,7 +4608,7 @@ function echoSend() {
   echoBubble('crew', msg);
   echoReply(echoPost('chat', { message: msg }));
 }
-function echoShare(to) { echoBubble('crew', to === 'ground' ? 'Yes, send a private note to the flight surgeon.' : 'Yes, please let them know.'); echoReply(echoPost('share', { to })); }
+function echoShare(to) { echoBubble('crew', to === 'ground' ? 'Yes, send a private note to the flight surgeon.' : 'Yes, please let them know.'); echoReply(echoPost('share', { to, consent: true })); }   // the click is the crew member's yes
 function echoDismiss() { echoBubble('crew', "I'm okay for now."); echoReply(echoPost('dismiss', {})); }
 
 setInterval(() => { if (!STORY.on || STORY.allowEcho) echoRefresh(); }, 8000);
@@ -4598,7 +4655,9 @@ function _storyLocalReset() {
   Object.assign(PREDICT_STATE, { top: null, announcedKey: null, lastCrew: null, suppress: {}, prevented: null, preventedEntry: null });
   LIVE_ALERT.id = null; LIVE_ALERT.pauseUntil = 0;
   CM.etaEnd = null; CM.prevStates = null;
-  ECHO.crew = null; ECHO.lastProactive = null; ECHO.chats = {}; ECHO.pickedAt = 0;
+  const echoChat = document.getElementById('echo-chat');
+  if (ECHO.crew && echoChat) ECHO.chats[ECHO.crew] = echoChat.innerHTML;   // save before the switch marker is cleared
+  ECHO.crew = null; ECHO.lastProactive = null; ECHO.pickedAt = 0;   // conversations are kept (the backend keeps them too)
 }
 // Two cuts, both ending on ECHO's check-in: 'short' = the 2-minute judging cut (default), 'full' = about 3 minutes
 const STORY_CUTS = {
@@ -4683,13 +4742,16 @@ function stopStory() {
   closeSimModal(); closeCallPanel();
   const stopBtn = document.getElementById('story-stop'); if (stopBtn) stopBtn.style.visibility = 'hidden';
   storyCaption(1, 'Demo stopped. Resetting the ship to a clean start…');
+  CM.resetting = { started: Date.now(), doneAt: 0, fresh: 0 };
+  if (typeof renderAllClear === 'function') renderAllClear();
   // Stop the story AND reset, so nothing is left drifting after "stop"
   fetch(`${DASH_API.baseUrl}/api/demo/story/stop`, { method: 'POST' })
     .then(() => fetch(`${DASH_API.baseUrl}/api/demo/reset`, { method: 'POST' }))
     .catch(() => {})
     .finally(() => {
       _storyLocalReset();
-      storyCaption(1, 'Demo stopped. The ship is back to a clean start.');
+      if (CM.resetting) CM.resetting.doneAt = Date.now();
+      storyCaption(1, 'Demo stopped. Readings are settling back to normal.');
       setTimeout(() => { if (!STORY.on && bar) { bar.hidden = true; if (stopBtn) stopBtn.style.visibility = ''; } }, 2500);
     });
   const btn = document.getElementById('run-demo-btn'); if (btn) { btn.classList.remove('on'); btn.textContent = '▶ Run demo · 2 min'; }

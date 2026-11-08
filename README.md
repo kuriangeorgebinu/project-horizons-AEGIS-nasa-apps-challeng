@@ -203,8 +203,17 @@ How it fits together:
   deploy SSH key. State is kept in the private, versioned S3 bucket `aegis-tfstate-522921672742` with S3-native locking.
 - **App deploy** (`deploy/remote-deploy.sh`): ships a `git archive` of the commit, installs CPU-only PyTorch and the
   requirements, runs the backend under systemd, and serves only the public dashboard files.
-- **Public-site safety:** the phone alarm is always off (`AEGIS_CALLS=off`). DeepSeek is on only if the repository
-  secret `DEEPSEEK_API_KEY` is set; without it AEGIS runs in rule-based mode.
+- **Public-site safety:** the server runs with `AEGIS_PUBLIC=1`:
+  - the phone alarm is **off by default**; it rings only if the repository variable `AEGIS_PUBLIC_CALLS` is `on` and
+    all four Twilio secrets are set;
+  - endpoints that overwrite data, ring the phone or spend DeepSeek quota directly (`PUT /api/crew/*/vitals`,
+    `/api/simulation/start|stop|config|inject|clear-anomaly`, `/api/notify/test`, `/api/llm/*`, `/api/analyze`,
+    `/api/query`) answer 403, unless the request carries the `X-AEGIS-Admin` header matching the optional secret
+    `AEGIS_ADMIN_TOKEN`;
+  - what the dashboard uses (demo controls and keyboard shortcuts, agent chat, ECHO, What-If, recommendation actions)
+    stays on but is rate-limited per visitor and overall, so a shortcut pressed too often answers "please wait a minute";
+  - `/docs`, `/redoc` and `/openapi.json` are not served, and CORS allows no other sites.
+  DeepSeek is on only if the repository secret `DEEPSEEK_API_KEY` is set; without it AEGIS runs in rule-based mode.
 - **Natural voices:** if the Parameter Store entries `/aegis/polly/key-id` and `/aegis/polly/secret` exist (an IAM
   user allowed only `polly:SynthesizeSpeech`), the deploy gives the server that key and the agents speak with Amazon
   Polly's generative voices. Without them the dashboard uses the browser's built-in voices.
@@ -250,7 +259,7 @@ TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_FROM_NUMBER=           # your Twilio number, e.g. +1...
 AEGIS_ONCALL_NUMBER=          # the phone to ring (on a trial account it must be verified)
-# AEGIS_CALLS=off             # turn calls off without removing the keys
+AEGIS_CALLS=on                # calls are OFF unless this is on (default off since the bug-hunt fixes)
 # AEGIS_CALL_COOLDOWN_MIN=10
 # AEGIS_CALL_MAX_PER_HOUR=4
 ```
@@ -300,7 +309,7 @@ project-horizons-AEGIS-nasa-apps-challeng/
 
 ## Main API endpoints
 
-All under `http://127.0.0.1:8000`. Full list and try-it-out at `/docs`.
+All under `http://127.0.0.1:8000`. Full list and try-it-out at `/docs` (local only; not served on the public site).
 
 | Method | Endpoint | What it does |
 |---|---|---|

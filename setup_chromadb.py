@@ -186,6 +186,82 @@ def index_countermeasures(collection, knowledge_base: dict):
     return len(documents)
 
 
+def _pretty(key: str) -> str:
+    return str(key).replace("_", " ")
+
+
+def _flatten(v) -> str:
+    if isinstance(v, dict):
+        return "; ".join(f"{_pretty(k)}: {_flatten(x)}" for k, x in v.items())
+    if isinstance(v, list):
+        return ", ".join(_flatten(x) for x in v)
+    return _pretty(v)
+
+
+def protocol_documents(knowledge_base: dict) -> tuple[list, list, list]:
+    """Documents for the 'protocols' collection: the knowledge base's emergency_protocols and
+    intervention_protocols (the keys this indexer used to look for, 'medications' / 'countermeasure_protocols',
+    don't exist in the JSON, so the collection stayed empty)."""
+    docs, metas, ids = [], [], []
+    for key, p in (knowledge_base.get("emergency_protocols") or {}).items():
+        parts = [f"Emergency protocol: {p.get('name', _pretty(key))}", f"Condition: {_pretty(key)}"]
+        if p.get("steps"):
+            parts.append("Steps: " + ", ".join(_pretty(x) for x in p["steps"]))
+        for k, v in p.items():
+            if k not in ("name", "steps", "source"):
+                parts.append(f"{_pretty(k).capitalize()}: {_flatten(v)}")
+        docs.append(". ".join(parts))
+        metas.append({"protocol_id": key, "category": "emergency", "type": "protocol",
+                      "source": p.get("source", "AEGIS Knowledge Base")})
+        ids.append(f"proto_emergency_{key}")
+    for key, p in (knowledge_base.get("intervention_protocols") or {}).items():
+        parts = [f"Intervention protocol: {_pretty(key)}", f"Tier: {p.get('tier', 'prevent')}"]
+        if p.get("threshold"):
+            parts.append(f"Trigger: {p['threshold']}")
+        for i in p.get("interventions") or []:
+            parts.append(f"{_pretty(i.get('action', ''))}: {i.get('details', '')}")
+        docs.append(". ".join(parts))
+        metas.append({"protocol_id": key, "category": "intervention", "type": "protocol",
+                      "source": p.get("source", "AEGIS Knowledge Base")})
+        ids.append(f"proto_intervention_{key}")
+    return docs, metas, ids
+
+
+def countermeasure_documents(knowledge_base: dict) -> tuple[list, list, list]:
+    """The knowledge base's 'countermeasures' section (exercise devices, radiation shielding, ...)."""
+    docs, metas, ids = [], [], []
+    for group, items in (knowledge_base.get("countermeasures") or {}).items():
+        if not isinstance(items, dict):
+            continue
+        for key, c in items.items():
+            if not isinstance(c, dict):
+                continue
+            parts = [f"Countermeasure: {c.get('name', _pretty(key))}", f"Group: {_pretty(group)}"]
+            for k, v in c.items():
+                if k not in ("name", "source"):
+                    parts.append(f"{_pretty(k).capitalize()}: {_flatten(v)}")
+            docs.append(". ".join(parts))
+            metas.append({"category": group, "type": "countermeasure", "source": c.get("source", "AEGIS Knowledge Base")})
+            ids.append(f"cmkb_{group}_{key}")
+    return docs, metas, ids
+
+
+def index_protocols(collection, knowledge_base: dict) -> int:
+    docs, metas, ids = protocol_documents(knowledge_base)
+    if docs:
+        collection.upsert(documents=docs, metadatas=metas, ids=ids)
+        print(f"  Indexed {len(docs)} protocol documents")
+    return len(docs)
+
+
+def index_kb_countermeasures(collection, knowledge_base: dict) -> int:
+    docs, metas, ids = countermeasure_documents(knowledge_base)
+    if docs:
+        collection.upsert(documents=docs, metadatas=metas, ids=ids)
+        print(f"  Indexed {len(docs)} knowledge-base countermeasure documents")
+    return len(docs)
+
+
 def index_hrr_risks(collection, hrr_data: dict):
     """Index NASA HRR official risks."""
     print("Indexing NASA HRR risks...")
@@ -373,7 +449,8 @@ def main():
     total_docs += index_countermeasures(collections['countermeasures'], knowledge_base)
     total_docs += index_hrr_risks(collections['risks'], hrr_risks)
     total_docs += index_citations(collections['citations'], citations)
-    total_docs += index_medications(collections['protocols'], knowledge_base)
+    total_docs += index_kb_countermeasures(collections['countermeasures'], knowledge_base)
+    total_docs += index_protocols(collections['protocols'], knowledge_base)
     
     print(f"\n4. Indexing complete!")
     print(f"   Total documents indexed: {total_docs}")

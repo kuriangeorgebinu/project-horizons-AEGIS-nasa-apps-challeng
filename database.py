@@ -27,10 +27,23 @@ DB_PATH = Path(os.getenv("AEGIS_DB_PATH") or (Path(__file__).parent / "aegis.db"
 
 
 def get_connection() -> sqlite3.Connection:
-    """Get a database connection with row factory."""
-    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    """Get a database connection with row factory. WAL mode + a busy timeout: the simulator, the analysis loop and
+    API requests write at the same time, and readers must never get "database is locked"."""
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False, timeout=15)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout = 15000")
     return conn
+
+
+def _safe_rows(rows, build, what: str) -> list:
+    """Build model objects row by row; one corrupt row is skipped (and logged), not a 500 for the whole list."""
+    out = []
+    for row in rows:
+        try:
+            out.append(build(row))
+        except Exception as e:  # pragma: no cover - defensive
+            print(f"database: skipped a corrupt {what} row ({type(e).__name__}: {e})")
+    return out
 
 
 @contextmanager
@@ -134,7 +147,14 @@ def init_database():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_recommendations_status ON recommendations(status)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_timestamp ON event_log(timestamp)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_vitals_history_crew ON vitals_history(crew_member_id)")
-        
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_vitals_history_time ON vitals_history(timestamp)")
+        # Recommendation lifecycle: when and why a card left the list (shown on the dashboard for two minutes)
+        cols = {r[1] for r in cursor.execute("PRAGMA table_info(recommendations)").fetchall()}
+        if "resolved_at" not in cols:
+            cursor.execute("ALTER TABLE recommendations ADD COLUMN resolved_at TIMESTAMP")
+        if "resolution" not in cols:
+            cursor.execute("ALTER TABLE recommendations ADD COLUMN resolution TEXT")
+        cursor.execute("PRAGMA journal_mode = WAL")
         conn.commit()
 
 
@@ -142,8 +162,33 @@ def init_database():
 # Crew State Operations
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _crew_from_row(row) -> CrewMember:
+    vitals = json.loads(row["vitals_json"]) if row["vitals_json"] else None
+    return CrewMember(
+        id=row["id"],
+        name=row["name"],
+        role=CrewRole(row["role"]),
+        age=row["age"],
+        status=HealthStatus(row["status"]),
+        vitals=Vitals(**vitals) if vitals else None,
+        current_activity=row["current_activity"],
+        mission_day=row["mission_day"],
+        bone_density_baseline=row["bone_density_baseline"],
+        muscle_mass_baseline=row["muscle_mass_baseline"],
+        cumulative_radiation=row["cumulative_radiation"],
+        active_conditions=json.loads(row["active_conditions_json"]),
+        medications=json.loads(row["medications_json"])
+    )
+
+
 def get_all_crew() -> list[CrewMember]:
-    """Get all crew members."""
+    """Get all crew members (one SELECT, so vitals and the mission dose are read together)."""
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM crew_state ORDER BY id").fetchall()
+        return _safe_rows(rows, _crew_from_row, "crew")
+
+
+def _unused_get_all_crew_legacy() -> list[CrewMember]:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM crew_state")
@@ -179,7 +224,11 @@ def get_crew_member(crew_id: str) -> Optional[CrewMember]:
         
         if not row:
             return None
-        
+        try:
+            return _crew_from_row(row)
+        except Exception as e:  # pragma: no cover
+            print(f"database: corrupt crew row {crew_id}: {e}")
+            return None
         vitals = json.loads(row["vitals_json"]) if row["vitals_json"] else None
         return CrewMember(
             id=row["id"],
@@ -218,7 +267,8 @@ def upsert_crew_member(member: CrewMember):
                 mission_day = excluded.mission_day,
                 bone_density_baseline = excluded.bone_density_baseline,
                 muscle_mass_baseline = excluded.muscle_mass_baseline,
-                cumulative_radiation = excluded.cumulative_radiation,
+                -- a received dose can't be undone: an upsert never lowers the mission total
+                cumulative_radiation = MAX(crew_state.cumulative_radiation, excluded.cumulative_radiation),
                 active_conditions_json = excluded.active_conditions_json,
                 medications_json = excluded.medications_json,
                 updated_at = excluded.updated_at
@@ -266,15 +316,32 @@ def update_crew_vitals(crew_id: str, vitals: Vitals, status: Optional[HealthStat
 
 
 def update_cumulative_radiation(crew_id: str, increment: float):
-    """Add to a crew member's cumulative radiation dose (T7 fix)."""
+    """Add to a crew member's cumulative radiation dose (never a negative increment)."""
     with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE crew_state 
-            SET cumulative_radiation = cumulative_radiation + ?,
-                updated_at = ?
-            WHERE id = ?
-        """, (increment, datetime.utcnow().isoformat(), crew_id))
+        conn.execute("UPDATE crew_state SET cumulative_radiation = cumulative_radiation + ?, updated_at = ? WHERE id = ?",
+                     (max(0.0, float(increment or 0.0)), datetime.utcnow().isoformat(), crew_id))
+
+
+_tick_count = {"n": 0}
+
+
+def update_crew_tick(crew_id: str, vitals: Vitals, status: Optional[HealthStatus], dose_increment: float):
+    """One simulator tick in ONE transaction: vitals, status and the mission dose change together, so a reader
+    never sees new vitals with an old dose (or the reverse). History is pruned now and then (6 h kept)."""
+    now = datetime.utcnow().isoformat()
+    vj = json.dumps(vitals.model_dump())
+    with get_db() as conn:
+        if status:
+            conn.execute("UPDATE crew_state SET vitals_json = ?, status = ?, cumulative_radiation = cumulative_radiation + ?, "
+                         "updated_at = ? WHERE id = ?", (vj, status.value, max(0.0, float(dose_increment or 0.0)), now, crew_id))
+        else:
+            conn.execute("UPDATE crew_state SET vitals_json = ?, cumulative_radiation = cumulative_radiation + ?, "
+                         "updated_at = ? WHERE id = ?", (vj, max(0.0, float(dose_increment or 0.0)), now, crew_id))
+        conn.execute("INSERT INTO vitals_history (crew_member_id, vitals_json) VALUES (?, ?)", (crew_id, vj))
+        _tick_count["n"] += 1
+        if _tick_count["n"] % 500 == 0:
+            conn.execute("DELETE FROM vitals_history WHERE timestamp < datetime('now', '-6 hours')")
+            conn.execute("DELETE FROM event_log WHERE id NOT IN (SELECT id FROM event_log ORDER BY timestamp DESC LIMIT 5000)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -342,9 +409,12 @@ def get_recommendations(
         cursor.execute(query, params)
         rows = cursor.fetchall()
         
-        recs = []
-        for row in rows:
-            recs.append(Recommendation(
+        return _safe_rows(rows, _rec_from_row, "recommendation")
+
+
+def _rec_from_row(row) -> Recommendation:
+    keys = row.keys()
+    return Recommendation(
                 id=row["id"],
                 crew_member_id=row["crew_member_id"],
                 pillar=RecommendationPillar(row["pillar"]),
@@ -359,20 +429,68 @@ def get_recommendations(
                 confidence=row["confidence"],
                 risk_if_ignored=row["risk_if_ignored"],
                 created_at=datetime.fromisoformat(row["created_at"]),
-                expires_at=datetime.fromisoformat(row["expires_at"]) if row["expires_at"] else None
-            ))
-        return recs
+                expires_at=datetime.fromisoformat(row["expires_at"]) if row["expires_at"] else None,
+                resolved_at=datetime.fromisoformat(row["resolved_at"]) if "resolved_at" in keys and row["resolved_at"] else None,
+                resolution=row["resolution"] if "resolution" in keys else None,
+            )
 
 
-def update_recommendation_status(rec_id: str, status: RecommendationStatus) -> bool:
-    """Update a recommendation's status."""
+def get_recommendation(rec_id: str) -> Optional[Recommendation]:
     with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE recommendations SET status = ? WHERE id = ?",
-            (status.value, rec_id)
-        )
-        return cursor.rowcount > 0
+        row = conn.execute("SELECT * FROM recommendations WHERE id = ?", (rec_id,)).fetchone()
+        return _rec_from_row(row) if row else None
+
+
+def update_recommendation_status(rec_id: str, status: RecommendationStatus,
+                                 only_if: Optional[RecommendationStatus] = None,
+                                 expires_at: Optional[datetime] = None, reason: Optional[str] = None) -> bool:
+    """Change a recommendation's status, optionally only if it is still in `only_if` (no resurrecting a
+    dismissed card). Leaving 'pending' records when and why; `expires_at` is the defer / snooze timer."""
+    q = "UPDATE recommendations SET status = ?, resolved_at = ?, resolution = ?, expires_at = COALESCE(?, expires_at) WHERE id = ?"
+    args = [status.value, None if status == RecommendationStatus.PENDING else datetime.utcnow().isoformat(),
+            reason, expires_at.isoformat() if expires_at else None, rec_id]
+    if only_if is not None:
+        q += " AND status = ?"
+        args.append(only_if.value)
+    with get_db() as conn:
+        return conn.execute(q, args).rowcount > 0
+
+
+def active_recommendation_titles(crew_id: str) -> set:
+    """Titles that must not be raised again right now: pending / accepted cards, deferred ones until their timer
+    ends, dismissed ones for their 30-minute snooze."""
+    now = datetime.utcnow().isoformat()
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT title FROM recommendations WHERE crew_member_id = ? AND ("
+            " status IN ('pending', 'accepted') OR"
+            " (status IN ('deferred', 'dismissed') AND expires_at IS NOT NULL AND expires_at > ?))",
+            (crew_id, now)).fetchall()
+        return {r["title"] for r in rows}
+
+
+def expire_deferred_recommendations(crew_id: Optional[str] = None) -> int:
+    """'Will re-evaluate in 4 hours': a deferred card whose timer ran out is closed, so the agents raise it again
+    if the reading still calls for it."""
+    now = datetime.utcnow().isoformat()
+    q = ("UPDATE recommendations SET status = 'completed', resolved_at = ?, resolution = 'deferral ended: re-evaluated' "
+         "WHERE status = 'deferred' AND expires_at IS NOT NULL AND expires_at <= ?")
+    args = [now, now]
+    if crew_id:
+        q += " AND crew_member_id = ?"
+        args.append(crew_id)
+    with get_db() as conn:
+        return conn.execute(q, args).rowcount
+
+
+def recent_recommendation_changes(minutes: float = 2.0) -> list[dict]:
+    """Cards that left the list in the last few minutes, with why (server-side, survives a page reload)."""
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, crew_member_id, title, status, resolution, resolved_at FROM recommendations "
+            "WHERE status != 'pending' AND resolved_at IS NOT NULL AND resolved_at >= ? ORDER BY resolved_at DESC LIMIT 20",
+            ((datetime.utcnow() - __import__('datetime').timedelta(minutes=minutes)).isoformat(),)).fetchall()
+        return [dict(r) for r in rows]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -420,17 +538,14 @@ def get_events(limit: int = 100, event_type: Optional[EventType] = None) -> list
             )
         
         rows = cursor.fetchall()
-        events = []
-        for row in rows:
-            events.append(Event(
-                id=row["id"],
-                type=EventType(row["type"]),
-                agent=AgentType(row["agent"]) if row["agent"] else None,
-                message=row["message"],
-                details=json.loads(row["details_json"]) if row["details_json"] else None,
-                timestamp=datetime.fromisoformat(row["timestamp"])
-            ))
-        return events
+        return _safe_rows(rows, lambda row: Event(
+            id=row["id"],
+            type=EventType(row["type"]),
+            agent=AgentType(row["agent"]) if row["agent"] else None,
+            message=row["message"],
+            details=json.loads(row["details_json"]) if row["details_json"] else None,
+            timestamp=datetime.fromisoformat(row["timestamp"])
+        ), "event")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -474,19 +589,23 @@ def get_alerts(unacknowledged_only: bool = False, limit: int = 50) -> list[Alert
             )
         
         rows = cursor.fetchall()
-        alerts = []
-        for row in rows:
-            alerts.append(Alert(
-                id=row["id"],
-                severity=AlertSeverity(row["severity"]),
-                title=row["title"],
-                message=row["message"],
-                source=AgentType(row["source"]) if row["source"] else None,
-                crew_member_id=row["crew_member_id"],
-                timestamp=datetime.fromisoformat(row["timestamp"]),
-                acknowledged=bool(row["acknowledged"])
-            ))
-        return alerts
+        return _safe_rows(rows, lambda row: Alert(
+            id=row["id"],
+            severity=AlertSeverity(row["severity"]),
+            title=row["title"],
+            message=row["message"],
+            source=AgentType(row["source"]) if row["source"] else None,
+            crew_member_id=row["crew_member_id"],
+            timestamp=datetime.fromisoformat(row["timestamp"]),
+            acknowledged=bool(row["acknowledged"])
+        ), "alert")
+
+
+def count_open_alerts() -> dict:
+    """Unacknowledged alerts per severity, over the whole table (not just the newest 50)."""
+    with get_db() as conn:
+        rows = conn.execute("SELECT severity, COUNT(*) AS n FROM alerts WHERE acknowledged = 0 GROUP BY severity").fetchall()
+        return {r["severity"]: r["n"] for r in rows}
 
 
 def acknowledge_alert(alert_id: str) -> bool:
@@ -559,14 +678,9 @@ def reset_demo_data() -> dict:
             cur.execute(f"SELECT COUNT(*) FROM {table}")
             removed[table] = cur.fetchone()[0]
             cur.execute(f"DELETE FROM {table}")
-    # A dose already received can't be undone: keep each person's mission total (never lower it on a reset)
-    received = {m.id: (m.cumulative_radiation or 0.0) for m in get_all_crew()}
+    # A dose already received can't be undone: the crew upsert keeps MAX(old, seed) in the same statement,
+    # so no reader ever sees a lowered mission total
     init_default_crew()                     # back to the canonical crew, day 54, starting readings
-    with get_db() as conn:
-        cur = conn.cursor()
-        for crew_id, dose in received.items():
-            cur.execute("UPDATE crew_state SET cumulative_radiation = MAX(cumulative_radiation, ?) WHERE id = ?",
-                        (dose, crew_id))
     return removed
 
 

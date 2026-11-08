@@ -6,8 +6,8 @@ Configure in .env (never commit it):
     TWILIO_AUTH_TOKEN=...
     TWILIO_FROM_NUMBER=+1...        your Twilio number
     AEGIS_ONCALL_NUMBER=+1...       the phone to ring (on a trial account it must be a verified number)
-Optional:
-    AEGIS_CALLS=off                 turn calling off without removing the keys
+Calling is OFF unless switched on explicitly:
+    AEGIS_CALLS=on                  required to dial (default off, so a deployment never rings anyone by accident)
     AEGIS_CALL_COOLDOWN_MIN=10      no repeat call for the same alert within this many minutes
     AEGIS_CALL_MAX_PER_HOUR=4       hard cap across all alerts
 
@@ -51,7 +51,8 @@ def configured() -> bool:
 
 
 def enabled() -> bool:
-    return _env("AEGIS_CALLS", "on").lower() != "off"
+    """Calls are dialled only with AEGIS_CALLS=on. Unset or anything else means off (logged, never dialled)."""
+    return _env("AEGIS_CALLS", "off").strip().lower() in ("on", "1", "true", "yes")
 
 
 def _masked(num: str) -> str:

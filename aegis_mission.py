@@ -18,6 +18,7 @@ IL-6 (GENE) - modelled, not measured:
   (2.5-5.9 pg/mL, NASA OSDR OSD-575). GENE flags a rise against that personal baseline, the rule that caught
   3 of 4 real post-flight rises in the Inspiration4 data.
 """
+import math
 import os
 
 CAREER_LIMIT_MSV = 600.0          # NASA-STD-3001 career effective dose limit
@@ -75,12 +76,22 @@ PREFLIGHT_IL6 = {"crew-001": 3.85, "crew-002": 4.13, "crew-003": 4.48, "crew-004
 DEFAULT_PREFLIGHT_IL6 = 4.0
 
 
-def il6_model(stress_index: float, dose_24h: float, bg: float = None) -> float:
-    """MODELLED IL-6 (pg/mL): rises with stress and with radiation above the mission's normal background."""
+I4_OBSERVED_MAX_IL6 = 12.07       # highest IL-6 in the Inspiration4 data the GENE validation rests on (pg/mL)
+REST_STRESS = 40.0                # stress index at or below which the model adds nothing (resting + light work)
+
+
+def il6_model(stress_index: float, dose_24h: float, bg: float = None, baseline: float = None) -> float:
+    """MODELLED IL-6 (pg/mL), centred on the person's own pre-flight baseline: at rest (stress <= 40, dose at the
+    mission background) it equals that baseline. Stress above rest and radiation above background add to it, with a
+    soft ceiling just under the Inspiration4 observed maximum (12.07 pg/mL), so the model never claims values outside
+    the real data the GENE rule was validated on."""
     bg = background() if bg is None else bg
-    stress = 50.0 if stress_index is None else stress_index
+    base = DEFAULT_PREFLIGHT_IL6 if baseline is None else baseline
+    stress = REST_STRESS if stress_index is None else stress_index
     dose = bg if dose_24h is None else dose_24h
-    return 1.5 + stress / 20.0 + 0.8 * (dose / bg)
+    excess = max(0.0, stress - REST_STRESS) / 10.0 + 0.9 * max(0.0, dose / bg - 1.0)
+    room = max(0.1, I4_OBSERVED_MAX_IL6 - 0.1 - base)
+    return base + room * (1.0 - math.exp(-excess / room))
 
 
 def il6_baseline(crew_id: str) -> float:

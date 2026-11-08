@@ -133,9 +133,12 @@ def a3_pulse():
     for metric, val, expect, ref in cases:
         f = [x for x in agent.analyze(member(**{metric: val})) if x["metric"] == metric]
         got = f[0]["type"] if f else "none"
-        agrees = got == expect or (expect.startswith("watch") and got == "none" and None)
-        out.append({"metric": metric, "value": val, "expected": expect, "aegis": got, "reference": ref,
-                    "agrees": agrees})
+        agrees = got == expect                 # plain true / false: no case is left out of the count
+        row = {"metric": metric, "value": val, "expected": expect, "aegis": got, "reference": ref, "agrees": agrees}
+        if not agrees and expect.startswith("watch") and got == "none":
+            row["note"] = ("Deliberate difference: AEGIS flags heart rate only below 40 bpm (critical), because a "
+                           "resting rate of 40-60 bpm is common in fit astronauts. Counted as a disagreement.")
+        out.append(row)
     return out
 
 

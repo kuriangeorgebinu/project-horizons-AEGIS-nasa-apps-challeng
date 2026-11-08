@@ -103,12 +103,8 @@ def _refresh_state() -> None:
         pass
     try:
         import database as db
-        sev: dict = {}
-        for a in db.get_alerts():
-            if not a.acknowledged:
-                k = getattr(a.severity, "value", str(a.severity))
-                sev[k] = sev.get(k, 0) + 1
-        for k in ("critical", "high", "medium", "low"):
+        sev = db.count_open_alerts()               # whole table, every severity (incl. info)
+        for k in ("critical", "high", "medium", "low", "info"):
             ALERTS_OPEN.labels(k).set(sev.get(k, 0))
         from models import RecommendationStatus
         per: dict = {}

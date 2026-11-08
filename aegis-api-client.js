@@ -29,7 +29,12 @@ const AEGIS_API = {
           ...options.headers
         }
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        let detail = ''; try { detail = (await response.json()).detail || ''; } catch (x) {}
+        const err = new Error(`HTTP ${response.status}${detail ? ': ' + detail : ''}`);
+        err.status = response.status; err.detail = detail;
+        throw err;
+      }
       return await response.json();
     } catch (error) {
       console.error(`AEGIS API Error [${endpoint}]:`, error);
@@ -107,9 +112,16 @@ const AEGIS_API = {
     const fn = { accept: 'acceptRecommendation', defer: 'deferRecommendation', dismiss: 'dismissRecommendation' }[kind];
     const ids = String(idsCsv || '').split(',').filter(Boolean);
     // Remember what the crew did, so the card can say "Accepted" instead of vanishing silently
-    this._recActed = this._recActed || {};
-    (this._recPrev || new Map()).forEach((r, title) => { if (r._all.some(x => ids.includes(String(x.id)))) this._recActed[title] = kind; });
-    await Promise.all(ids.map(id => this[fn](id).catch(() => null)));
+    // The server records who did what (recent-changes), so the "Accepted / Resolved" lines survive a reload.
+    // 409 = someone (or the agents) already handled this card: refresh instead of pretending it worked.
+    const results = await Promise.all(ids.map(id => this[fn](id).then(() => 'ok').catch(e => (e && e.status) || 'err')));
+    const note = document.getElementById('recs-note');
+    if (note) {
+      note.textContent = results.includes(409) ? 'Already handled by someone else or resolved by the agents. The list has been refreshed.'
+        : results.includes(429) ? 'Too many actions in a minute on the public demo. Please wait a moment.'
+        : results.some(r => r !== 'ok') ? 'Could not record that action. Please try again.' : '';
+      clearTimeout(this._noteT); if (note.textContent) this._noteT = setTimeout(() => { note.textContent = ''; }, 6000);
+    }
     return this.updateDashboard();
   },
   
@@ -225,7 +237,8 @@ const AEGIS_API = {
       
       // Fetch recommendations
       const recs = await this.getPendingRecommendations();
-      this.recommendations = recs;
+      this.recommendations = recs; this._lastRecs = recs;
+      try { this._recChanges = await this.fetch('/api/recommendations/recent-changes?minutes=2'); } catch (x) { /* keep the last list */ }
       this.updateRecommendationsUI(recs);
       
       // Update connection status
@@ -276,11 +289,14 @@ const AEGIS_API = {
     const recsList = document.querySelector('.recs-list');
     if (!recsList) return;
     
-    // One card per recommendation type: the same advice for several crew members (e.g. the long-term radiation
-    // trend for all four) is merged into one card that lists who it applies to. Most urgent first, up to 8.
+    // The list follows the crew member selected on the dashboard; cards for others are counted, not shown.
+    const sel = (window.DASH_API && DASH_API.selectedCrewId) || null;
+    const mineRecs = sel ? recs.filter(r => r.crew_member_id === sel) : recs;
+    const othersN = recs.length - mineRecs.length;
+    // One card per recommendation type (merged if the same advice applies more than once). Most urgent first.
     const sevRank = { critical: 0, high: 1, moderate: 2, medium: 2, low: 3 };
     const groups = new Map();
-    [...recs].sort((a, b) => (sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9)
+    [...mineRecs].sort((a, b) => (sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9)
                             || new Date(b.created_at) - new Date(a.created_at))
       .forEach(r => {
         const g = groups.get(r.title);
@@ -288,33 +304,27 @@ const AEGIS_API = {
         else if (!g._all.some(x => x.crew_member_id === r.crew_member_id)) g._all.push(r);
       });
     const unique = [...groups.values()];
+    this._recPrev = new Map(unique.map(r => [r.title, r]));
     const MAX_SHOWN = 8;
-    // Lifecycle: a recommendation that leaves the list stays visible for two minutes as one line saying why
-    // (accepted / deferred / dismissed by the crew, or resolved because the reading went back to normal)
-    const now = Date.now(), cur = new Map(unique.map(r => [r.title, r]));
-    this._recGone = (this._recGone || []).filter(g => now - g.at < 120000 && !cur.has(g.title));
-    if (this._recPrev) this._recPrev.forEach((r, title) => {
-      if (cur.has(title)) return;
-      const how = (this._recActed || {})[title];
-      this._recGone.unshift({ title, at: now, how });
-      if (this._recActed) delete this._recActed[title];
-    });
-    this._recPrev = cur;
+    const hhmmUtc = t => { if (!t) return ''; const d = new Date(t + (/[zZ]|[+-]\d\d:?\d\d$/.test(t) ? '' : 'Z')); return isNaN(d) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
+    // Lifecycle lines come from the server (/api/recommendations/recent-changes): what happened and why, for 2 minutes
     const goneEl = document.getElementById('recs-resolved');
     if (goneEl) {
       const escG = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-      const label = { accept: 'Accepted', defer: 'Deferred', dismiss: 'Dismissed' };
-      goneEl.innerHTML = this._recGone.slice(0, 3).map(g => `<div class="rec-resolved"><b>${g.how ? label[g.how] : '✓ Resolved'}</b> · ${escG(g.title)}` +
-        `${g.how ? '' : ' · the reading that raised it is back within range'} · ${new Date(g.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`).join('');
+      const label = { accepted: 'Accepted', deferred: 'Deferred 4 h', dismissed: 'Dismissed', completed: '✓ Resolved' };
+      const seen = new Set();
+      const lines = (this._recChanges || []).filter(c => (!sel || c.crew_member_id === sel) && !seen.has(c.title) && seen.add(c.title)).slice(0, 3);
+      goneEl.innerHTML = lines.map(c => `<div class="rec-resolved"><b>${label[c.status] || escG(c.status)}</b> · ${escG(c.title)}` +
+        `${c.resolution ? ' · ' + escG(c.resolution) : ''} · ${hhmmUtc(c.resolved_at)}</div>`).join('');
     }
     const countEl = document.getElementById('recs-count');
     if (countEl) {
-      countEl.textContent = unique.length > MAX_SHOWN
-        ? `Showing ${MAX_SHOWN} of ${unique.length}`
-        : (unique.length ? `${unique.length} active` : '');
+      const base = unique.length > MAX_SHOWN ? `Showing ${MAX_SHOWN} of ${unique.length}` : (unique.length ? `${unique.length} active` : '');
+      countEl.textContent = base + (othersN ? `${base ? ' · ' : ''}${othersN} for other crew` : '');
+      countEl.title = othersN ? 'Select another crew member to see their actions' : '';
     }
     if (unique.length === 0) {
-      recsList.innerHTML = '<div class="recs-empty">Nothing to do right now. The agents will add actions here when a reading needs one.</div>';
+      recsList.innerHTML = `<div class="recs-empty">Nothing to do for this crew member right now.${othersN ? ` ${othersN} action${othersN > 1 ? 's are' : ' is'} waiting for other crew.` : ''} The agents add actions here when a reading needs one.</div>`;
       return;
     }
     
@@ -387,6 +397,7 @@ const AEGIS_API = {
         </div>
         <div class="rec-body">
           <div class="rec-intervention" title="${esc(rec.description)}">↳ ${esc(rec.title)}</div>
+          <div class="rec-raised" title="Numbers in this card are the readings when the agent raised it; Live Vitals shows the current values">Readings when raised ${hhmmUtc(rec.created_at)}</div>
           ${rec._all.length > 1 ? `<div class="rec-crew-list">For ${esc(rec._all.map(r => crewNames[r.crew_member_id] || r.crew_member_id).join(', '))}. Shown for ${esc(crewNames[rec.crew_member_id] || rec.crew_member_id)}:</div>` : ''}
           ${aiHtml(rec) || `<div class="rec-detection">${verifyHtml(rec)}"${esc(rec.description)}"</div>`}
           ${stepsHtml(rec)}

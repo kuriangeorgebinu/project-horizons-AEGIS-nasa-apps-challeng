@@ -10,10 +10,13 @@ MIRROR detects, ECHO responds as a presence. Three modes:
 
 Design rules
 - Rules decide, the AI only words. Mode changes and crisis detection are rule-based (regex + readings).
-  DeepSeek may word ordinary companion replies; support and urgent replies are always scripted.
-- Private by default. Chats and check-ins stay in memory for this session, are never written to the event
-  log and are never sent to mission control. ECHO asks before sharing anything. The one exception, stated
-  up front in the panel: if someone says they may harm themselves, ECHO alerts the medical officer.
+  DeepSeek may word ordinary small-talk replies only; anything in support mode, any distress and any
+  possible self-harm is answered by fixed scripts on board, never by the model.
+- Private by default. Chats and check-ins stay in memory on board, are never written to the event log and are
+  never sent to mission control. For small talk, only the single message just typed goes to the AI service,
+  with every crew name replaced by a role; no chat history is ever sent. ECHO shares nothing without an
+  explicit yes from the crew member. The one exception, stated up front in the panel: if someone says they
+  may harm themselves, ECHO alerts the medical officer.
 - Escalation follows the light delay: the medical officer on board first (the Commander when the medical
   officer is the one struggling), then the flight surgeon at mission control, minutes away.
 - ECHO always says it is an AI. It is not a counsellor and gives no medical or psychiatric advice.
@@ -41,8 +44,11 @@ AFTER_EMERGENCY_MINUTES = 20      # an emergency this recent makes ECHO check in
 
 # Rule-based crisis detection. ACUTE = possible risk of self-harm -> urgent path. DISTRESS = support mode.
 ACUTE = re.compile(
-    r"\b(kill(ing)? myself|suicid\w*|end (it all|my life|things)|want(ed)? to die|wish i (was|were) dead|"
-    r"don'?t want to (live|be here|wake up)|hurt(ing)? myself|self[- ]?harm\w*|no (reason|point) (to|in) (live|living|going on))\b",
+    r"\b(kill(ing)? (my ?self|me)|suicid\w*|end (it|it all|my life|things|everything)|take my (own )?life|"
+    r"end my own life|want(ed)? to die|wanna die|ready to die|wish i (was|were) dead|better off dead|"
+    r"(don'?t|do not) want to (live|be here|be alive|wake up|exist)|(hurt|harm|cut|injure|burn)(ing)? my ?self|"
+    r"self[- ]?harm\w*|overdos\w*|od on|hang my ?self|jump off|slit my|no (reason|point) (to|in) (live|living|going on)|"
+    r"not worth living|can'?t go on|cannot go on|no way out|disappear forever|everyone would be better without me)\b",
     re.I)
 DISTRESS = re.compile(
     r"\b(panic\w*|can'?t cope|cannot cope|overwhelm\w*|hopeless|helpless|terrified|scared|afraid|anxious|anxiety|"
@@ -63,10 +69,16 @@ def _st(crew_id: str) -> dict:
         return _STATE[crew_id]
 
 
-def reset() -> None:
-    """Demo reset: forget every check-in and chat (they only ever lived in memory)."""
+def reset(keep_conversations: bool = True) -> None:
+    """Demo reset: support modes and snoozes are cleared, so a new demo starts calm. Each crew member's own
+    conversation and check-ins are kept (they live in memory only and are the crew member's, not the demo's)."""
     with _lock:
-        _STATE.clear()
+        if not keep_conversations:
+            _STATE.clear()
+            return
+        for st in _STATE.values():
+            st["support"] = None
+            st["dismissed_until"] = 0.0
 
 
 # ── Who is who ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -84,6 +96,11 @@ def _address(m) -> str:
     return f"Dr. {m.name.split()[-1]}"
 
 
+def _normalize(text: str) -> str:
+    """Curly quotes and doubled spaces must not hide a crisis phrase from the detector."""
+    return " ".join(str(text).replace("\u2019", "'").replace("\u2018", "'").split())
+
+
 def _display(m) -> str:
     if m is None:
         return "the crew member"
@@ -99,7 +116,11 @@ def escalation(crew_id: str) -> dict:
     crew = db.get_all_crew()
     medic = next((c for c in crew if c.role.value == "medical_officer"), None)
     cmdr = next((c for c in crew if c.role.value == "commander"), None)
-    first = cmdr if (medic is None or medic.id == crew_id) else medic
+    # The medical officer first; the Commander if the medical officer is the one struggling (or there is none);
+    # and never the person themselves: if they are the Commander too, the next crew member on the roster.
+    others = [c for c in crew if c.id != crew_id]
+    first = medic if (medic and medic.id != crew_id) else (cmdr if (cmdr and cmdr.id != crew_id) else
+                                                            (others[0] if others else None))
     return {
         "onboard": {"crew_id": first.id if first else None, "name": _display(first),
                     "role": (first.role.value.replace("_", " ") if first else "crew")},
@@ -218,12 +239,14 @@ def status(crew_id: str, event: Optional[str] = None) -> dict:
         level = "support" if mode == "support" else "calm"
     return {"crew_id": crew_id, "name": _display(m), "address": addr, "mode": mode, "level": level,
             "reason": reason, "text": text, "facts": f, "escalation": esc,
-            "coping": COPING if mode == "support" else [],
+            "coping": list(COPING) if mode == "support" else [],
             "privacy": PRIVACY}
 
 
-PRIVACY = ("Private: what you tell ECHO stays here and is never sent to mission control unless you choose to "
-           "share it. One exception: if you say you might harm yourself, ECHO alerts the medical officer.")
+PRIVACY = ("Private: what you tell ECHO stays on board and is never sent to mission control unless you choose to "
+           "share it. Small talk may be worded by an AI service (that one message only, names removed); anything "
+           "about how you feel is answered on board. One exception: if you say you might harm yourself, ECHO "
+           "alerts the medical officer.")
 
 COPING = [
     "Slow breathing: in for 4, hold for 4, out for 4, hold for 4. Five rounds.",
@@ -248,7 +271,7 @@ def checkin(crew_id: str, mood: int, note: str = "") -> dict:
     f = _facts(m)
     esc = escalation(crew_id)
     after = (s.get("support") or {}).get("reason") == "after_emergency" and _support_active(crew_id)
-    if note and ACUTE.search(note):
+    if note and ACUTE.search(_normalize(note)):
         return _urgent(crew_id, m)
     if mood <= 2:
         _set_support(crew_id, "low_mood")
@@ -273,7 +296,7 @@ def checkin(crew_id: str, mood: int, note: str = "") -> dict:
         mode, level = "companion", "calm"
     _remember(crew_id, "echo", text)
     return {"crew_id": crew_id, "mood": mood, "mood_word": MOODS[mood], "mode": mode, "level": level,
-            "text": text, "coping": COPING if mode == "support" else [], "escalation": esc, "source": "rules"}
+            "text": text, "coping": list(COPING) if mode == "support" else [], "escalation": esc, "source": "rules"}
 
 
 # ── Chat ──────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -345,38 +368,60 @@ def _scripted(text: str, m, f: dict) -> str:
     return _rng.choice(_DEFAULT).format(**ctx)
 
 
-_MED_WORDS = re.compile(r"\b(mg|milligram|dose|dosage|tablet|pill|medication|medicine|prescri\w+|diagnos\w+|"
-                        r"melatonin|ambien|zolpidem|sertraline|ssri|benzodiazepine|xanax|therapy session)\b", re.I)
+_MED_WORDS = re.compile(r"\b(mg|mcg|milligram\w*|microgram\w*|dose\w*|dosage|tablet\w*|pill\w*|capsule\w*|"
+                        r"medication\w*|medicine\w*|meds|drug\w*|prescri\w+|diagnos\w+|sedat\w+|inject\w*|"
+                        r"supplement\w*|substance\w*|alcohol|drink(ing)? (a|some) (beer|wine|whisky|vodka|shot)|"
+                        r"smok\w+|vape|vaping|high|stoned|therapy session|therap(y|ist)|psychiatr\w+)\b", re.I)
+
+
+def _scrub_names(text: str) -> str:
+    """Crew names never go to the model: 'Nakamura' / 'Dr. Okonkwo' / 'Sarah' -> their role."""
+    out = text
+    for c in db.get_all_crew():
+        role = "the " + c.role.value.replace("_", " ")
+        for part in c.name.split():
+            out = re.sub(rf"\b(?:dr\.?\s+|doctor\s+|commander\s+|cmdr\.?\s+)?{re.escape(part)}\b", role, out, flags=re.I)
+    return out
 
 
 def _ai_reply(text: str, m, f: dict, history: list) -> Optional[str]:
     """DeepSeek words an ordinary companion reply. Role only, no names. Checked before it is shown."""
     if not aegis_llm.enabled():
         return None
-    convo = " | ".join(f"{h['who']}: {h['text']}" for h in history[-6:])
-    prompt = (f"You are talking WITH {_role_words(m)} (address them as '{_address(m) if m.role.value == 'commander' else 'Doctor'}'), "
+    # Privacy: only this one message, names replaced by roles. No chat history leaves the ship.
+    prompt = (f"You are talking WITH {_role_words(m)} (address them as '{'Commander' if m.role.value == 'commander' else 'Doctor'}'), "
               f"mission day {f['mission_day']} of {f['mission_days']} on the way to Mars. "
               f"Facts you may use: sleep score last night {f['sleep']} out of 100. "
-              f"Recent conversation: {convo or '(none)'}. "
-              f"They just said: \"{text}\". Reply as ECHO.")
+              f"They just said: \"{_scrub_names(text)}\". Reply as ECHO, small talk only. Never mention any "
+              f"medicine, drug, alcohol, dose, diagnosis or treatment.")
     # A chat reply should feel live: two tries of up to 12 s each (one slow DeepSeek call used to leave the
     # crew member with a canned line after a 25 s wait)
-    out = aegis_llm.chat(prompt, persona="ECHO", words=55, mode="echo", timeout=12) or \
-          aegis_llm.chat(prompt, persona="ECHO", words=55, mode="echo", timeout=12)
+    out = aegis_llm.chat(prompt, persona="ECHO", words=55, mode="echo", timeout=15)   # 15 s in total, retries included
     if not out:
         return None
     allowed = {str(f.get("sleep")), str(f.get("mission_day")), str(f.get("mission_days")), "4", "5", "3", "10"}
     nums = set(re.findall(r"\d+", out))
-    if _MED_WORDS.search(out) or not nums <= allowed or len(out) > 500:
+    import aegis_verify
+    med = aegis_verify.check_medicine(out, "")
+    if (_MED_WORDS.search(out) or not med["ok"] or not nums <= allowed or len(out) > 500
+            or ACUTE.search(_normalize(out)) or DISTRESS.search(out)):
         return None                                  # fails the check -> scripted reply instead
     return out
+
+
+# Support mode: every reply is scripted (no model), warm and pointing to people
+_SUPPORT_REPLIES = [
+    "I'm here with you, {addr}. Take your time. Would one of the small things below help, or shall I ask {onboard} to come and sit with you? Only if you say yes.",
+    "Thank you for staying with me, {addr}. You don't have to have the right words. Want to try the slow breathing together, or talk a bit more?",
+    "That makes sense, {addr}. Whatever you're feeling is allowed out here. If you'd like company, I can let {onboard} know. Nothing from our chat gets shared.",
+]
 
 
 def chat(crew_id: str, message: str) -> dict:
     m = _member(crew_id)
     if m is None:
         return {"error": "unknown crew member"}
-    message = " ".join(str(message).split())[:500]
+    message = _normalize(message)[:500]
     s = _st(crew_id)
     history = list(s["chat"])
     _remember(crew_id, "crew", message)
@@ -401,17 +446,21 @@ def chat(crew_id: str, message: str) -> dict:
                     + f"Let's take it one step at a time. Would one of these help right now? And if you'd like, I can "
                       f"let {esc['onboard']['name']} know you want to talk. Only if you say yes.")
         _remember(crew_id, "echo", text)
-        return {"crew_id": crew_id, "mode": "support", "level": "support", "text": text, "coping": COPING,
+        return {"crew_id": crew_id, "mode": "support", "level": "support", "text": text, "coping": list(COPING),
                 "escalation": esc, "source": "rules"}
     sup = _support_active(crew_id)
-    text = _ai_reply(message, m, f, history)
-    source = "deepseek" if text else "rules"
+    if sup:                                          # support mode: always scripted, never the model
+        text = _rng.choice(_SUPPORT_REPLIES).format(addr=_address(m), onboard=esc["onboard"]["name"])
+        source = "rules"
+    else:
+        text = _ai_reply(message, m, f, history)
+        source = "deepseek" if text else "rules"
     if not text:
         text = _scripted(message, m, f)
     _remember(crew_id, "echo", text)
     mode = "support" if sup else "companion"
     return {"crew_id": crew_id, "mode": mode, "level": (sup or {}).get("level", "calm") if sup else "calm",
-            "text": text, "coping": COPING if sup else [], "escalation": esc, "source": source}
+            "text": text, "coping": list(COPING) if sup else [], "escalation": esc, "source": source}
 
 
 # ── Sharing (only when the crew member says yes) ─────────────────────────────────────────────────────────────
@@ -425,10 +474,18 @@ def db_note(crew_id: str, message: str) -> None:
         pass
 
 
-def share(crew_id: str, to: str = "onboard") -> dict:
+SHARE_TARGETS = ("onboard", "ground")
+
+
+def share(crew_id: str, to: str = "onboard", consent: bool = False) -> dict:
+    """Only on the crew member's explicit yes (consent=True), and only to the two places ECHO offers."""
     m = _member(crew_id)
     if m is None:
         return {"error": "unknown crew member"}
+    if to not in SHARE_TARGETS:
+        return {"error": f"'to' must be one of {SHARE_TARGETS}"}
+    if consent is not True:
+        return {"error": "ECHO shares only when the crew member says yes (consent required)"}
     esc = escalation(crew_id)
     s = _st(crew_id)
     with _lock:

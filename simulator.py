@@ -116,7 +116,7 @@ class VitalsSimulator:
         
         # H1: Clamp ranges per vital to prevent validation errors
         clamp_ranges = {
-            "heart_rate": (40, 180),
+            "heart_rate": (30, 180),      # below PULSE's 40 bpm bradycardia limit, so it can actually fire
             "bp_systolic": (85, 190),
             "bp_diastolic": (50, 120),
             "spo2": (88, 100),
@@ -147,7 +147,7 @@ class VitalsSimulator:
         hr_base = baseline["heart_rate"] + (circadian_factor * 5) + (activity_factor * 20)
         hr_raw = self._bounded_random(
             hr_base + scenario_mods.get("heart_rate", 0),
-            3, 40, 180  # Reduced spread from 5 to 3
+            3, 30, 180  # Reduced spread from 5 to 3; floor below the 40 bpm bradycardia limit
         )
         
         bp_sys_raw = self._bounded_random(
@@ -356,15 +356,17 @@ class VitalsSimulator:
                 mods["heart_rate"] = p * max(15, 104 - b.get("heart_rate", 68))
                 mods["sleep"] = -25 * p
         
-        # M1: Only apply anomaly to target crew (or all if inject_crew_id is None)
-        target_crew = getattr(self.config, 'inject_crew_id', None)
+        # Anomalies have their own target (anomaly_crew_id), separate from the scenario's victim (inject_crew_id)
+        target_crew = getattr(self.config, 'anomaly_crew_id', None)
         if target_crew is not None and crew_id != target_crew:
             # This crew member is not the target, skip anomaly modifiers
             return mods
             
         # Handle specific anomaly injections
         if self.config.inject_anomaly == "cardiac":
-            mods["heart_rate"] = _rng.choice([30, -20])  # Tachy or brady
+            # Critical tachycardia (> 150 bpm) or critical bradycardia (< 40 bpm), so PULSE's PROTECT rules fire
+            hr_base = self._crew_baselines.get(crew_id, {}).get("heart_rate", 68) if crew_id else 68
+            mods["heart_rate"] = _rng.choice([158 - hr_base, 34 - hr_base])
             mods["bp_systolic"] = 20
             
         elif self.config.inject_anomaly == "radiation":
@@ -392,21 +394,13 @@ class VitalsSimulator:
         rt = aegis_mission.radiation_thresholds()
         sleep = vitals.sleep_quality if vitals.sleep_quality is not None else 100
 
-        # Critical conditions
+        # Exactly the agents' limits (PULSE, MIRROR, SOLARIS), so the headline status and the agents' findings agree:
+        # critical = a PROTECT finding, warning = a PREVENT finding. Caution is set by the API layer (IL-6 mild).
         if (vitals.heart_rate > 150 or vitals.heart_rate < 40 or
                 vitals.spo2 < 90 or rad >= rt["shelter"]):
             return HealthStatus.CRITICAL
-        
-        # Warning conditions
-        if (vitals.heart_rate > 120 or vitals.heart_rate < 50 or
-                vitals.spo2 < 94 or sleep < 50):
+        if vitals.heart_rate > 100 or vitals.spo2 < 95 or sleep < 70 or rad >= rt["warning"]:
             return HealthStatus.WARNING
-        
-        # Caution conditions
-        if (vitals.heart_rate > 100 or vitals.heart_rate < 55 or
-                vitals.spo2 < 96 or sleep < 70 or rad >= rt["warning"]):
-            return HealthStatus.CAUTION
-        
         return HealthStatus.NOMINAL
     
     async def update_all_crew(self):
@@ -418,35 +412,30 @@ class VitalsSimulator:
             config.scenario = None
             self.set_config(config)
         crew = db.get_all_crew()
-        
+        # One clock for everything: the mission time that passed since the last tick (real seconds x speed).
+        # The dose accrues over exactly that time and the mission day advances by exactly that time, so at the
+        # normal background a mission day adds 1.84 mSv, whatever the tick rate or speed.
+        now = datetime.utcnow()
+        last = getattr(self, "_last_tick_clock", None) or now
+        self._last_tick_clock = now
+        sim_seconds = min(60.0, max(0.0, (now - last).total_seconds())) * self.config.speed_multiplier
         for member in crew:
             vitals = self.generate_vitals(member)
             status = self.determine_status(vitals)
-            db.update_crew_vitals(member.id, vitals, status)
-            
-            # T7 fix: Accumulate radiation dose
-            # Convert 24h dose to per-update increment (update every ~5 seconds)
-            # radiation_dose_24h is mSv/day, we update ~17280 times/day at 1x
-            if vitals.radiation_dose_24h:
-                daily_dose = vitals.radiation_dose_24h
-                # Scale by speed multiplier so higher speeds = more accumulation per tick
-                increment = (daily_dose / 17280) * self.config.speed_multiplier
-                db.update_cumulative_radiation(member.id, increment)
-        
-        # Increment mission time
-        self.mission_day += (1 / (24 * 60 * 60)) * self.config.speed_multiplier
+            increment = (vitals.radiation_dose_24h or 0.0) * sim_seconds / 86400.0
+            db.update_crew_tick(member.id, vitals, status, increment)
+        self.mission_day += sim_seconds / 86400.0
     
     async def run(self):
         """Main simulation loop."""
         self.running = True
-        update_interval = 5.0 / self.config.speed_multiplier  # Base: 5 seconds
-        
         while self.running:
             try:
                 await self.update_all_crew()
                 self.last_tick_at = datetime.utcnow()  # M5: Track successful tick
                 self.last_error = None  # Clear error on success
-                await asyncio.sleep(max(1.0, update_interval))
+                # re-read every tick, so a speed change takes effect at once (dose uses measured time anyway)
+                await asyncio.sleep(max(1.0, 5.0 / self.config.speed_multiplier))
             except Exception as e:
                 self.last_error = str(e)  # M5: Track error
                 print(f"Simulator error: {e}")
@@ -464,11 +453,20 @@ class VitalsSimulator:
             self._task.cancel()
     
     def set_config(self, config: SimulationConfig):
-        """Update simulation configuration."""
+        """Update simulation configuration. A scenario change starts clean: no smoothing carried over from the
+        previous scenario, no leftover anomaly, and the story timings only while the story's own scenarios run."""
         old_scenario = self.config.scenario
         self.config = config
         if config.scenario != old_scenario:
             self.scenario_started_at = datetime.utcnow()
+            self._previous_vitals = {}
+            if old_scenario not in ("buildup_demo", "prevent_recovery") or config.scenario is None:
+                self.config.inject_anomaly = None
+                self.config.anomaly_crew_id = None
+            if config.scenario not in ("buildup_demo", "prevent_recovery", "spe_event"):
+                self.story_buildup_s = None
+                self.story_recovery_s = None
+                self.story_fast_settle = False
         
         # SPE onset: the hours before the crew reaches the shelter add a one-time dose (fixed 3 mSv so the
         # demo is repeatable; the demo reset restores the seeded cumulative dose).
@@ -490,9 +488,9 @@ class VitalsSimulator:
         )
     
     def inject_anomaly(self, anomaly_type: str, crew_id: Optional[str] = None):
-        """Inject an anomaly for demo purposes."""
+        """Inject an anomaly for demo purposes. Its target is kept apart from the running scenario's crew member."""
         self.config.inject_anomaly = anomaly_type
-        self.config.inject_crew_id = crew_id  # M1: Store target crew (None = all)
+        self.config.anomaly_crew_id = crew_id  # None = all
         
         # Log the injection
         db.log_event(
@@ -502,9 +500,9 @@ class VitalsSimulator:
         )
     
     def clear_anomaly(self):
-        """Clear any active anomaly injection."""
+        """Clear any active anomaly injection (a running scenario keeps its own target)."""
         self.config.inject_anomaly = None
-        self.config.inject_crew_id = None  # M1: Clear target crew
+        self.config.anomaly_crew_id = None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -124,35 +124,55 @@ def chat(prompt: str, persona: str = "AEGIS", words: int = 70,
     """
     if not enabled():
         return None
+    # `timeout` is the TOTAL time this call may take, retries included (an empty answer is retried with a bigger
+    # token budget, a busy/failed call once more), so a chat reply never waits several timeouts in a row.
+    total = timeout or float(os.getenv("DEEPSEEK_TIMEOUT", "25"))
+    deadline = time.time() + total
     system = BASE_SYSTEM.format(persona=PERSONAS.get(persona.upper(), PERSONAS["AEGIS"]), words=words,
                                 mode_rules=MODE_RULES.get(mode, MODE_RULES["report"]))
     if temperature is None:
         temperature = 0.8 if mode in ("chat", "echo") else 0.2   # lively conversation, steady health reports
     base = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
-    t0 = time.time()
-    try:
-        for budget in (max_tokens, max_tokens * 2):
+    attempts = [max_tokens, max_tokens * 2]
+    tried_again = False
+    while attempts:
+        remaining = deadline - time.time()
+        if remaining < 2:
+            return None
+        budget = attempts[0]
+        t0 = time.time()
+        try:
             r = httpx.post(
                 f"{base}/chat/completions",
                 headers={"Authorization": f"Bearer {_key()}"},
-                timeout=timeout or float(os.getenv("DEEPSEEK_TIMEOUT", "25")),
+                timeout=remaining,
                 json={"model": model(), "max_tokens": budget, "temperature": temperature,
                       "messages": [{"role": "system", "content": system},
                                    {"role": "user", "content": prompt}]},
             )
-            if r.status_code != 200:
-                _record(False, time.time() - t0, f"HTTP {r.status_code}: {r.text[:200]}")
+        except Exception as e:                               # network, timeout...
+            _record(False, time.time() - t0, f"{type(e).__name__}: {e}")
+            if tried_again:
                 return None
+            tried_again = True                               # one more try if time is left
+            continue
+        if r.status_code != 200:
+            _record(False, time.time() - t0, f"HTTP {r.status_code}: {r.text[:200]}")
+            if tried_again or r.status_code not in (429, 500, 502, 503, 504):
+                return None
+            tried_again = True
+            continue
+        try:
             text = ((r.json().get("choices") or [{}])[0].get("message") or {}).get("content") or ""
-            text = " ".join(text.replace("**", "").split())  # single paragraph, no markdown
-            if text:
-                _record(True, time.time() - t0)
-                return text
-        _record(False, time.time() - t0, "empty completion after retry (reasoning used the token budget)")
-        return None
-    except Exception as e:                                   # network, timeout, bad JSON...
-        _record(False, time.time() - t0, f"{type(e).__name__}: {e}")
-        return None
+        except ValueError:
+            text = ""
+        text = " ".join(text.replace("**", "").split())      # single paragraph, no markdown
+        if text:
+            _record(True, time.time() - t0)
+            return text
+        _record(False, time.time() - t0, "empty completion (reasoning used the token budget)")
+        attempts.pop(0)                                      # retry with a bigger token budget
+    return None
 
 
 def chat_tools(prompt: str, tools: list, persona: str = "AEGIS", words: int = 60,

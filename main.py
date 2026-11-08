@@ -18,7 +18,7 @@ load_dotenv()
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,6 +44,8 @@ import aegis_mission
 import aegis_echo
 import aegis_tts
 import aegis_metrics
+import aegis_guard
+import os as _os
 import time as _time
 
 
@@ -69,6 +71,9 @@ async def lifespan(app: FastAPI):
     # Initialize knowledge base (warm up embeddings)
     print("🧠 Loading knowledge base...")
     kb = get_knowledge_base()
+    added = kb.ensure_indexed()          # protocols / KB countermeasures indexed if missing (never silently empty)
+    if added:
+        print(f"   📚 indexed now: {added}")
     stats = kb.get_stats()
     print(f"   📚 {stats['total']} documents indexed")
     
@@ -147,21 +152,38 @@ async def lifespan(app: FastAPI):
 # FastAPI App
 # ─────────────────────────────────────────────────────────────────────────────
 
+_PUBLIC = aegis_guard.public()
 app = FastAPI(
     title="AEGIS API",
     description="Autonomous Expert Group for Integrated Space Health - NASA Space Apps 2026",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    # The public deployment doesn't publish the interactive API docs (they list every endpoint)
+    docs_url=None if _PUBLIC else "/docs",
+    redoc_url=None if _PUBLIC else "/redoc",
+    openapi_url=None if _PUBLIC else "/openapi.json",
 )
 
-# CORS for dashboard connection
+# CORS: the public site is same-origin (Caddy serves page + API), so only the local page server needs CORS.
+# No cookies or credentials are used anywhere, so credentials are never allowed cross-origin.
+_cors = _os.getenv("AEGIS_CORS_ORIGINS") or ("" if _PUBLIC else "http://127.0.0.1:8080,http://localhost:8080,null")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your dashboard origin
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[o.strip() for o in _cors.split(",") if o.strip()],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT"],
+    allow_headers=["Content-Type", "X-AEGIS-Admin"],
 )
+
+
+# Public deployment: admin endpoints off, the rest rate-limited (aegis_guard). No-op locally.
+@app.middleware("http")
+async def _guard_middleware(request: Request, call_next):
+    verdict = aegis_guard.check(request.method, request.url.path, aegis_guard.client_ip(request), request.headers)
+    if verdict:
+        code, reason = verdict
+        return JSONResponse(status_code=code, content={"detail": reason})
+    return await call_next(request)
 
 
 # Prometheus: request count/latency per route template (e.g. /api/crew/{crew_id}), not per raw URL
@@ -282,9 +304,11 @@ async def story_start(cut: str = "short"):
     compressed build-up so AEGIS can PREDICT the cascade and PREVENT it; the dashboard then triggers the solar
     storm (PROTECT) and ends with ECHO checking in. Phone calls are logged, never dialled, while the story runs.
     """
+    if cut not in STORY_CUTS:
+        raise HTTPException(status_code=400, detail=f"cut must be one of {sorted(STORY_CUTS)}")
     out = await demo_reset()
     simulator = get_simulator()
-    t = STORY_CUTS.get(cut, STORY_CUTS["short"])
+    t = STORY_CUTS[cut]
     simulator.story_buildup_s = t["buildup_s"]
     simulator.story_recovery_s = t["recovery_s"]
     simulator.story_fast_settle = t["fast_settle"]
@@ -295,7 +319,7 @@ async def story_start(cut: str = "short"):
     simulator.set_config(config)
     get_coordinator().rearm_cascades()
     db.log_event(EventType.SYSTEM, "Story demo started (calls logged, not dialled)")
-    return {"started": True, "crew_id": "crew-001", "cut": cut if cut in STORY_CUTS else "short", **t, "reset": out}
+    return {"started": True, "crew_id": "crew-001", "cut": cut, **t, "reset": out}
 
 
 @app.post("/api/demo/story/stop")
@@ -405,7 +429,8 @@ class EchoChat(_BaseModel):
 
 
 class EchoShare(_BaseModel):
-    to: str = _Field("onboard", description="onboard (medical officer, or the Commander) or ground (flight surgeon)")
+    to: Literal["onboard", "ground"] = _Field("onboard", description="onboard (medical officer, or the Commander) or ground (flight surgeon)")
+    consent: bool = _Field(False, description="must be true: the crew member said yes to sharing")
 
 
 def _echo_member(crew_id: str):
@@ -440,7 +465,10 @@ async def echo_chat(crew_id: str, req: EchoChat):
 async def echo_share(crew_id: str, req: EchoShare):
     """Only when the crew member says yes: let the medical officer (or the flight surgeon) know they'd like to talk."""
     _echo_member(crew_id)
-    return await asyncio.to_thread(aegis_echo.share, crew_id, req.to)
+    out = await asyncio.to_thread(aegis_echo.share, crew_id, req.to, req.consent)
+    if out.get("error"):
+        raise HTTPException(status_code=400, detail=out["error"])
+    return out
 
 
 @app.post("/api/echo/{crew_id}/dismiss")
@@ -669,16 +697,36 @@ async def get_recommendations(
 @app.get("/api/recommendations/pending", response_model=list[Recommendation])
 async def get_pending_recommendations():
     """Get all pending recommendations."""
-    return db.get_recommendations(status=RecommendationStatus.PENDING)
+    return db.get_recommendations(status=RecommendationStatus.PENDING, limit=500)   # all of them (no silent 50 cap)
+
+
+@app.get("/api/recommendations/recent-changes")
+async def recent_recommendation_changes(minutes: float = Query(default=2.0, ge=0.5, le=30)):
+    """Cards that left the list recently, with why (accepted / deferred / dismissed / resolved)."""
+    return db.recent_recommendation_changes(minutes)
 
 
 @app.post("/api/recommendations/{rec_id}/action")
 async def action_recommendation(rec_id: str, action: RecommendationAction):
-    """Take action on a recommendation (accept, defer, dismiss)."""
-    success = db.update_recommendation_status(rec_id, action.action)
-    
-    if not success:
+    """Take action on a recommendation (accept, defer, dismiss). Only a pending recommendation can be acted on."""
+    if action.recommendation_id and action.recommendation_id != rec_id:
+        raise HTTPException(status_code=400, detail="recommendation_id in the body does not match the URL")
+    if action.action not in (RecommendationStatus.ACCEPTED, RecommendationStatus.DEFERRED, RecommendationStatus.DISMISSED):
+        raise HTTPException(status_code=400, detail="action must be accepted, deferred or dismissed")
+    current = db.get_recommendation(rec_id)
+    if not current:
         raise HTTPException(status_code=404, detail=f"Recommendation {rec_id} not found")
+    if current.status != RecommendationStatus.PENDING:
+        raise HTTPException(status_code=409, detail=f"Recommendation {rec_id} is already {current.status.value}")
+    from datetime import timedelta as _td
+    timer = {RecommendationStatus.DEFERRED: _td(hours=4),        # "Will re-evaluate in 4 hours"
+             RecommendationStatus.DISMISSED: _td(minutes=30)}.get(action.action)   # not raised again for 30 min
+    reason = {RecommendationStatus.ACCEPTED: "accepted by the crew", RecommendationStatus.DEFERRED: "deferred for 4 hours",
+              RecommendationStatus.DISMISSED: "dismissed by the crew"}[action.action]
+    success = db.update_recommendation_status(rec_id, action.action, only_if=RecommendationStatus.PENDING,
+                                              expires_at=(datetime.utcnow() + timer) if timer else None, reason=reason)
+    if not success:
+        raise HTTPException(status_code=409, detail=f"Recommendation {rec_id} was changed by someone else")
     
     # Log the user action
     db.log_event(
@@ -697,8 +745,10 @@ async def action_recommendation(rec_id: str, action: RecommendationAction):
 @app.post("/api/analyze/{crew_id}")
 async def analyze_crew_member_endpoint(crew_id: str):
     """Run AI analysis on a specific crew member."""
+    t0 = _time.perf_counter()
     try:
-        result = analyze_crew_member(crew_id)
+        result = await asyncio.to_thread(analyze_crew_member, crew_id)
+        aegis_metrics.analysis(_time.perf_counter() - t0, True)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -707,7 +757,9 @@ async def analyze_crew_member_endpoint(crew_id: str):
 @app.post("/api/analyze")
 async def analyze_all_crew_endpoint():
     """Run AI analysis on all crew members."""
-    results = analyze_all_crew()
+    t0 = _time.perf_counter()
+    results = await asyncio.to_thread(analyze_all_crew)
+    aegis_metrics.analysis(_time.perf_counter() - t0, True)
     return {
         "timestamp": datetime.utcnow().isoformat(),
         "crew_analyzed": len(results),
@@ -724,7 +776,7 @@ async def get_analysis_summary():
     # Count by pillar
     predict_count = len([r for r in pending_recs if r.pillar == RecommendationPillar.PREDICT])
     prevent_count = len([r for r in pending_recs if r.pillar == RecommendationPillar.PREVENT])
-    respond_count = len([r for r in pending_recs if r.pillar == RecommendationPillar.RESPOND])
+    protect_count = len([r for r in pending_recs if r.pillar == RecommendationPillar.PROTECT])
     
     # Count by status
     status_counts = {
@@ -742,7 +794,7 @@ async def get_analysis_summary():
             "total": len(pending_recs),
             "PREDICT": predict_count,
             "PREVENT": prevent_count,
-            "RESPOND": respond_count
+            "PROTECT": protect_count
         }
     }
 
@@ -849,6 +901,8 @@ async def inject_anomaly(
             detail=f"Invalid anomaly type. Valid types: {valid_anomalies}"
         )
     
+    if crew_id and not db.get_crew_member(crew_id):
+        raise HTTPException(status_code=404, detail=f"Crew member {crew_id} not found")
     simulator = get_simulator()
     simulator.inject_anomaly(anomaly_type, crew_id)
     
