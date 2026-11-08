@@ -171,9 +171,9 @@ never dialled). Click **■ Stop** to end it early.
 | Keys | Scenario |
 |---|---|
 | **Shift + B** | Slow build-up for the selected crew member → early warning, countdown, then "Start prevention plan" |
-| **Shift + D** | Cascade for the selected crew member → recovery plan |
+| **Shift + D** | Cascade for the selected crew member, built over ~100 s (same pace as the 2-minute demo) → early warning with countdown and "Start prevention plan" (cascade avoided); left alone it becomes the full cascade → recovery plan |
 | **Shift + M** | Medical emergency (low oxygen) for the selected crew member → medical response |
-| **Shift + S** | Solar storm for the whole crew → storm shelter |
+| **Shift + S** | Solar storm for the whole crew → storm shelter (peaks ~90 s, then fades back to background over ~60 s; the alert stays open until a person confirms it) |
 | **Shift + N** | Back to normal |
 | **Shift + R** | Clean demo reset: clears alerts, recommendations and history, crew back to their fixed baselines |
 

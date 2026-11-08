@@ -24,6 +24,8 @@ import aegis_mission
 # ─────────────────────────────────────────────────────────────────────────────
 
 BUILDUP_SECONDS = 360   # buildup_demo: time for the metrics to drift from baseline to the cascade end state
+CASCADE_BUILD_SECONDS = 100   # cascade_demo (Shift+D): same pace as the 2-minute story's build-up, so AEGIS
+                              # forecasts the cascade and offers PREVENT-1 before the third system crosses
 RECOVERY_SECONDS = 120  # prevent_recovery: time for the drift to reverse back to baseline after PREVENT-1
 
 # Repeatable demos: every random draw in the simulator comes from this seeded generator, and each crew
@@ -253,6 +255,8 @@ class VitalsSimulator:
         elapsed = (datetime.utcnow() - self.scenario_started_at).total_seconds()
         if self.config.scenario == "buildup_demo":
             return min(1.0, elapsed / (self.story_buildup_s or BUILDUP_SECONDS))
+        if self.config.scenario == "cascade_demo":
+            return min(1.0, elapsed / CASCADE_BUILD_SECONDS)
         if self.config.scenario == "prevent_recovery":
             return self.recovery_from_p * max(0.0, 1.0 - elapsed / (self.story_recovery_s or RECOVERY_SECONDS))
         return 0.0
@@ -264,7 +268,7 @@ class VitalsSimulator:
             return False
         if crew_id != (self.config.inject_crew_id or "crew-001"):
             return False
-        p = self.buildup_progress() if self.config.scenario == "buildup_demo" else 1.0
+        p = self.buildup_progress()       # reverse the drift from wherever it has got to
         self.recovery_from_p = p
         config = self.config.model_copy()
         config.scenario = "prevent_recovery"
@@ -349,23 +353,26 @@ class VitalsSimulator:
             # This simulates the Day 47-54 story from the pitch
             # Story: the cascade builds in ONE crew member (Commander Chen by default, or the
             # inject_crew_id target); everyone else stays nominal so the demo is readable.
+            # Builds over CASCADE_BUILD_SECONDS (not all at once), so the forecast with its countdown and the
+            # PREVENT-1 window come first, exactly as in the story demo; left alone it ends as the full cascade.
             target = self.config.inject_crew_id or "crew-001"
             if crew_id is None or crew_id == target:
+                p = self.buildup_progress()
                 # Keep radiation amber: background 1.84 + 2.2-2.8 = ~4.0-4.6 mSv/24h, above the SOLARIS
                 # warning (2 x background = 3.68) but well below shelter (9.2), so it builds a cascade
                 # (RECOVER-3) rather than an acute SHELTER alert.
-                mods["radiation"] = _rng.uniform(2.2, 2.8)   # SOLARIS warning
+                mods["radiation"] = _rng.uniform(2.2, 2.8) * p   # SOLARIS warning at the end of the build
                 # MIRROR warning is >70, critical >85. Aim for ~76 (+ activity load ~3) relative to THIS
                 # crew member's random baseline, so the demo is amber on every restart instead of
                 # sometimes tipping into a critical stress alert.
                 stress_base = self._crew_baselines.get(crew_id or target, {}).get("stress_base", 30)
-                mods["stress"] = max(30, 76 - stress_base)
+                mods["stress"] = p * max(30, 76 - stress_base)
                 # PULSE warning is >100 bpm: aim for ~112 relative to this crew member's baseline
                 # (+ ~4 activity load), clear of the line so the ring doesn't flicker amber/red with noise,
                 # and far below the 150 bpm critical level.
                 hr_base = self._crew_baselines.get(crew_id or target, {}).get("heart_rate", 68)
-                mods["heart_rate"] = max(15, 108 - hr_base)
-                mods["sleep"] = -25                             # MIRROR sleep warning (<70%)
+                mods["heart_rate"] = p * max(15, 108 - hr_base)
+                mods["sleep"] = -25 * p                         # MIRROR sleep warning (<70%)
 
         elif self.config.scenario in ("buildup_demo", "prevent_recovery"):
             # PREDICT demo: the same end state as cascade_demo, reached gradually over BUILDUP_SECONDS, so the

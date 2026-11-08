@@ -3183,7 +3183,7 @@ async function setDemoScenario(name) {
     const qs = perPerson ? `?crew_id=${encodeURIComponent(crewId)}` : '';
     r = await fetch(`${DASH_API.baseUrl}/api/simulation/scenario/${name}${qs}`, { method: 'POST' });
     if (!r.ok) throw new Error(r.status);
-    const label = { cascade_demo: `Demo: several of ${who}'s readings are about to go wrong at once. Watch what happens.`,
+    const label = { cascade_demo: `Demo: several of ${who}'s readings start drifting toward their limits together. Watch AEGIS forecast the cascade and offer a prevention plan before it forms.`,
                     buildup_demo: `Demo: ${who}'s readings will slowly drift over the next few minutes. Let's see if I can spot it before it becomes a problem.`,
                     medical_emergency: `Demo: ${who}'s oxygen level is about to drop. I'll flag it the moment it gets dangerous.`,
                     spe_event: 'Demo: a solar storm is on its way.',
