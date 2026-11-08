@@ -853,15 +853,15 @@ body.emergency.acked .confirm-btn{animation:none;}
 @media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr);grid-template-areas:"header" "mission" "story" "crew" "graph" "alert" "echo" "vitals" "voice" "nasa";}}
 
 /* The two chats side by side on one row (AEGIS + agents left, ECHO right), same height, message boxes level at the
-   bottom. The status card takes the full row above them. */
+   bottom. The status card (alert + recommended actions) takes the full row below them. */
 .shell{grid-template-areas:
   "header header header header header header header header header header header header"
   "mission mission mission mission mission mission mission mission mission mission mission mission"
   "story story story story story story story story story story story story"
   "crew crew crew crew crew crew crew crew crew crew crew crew"
   "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
-  "alert alert alert alert alert alert alert alert alert alert alert alert"
   "voice voice voice voice voice voice voice echo echo echo echo echo"
+  "alert alert alert alert alert alert alert alert alert alert alert alert"
   "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}
 @media (max-width:1200px){.shell{grid-template-areas:
   "header header header header header header header header header header header header"
@@ -869,10 +869,10 @@ body.emergency.acked .confirm-btn{animation:none;}
   "story story story story story story story story story story story story"
   "crew crew crew crew crew crew crew crew crew crew crew crew"
   "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
-  "alert alert alert alert alert alert alert alert alert alert alert alert"
   "voice voice voice voice voice voice echo echo echo echo echo echo"
+  "alert alert alert alert alert alert alert alert alert alert alert alert"
   "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}}
-@media (max-width:900px){.shell{grid-template-areas:"header" "mission" "story" "crew" "graph" "vitals" "alert" "voice" "echo" "nasa";}}
+@media (max-width:900px){.shell{grid-template-areas:"header" "mission" "story" "crew" "graph" "vitals" "voice" "echo" "alert" "nasa";}}
 .chat-panel,.echo-panel{min-height:480px;}
 #ask-panel.chat-panel{padding:1.1rem 1.2rem;gap:.7rem;}   /* same padding and spacing as ECHO, so the two Send rows line up */
 .chat-panel .ask-log,.chat-panel .ask-log:empty{display:flex;flex:1 1 0;min-height:0;max-height:none;overflow-y:auto;
