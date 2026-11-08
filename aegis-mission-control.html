@@ -2883,6 +2883,15 @@ function _alertKind(a) {
 }
 function _bannerFor(a) {
   const k = _alertKind(a);
+  if (EMG.alertId === a.id && !EMG.acked) {
+    // Same alert: only the "who" can change (the other crew's shelter alerts arrive a few seconds later)
+    const who = k.isShelter && LIVE_ALERT.shelterAll ? 'all crew' : _crewDisplayName(a.crew_member_id);
+    if (EMG.baseLabel && !EMG.baseLabel.endsWith(' · ' + who)) {
+      EMG.label = EMG.baseLabel = EMG.baseLabel.replace(/ · [^·]+$/, ' · ' + who);
+      _tickEmergency();
+    }
+    return;
+  }
   if (EMG.alertId === a.id || (EMG.acked && EMG.protocol === k.protocol)) return;
   _setEmergency({ level: k.isProtect ? 'protect' : 'cascade', protocol: k.protocol,
                   name: k.isShelter && LIVE_ALERT.shelterAll ? 'all crew' : _crewDisplayName(a.crew_member_id), since: a.timestamp, alertId: a.id, crewId: a.crew_member_id });
@@ -2922,8 +2931,13 @@ function _renderProtocolState() {
     desc.textContent = `Confirmed by the crew at ${hhmm(info.at)}. The protocol stays in effect until the readings that raised it are back in a safe range.`;
   } else {
     panel.style.borderColor = 'var(--green)'; icon.textContent = '✓'; title.style.color = 'var(--green)';
-    title.textContent = `${info.protocol} complete · readings recovered · ${info.name}`;
-    desc.textContent = `Confirmed by the crew at ${hhmm(info.at)}; the readings that raised it were back in range at ${hhmm(info.doneAt)}. Nothing closed on its own: a person confirmed, and the readings confirmed it worked.`;
+    if (info.elsewhere) {
+      title.textContent = `${info.protocol} confirmed on another screen · ${info.name}`;
+      desc.textContent = `Someone confirmed this alert from another open dashboard at about ${hhmm(info.at)} (the demo is shared). It did not close on its own.`;
+    } else {
+      title.textContent = `${info.protocol} complete · readings recovered · ${info.name}`;
+      desc.textContent = `Confirmed by the crew at ${hhmm(info.at)}; the readings that raised it were back in range at ${hhmm(info.doneAt)}. Nothing closed on its own: a person confirmed, and the readings confirmed it worked.`;
+    }
   }
   return true;
 }
@@ -3016,7 +3030,10 @@ function renderLiveAlert(a) {
   // Protocol alerts never close themselves: a person confirms them. Once the readings are back in range, say so,
   // so an open alert reads as "waiting for sign-off", not as a stale one.
   const nowEntry = CM.last && (CM.last.crew || []).find(c => c.crew_member_id === a.crew_member_id);
-  const recovered = !!(nowEntry && sysAllOk(nowEntry) && !Object.values(sysStates(nowEntry)).includes('watch'));
+  // Only once the alert is 45 s old: right after it is raised, the last forecast can still show the readings from
+  // just before it (which would flash "recovered" at the start of a storm)
+  const alertAgeS = isNaN(raisedAt) ? 0 : (Date.now() - raisedAt) / 1000;
+  const recovered = !!(alertAgeS > 45 && nowEntry && sysAllOk(nowEntry) && !Object.values(sysStates(nowEntry)).includes('watch'));
   panel.classList.toggle('recovered', recovered);
   if (recovered) {
     panel.style.borderColor = 'var(--cm-amber)';
@@ -3066,6 +3083,17 @@ async function refreshLiveAlerts() {
       ? ranked.find(a => a.crew_member_id === sel && /CASCADE/i.test(a.title || '')) || null : null;
     // During a ship-wide storm everyone's shelter alert is the same news: only point out what is different
     LIVE_ALERT.other = ranked.find(a => a.crew_member_id !== sel && !(LIVE_ALERT.shelterAll && _alertKind(a).isShelter)) || null;
+    const prevId = LIVE_ALERT.id, prevProto = LIVE_ALERT.protocol, prevCrew = sel, prevName = LIVE_ALERT.crewName;
+    if (prevId && !mine && !EMG.acked && !(LIVE_ALERT.completed && LIVE_ALERT.completed.alertId === prevId)) {
+      // The shared demo: someone may have confirmed it on another screen. Ask the backend before saying so.
+      fetch(`${DASH_API.baseUrl}/api/alerts/${encodeURIComponent(prevId)}/state`).then(r => r.ok ? r.json() : null).then(st => {
+        if (st && st.acknowledged) {
+          LIVE_ALERT.completed = { alertId: prevId, protocol: prevProto, crewId: prevCrew, at: Date.now(), doneAt: Date.now(),
+                                   until: Date.now() + 45000, name: prevProto === 'SHELTER-1' && LIVE_ALERT.shelterAll ? 'all crew' : prevName, elsewhere: true };
+          if (!LIVE_ALERT.id) _renderProtocolState();
+        }
+      }).catch(() => {});
+    }
     renderLiveAlert(mine);
     _renderOtherAlert();
     _renderCallLine(mine);

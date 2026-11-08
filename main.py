@@ -96,11 +96,16 @@ async def lifespan(app: FastAPI):
         last_run = 0.0
         last_scenario = None
         settle_until = 0.0
+        storm_seen_at = -1e9
         loop = asyncio.get_running_loop()
         while True:
             scenario = simulator.config.scenario
             try:
-                get_coordinator().protect_mode = simulator.spe_on()   # the storm can end by itself now
+                if simulator.spe_on():
+                    storm_seen_at = loop.time()
+                # the storm can end by itself; its leftover readings (IL-6, stress) settle for 60 s before they
+                # can count toward a cascade, so a storm's tail never shows up as someone else's cascade
+                get_coordinator().protect_mode = simulator.spe_on() or (loop.time() - storm_seen_at < 60)
             except Exception:
                 pass
             # Nominal: every 120 s, but every 30 s while agent recommendations are still open, so one whose
@@ -820,6 +825,13 @@ async def get_alerts(
 ):
     """Get alerts."""
     return db.get_alerts(unacknowledged_only=unacknowledged_only, limit=limit)
+
+
+@app.get("/api/alerts/{alert_id}/state")
+async def alert_state(alert_id: str):
+    """Was this alert confirmed (possibly on another screen), or removed by a reset?"""
+    st = db.get_alert_state(alert_id)
+    return st or {"id": alert_id, "exists": False, "acknowledged": False}   # removed by a demo reset
 
 
 @app.post("/api/alerts/{alert_id}/acknowledge")

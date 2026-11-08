@@ -609,11 +609,26 @@ def count_open_alerts() -> dict:
 
 
 def acknowledge_alert(alert_id: str) -> bool:
-    """Acknowledge an alert."""
+    """Acknowledge (confirm) an alert. Logged, so a confirmation made on any screen of the shared demo is traceable."""
     with get_db() as conn:
         cursor = conn.cursor()
+        row = cursor.execute("SELECT title, crew_member_id, acknowledged FROM alerts WHERE id = ?", (alert_id,)).fetchone()
         cursor.execute("UPDATE alerts SET acknowledged = 1 WHERE id = ?", (alert_id,))
-        return cursor.rowcount > 0
+        done = cursor.rowcount > 0
+    if done and row is not None and not row["acknowledged"]:
+        try:
+            log_event(EventType.SYSTEM, f"Alert confirmed by a person: {alert_id} ({row['title']}) for {row['crew_member_id']}",
+                      details={"alert_id": alert_id, "crew_id": row["crew_member_id"], "confirmed": True})
+        except Exception:
+            pass
+    return done
+
+
+def get_alert_state(alert_id: str) -> Optional[dict]:
+    """Whether an alert still exists and was confirmed (None after a demo reset removed it)."""
+    with get_db() as conn:
+        row = conn.execute("SELECT id, acknowledged FROM alerts WHERE id = ?", (alert_id,)).fetchone()
+        return {"id": row["id"], "acknowledged": bool(row["acknowledged"])} if row else None
 
 
 def update_alert_message(alert_id: str, message: str) -> bool:
