@@ -54,6 +54,7 @@ class VitalsSimulator:
         self.mission_day = 54  # Day 54 matches the cascade story
         self.start_time = datetime.utcnow()
         self.scenario_started_at = datetime.utcnow()   # for gradual scenarios (buildup_demo)
+        self.spe_started_at: Optional[datetime] = None
         self.recovery_from_p = 0.0                     # build-up progress when PREVENT-1 started
         # One-click story demo (dashboard "Run demo"): the same build-up and recovery, compressed so the whole
         # story fits in about 3 minutes. None = the normal BUILDUP_SECONDS / RECOVERY_SECONDS.
@@ -297,6 +298,21 @@ class VitalsSimulator:
         
         return activity_levels.get(activity, 0.3)
     
+    # A manual solar storm (Shift+S) runs a full course instead of staying at its peak forever: full strength for
+    # SPE_PEAK_S, then the dose falls back to background over SPE_DECAY_S and the storm ends by itself. Confirming
+    # SHELTER-1 still ends it at once (the dashboard returns the simulator to nominal), as before.
+    SPE_PEAK_S = 90
+    SPE_DECAY_S = 60
+
+    def spe_strength(self) -> float:
+        """1 during the storm's peak, falling to 0 over the decay (0 when no storm)."""
+        if not self.spe_on():
+            return 0.0
+        t = (datetime.utcnow() - (self.spe_started_at or datetime.utcnow())).total_seconds()
+        if t <= self.SPE_PEAK_S:
+            return 1.0
+        return max(0.0, 1.0 - (t - self.SPE_PEAK_S) / self.SPE_DECAY_S)
+
     def spe_on(self) -> bool:
         """A solar particle event is under way (on its own, or as the layer under a one-person demo)."""
         return self.config.scenario == "spe_event" or bool(getattr(self.config, "spe_active", False))
@@ -372,8 +388,9 @@ class VitalsSimulator:
         # On top of a one-person demo the larger push wins per vital, so that person shows all the demo's
         # readings plus the storm, and everyone else shows the storm.
         if self.spe_on():
-            mods["radiation"] = max(mods.get("radiation", 0.0), _rng.uniform(18.0, 30.0))
-            mods["stress"] = max(mods.get("stress", 0), 15)
+            k = self.spe_strength()
+            mods["radiation"] = max(mods.get("radiation", 0.0), _rng.uniform(18.0, 30.0) * k)
+            mods["stress"] = max(mods.get("stress", 0), 15 * k)
         
         # Anomalies have their own target (anomaly_crew_id), separate from the scenario's victim (inject_crew_id)
         target_crew = getattr(self.config, 'anomaly_crew_id', None)
@@ -430,6 +447,14 @@ class VitalsSimulator:
             config = self.config.model_copy()
             config.scenario = None
             self.set_config(config)
+        # The solar storm has run its course: end it (a one-person demo stacked on it keeps running)
+        if self.spe_on() and self.spe_strength() <= 0.0 and not self.story_buildup_s:
+            config = self.config.model_copy()
+            config.spe_active = False
+            if config.scenario == "spe_event":
+                config.scenario = None
+            self.set_config(config)
+            db.log_event(db.EventType.SYSTEM, "Solar storm over: doses back to the normal background")
         crew = db.get_all_crew()
         # One clock for everything: the mission time that passed since the last tick (real seconds x speed).
         # The dose accrues over exactly that time and the mission day advances by exactly that time, so at the
@@ -491,6 +516,7 @@ class VitalsSimulator:
         # SPE onset: the hours before the crew reaches the shelter add a one-time dose (fixed 3 mSv so the
         # demo is repeatable; the demo reset restores the seeded cumulative dose).
         if self.spe_on() and not old_spe:
+            self.spe_started_at = datetime.utcnow()
             crew = db.get_all_crew()
             for member in crew:
                 db.update_cumulative_radiation(member.id, 3.0)

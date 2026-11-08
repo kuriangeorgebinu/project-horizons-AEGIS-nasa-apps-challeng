@@ -328,7 +328,7 @@ const AEGIS_API = {
       const escG = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const label = { accepted: 'Accepted', deferred: 'Deferred 4 h', dismissed: 'Dismissed', completed: '✓ Resolved' };
       const seen = new Set();
-      const lines = (this._recChanges || []).filter(c => (!sel || c.crew_member_id === sel) && !seen.has(c.title) && seen.add(c.title)).slice(0, 3);
+      const lines = (this._recChanges || []).filter(c => (!sel || c.crew_member_id === sel) && !seen.has(c.title) && seen.add(c.title)).slice(0, 8);
       goneEl.innerHTML = lines.map(c => `<div class="rec-resolved"><b>${/demo reset/.test(c.resolution || '') ? '✓ Cleared' : (label[c.status] || escG(c.status))}</b> · ${escG(c.title)}` +
         `${c.resolution ? ' · ' + escG(c.resolution) : ''} · ${hhmmUtc(c.resolved_at)}</div>`).join('');
     }

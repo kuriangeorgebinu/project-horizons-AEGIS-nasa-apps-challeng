@@ -9,7 +9,7 @@ import json
 import os
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 import uuid
@@ -686,7 +686,8 @@ def reset_demo_data() -> dict:
             cur.execute(f"SELECT COUNT(*) FROM {table}")
             removed[table] = cur.fetchone()[0]
             if table == "recommendations":
-                cur.execute("DELETE FROM recommendations WHERE NOT (resolution = ? AND resolved_at = ?)", (RESET_REASON, stamp))
+                recent = (datetime.utcnow() - timedelta(minutes=2)).isoformat()
+                cur.execute("DELETE FROM recommendations WHERE NOT (status = 'completed' AND resolved_at >= ?)", (recent,))
             else:
                 cur.execute(f"DELETE FROM {table}")
     # A dose already received can't be undone: the crew upsert keeps MAX(old, seed) in the same statement,

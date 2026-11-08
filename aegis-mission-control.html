@@ -2900,6 +2900,33 @@ function _renderOtherAlert() {
   const what = k.isShelter ? 'radiation above the shelter level' : k.isMedic ? 'medical emergency' : 'health cascade';
   el.innerHTML = `⚠ ${_insEsc(who)} has an open alert (${what}). <button type="button" onclick="selectCrew('${key}')">Show ${_insEsc(who)}</button>`;
 }
+// After a person confirms a protocol the alert is closed, but the card says what is going on instead of jumping to
+// "Steady": "<protocol> confirmed · in effect" while the readings recover, then "<protocol> complete" for 45 s.
+function _renderProtocolState() {
+  const sel = DASH_API.selectedCrewId, done = LIVE_ALERT.completed;
+  const forSel = c => c && (c.protocol === 'SHELTER-1' || c.crewId === sel);
+  let mode = null, info = null;
+  if (EMG.level && EMG.acked && forSel({ protocol: EMG.protocol, crewId: EMG.crewId })) {
+    mode = 'confirmed'; info = { protocol: EMG.protocol, at: EMG.ackedAt, name: EMG.label.split(' · ').pop() };
+  } else if (done && Date.now() < done.until && forSel(done)) { mode = 'complete'; info = done; }
+  if (!mode) return false;
+  const panel = document.getElementById('alert-panel'), icon = document.getElementById('alert-icon'), title = document.getElementById('alert-title'),
+        desc = document.getElementById('alert-desc'), agentsEl = document.getElementById('alert-agents'), btn = document.getElementById('confirm-btn');
+  if (!panel || !btn) return false;
+  const hhmm = t => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  panel.classList.remove('predict', 'recovered');
+  btn.style.display = 'none'; if (agentsEl) agentsEl.innerHTML = '';
+  if (mode === 'confirmed') {
+    panel.style.borderColor = 'var(--cm-amber)'; icon.textContent = '⛨'; title.style.color = 'var(--cm-amber)';
+    title.textContent = `${info.protocol} confirmed · in effect · ${info.name}`;
+    desc.textContent = `Confirmed by the crew at ${hhmm(info.at)}. The protocol stays in effect until the readings that raised it are back in a safe range.`;
+  } else {
+    panel.style.borderColor = 'var(--green)'; icon.textContent = '✓'; title.style.color = 'var(--green)';
+    title.textContent = `${info.protocol} complete · readings recovered · ${info.name}`;
+    desc.textContent = `Confirmed by the crew at ${hhmm(info.at)}; the readings that raised it were back in range at ${hhmm(info.doneAt)}. Nothing closed on its own: a person confirmed, and the readings confirmed it worked.`;
+  }
+  return true;
+}
 function renderLiveAlert(a) {
   const panel = document.getElementById('alert-panel');
   const icon = document.getElementById('alert-icon');
@@ -2914,6 +2941,7 @@ function renderLiveAlert(a) {
     LIVE_ALERT.id = null;
     // Nothing for the selected person. The banner still shows another crew member's emergency (it names them).
     if (!EMG.acked) { if (LIVE_ALERT.other) _bannerFor(LIVE_ALERT.other); else _setEmergency(null); }
+    if (_renderProtocolState()) return;      // a confirmed protocol in effect, or just completed
     const pvNow = PREDICT_STATE.prevented && PREDICT_STATE.prevented.crew === DASH_API.selectedCrewId ? PREDICT_STATE.prevented : null;
     if (pvNow && !(pvNow.avertedAt && PREDICT_STATE.preventedEntry && !sysAllOk(PREDICT_STATE.preventedEntry))) renderPreventedPanel(PREDICT_STATE.preventedEntry);
     else renderPredictPanel(PREDICT_STATE.top);
@@ -2998,6 +3026,8 @@ function renderLiveAlert(a) {
       `a recovered reading does not close an emergency order on its own. Raised ${raisedTxt || 'earlier'}.`;
   }
   LIVE_ALERT.recovered = recovered;
+  if (!btn.disabled) btn.textContent = recovered ? `Confirm ${LIVE_ALERT.protocol} · readings have recovered`
+                                                 : (PLAIN_BUTTON[LIVE_ALERT.protocol] || `Confirm ${LIVE_ALERT.protocol}`);
   _renderAiNote(aiMsg);
   agentsEl.innerHTML = agents.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('');
 
@@ -3564,7 +3594,11 @@ async function _checkResolved() {
       const me = (p.crew || []).find(x => x.crew_member_id === EMG.crewId);
       ok = !me || (me.out_now || []).length < 3;
     }
-    if (ok) _setEmergency(null);
+    if (ok) {
+      LIVE_ALERT.completed = { protocol: EMG.protocol, crewId: EMG.crewId, at: EMG.ackedAt, doneAt: Date.now(),
+                               until: Date.now() + 45000, name: EMG.label.split(' · ').pop() };
+      _setEmergency(null);
+    }
   } catch (e) { /* keep waiting */ }
 }
 setInterval(_checkResolved, 3000);
@@ -4025,7 +4059,7 @@ async function refreshPredict() {
     renderCascadeMap(mine);
     syncVitalsToMap(mine);
     renderCrewStrip();
-    if (!LIVE_ALERT.id && Date.now() >= LIVE_ALERT.pauseUntil) {
+    if (!LIVE_ALERT.id && Date.now() >= LIVE_ALERT.pauseUntil && !_renderProtocolState()) {
       const pvNow = PREDICT_STATE.prevented && (STORY.on || PREDICT_STATE.prevented.crew === DASH_API.selectedCrewId) ? PREDICT_STATE.prevented : null;
       if (pvNow && !(pvNow.avertedAt && PREDICT_STATE.preventedEntry && !sysAllOk(PREDICT_STATE.preventedEntry))) renderPreventedPanel(PREDICT_STATE.preventedEntry);
       else renderPredictPanel(PREDICT_STATE.top);
@@ -4782,7 +4816,7 @@ function _storyLocalReset() {
   _setEmergency(null); closeCallPanel(); closeSimModal();
   CALLS.dismissed.clear(); CALLS.since = Date.now();
   Object.assign(PREDICT_STATE, { top: null, announcedKey: null, lastCrew: null, suppress: {}, prevented: null, preventedEntry: null });
-  LIVE_ALERT.id = null; LIVE_ALERT.pauseUntil = 0;
+  LIVE_ALERT.id = null; LIVE_ALERT.pauseUntil = 0; LIVE_ALERT.completed = null;
   CM.etaEnd = null; CM.prevStates = null;
   const echoChat = document.getElementById('echo-chat');
   if (ECHO.crew && echoChat) ECHO.chats[ECHO.crew] = echoChat.innerHTML;   // save before the switch marker is cleared

@@ -99,6 +99,10 @@ async def lifespan(app: FastAPI):
         loop = asyncio.get_running_loop()
         while True:
             scenario = simulator.config.scenario
+            try:
+                get_coordinator().protect_mode = simulator.spe_on()   # the storm can end by itself now
+            except Exception:
+                pass
             # Nominal: every 120 s, but every 30 s while agent recommendations are still open, so one whose
             # reading is back to normal resolves within about a minute instead of lingering for several
             try:
@@ -285,8 +289,9 @@ async def demo_reset():
     """
     simulator = get_simulator()
     simulator.reset_demo()
-    removed = db.reset_demo_data()
-    get_coordinator().reset_state()
+    with get_coordinator()._lock:
+        removed = db.reset_demo_data()
+        get_coordinator().reset_state()
     get_coordinator().protect_mode = False
     aegis_notify.reset_log()
     aegis_notify.DEMO_QUIET["on"] = False
