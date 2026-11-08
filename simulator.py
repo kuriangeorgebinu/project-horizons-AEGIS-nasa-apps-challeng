@@ -297,16 +297,26 @@ class VitalsSimulator:
         
         return activity_levels.get(activity, 0.3)
     
+    def spe_on(self) -> bool:
+        """A solar particle event is under way (on its own, or as the layer under a one-person demo)."""
+        return self.config.scenario == "spe_event" or bool(getattr(self.config, "spe_active", False))
+
+    def personal_target(self) -> Optional[str]:
+        """The crew member a one-person demo is happening to (None when no such demo runs)."""
+        sc = self.config.scenario
+        if sc == "medical_emergency":
+            return self.config.inject_crew_id or "crew-004"
+        if sc in ("cascade_demo", "buildup_demo", "prevent_recovery"):
+            return self.config.inject_crew_id or "crew-001"
+        return None
+
     def _get_scenario_modifiers(self, crew_id: str = None) -> dict:
-        """Get vital sign modifiers based on active scenario."""
+        """Get vital sign modifiers based on active scenario (plus the solar storm layer, see the end)."""
         mods = {}
         
         if self.config.scenario == "spe_event":
-            # Solar Particle Event: daily dose jumps well above the shelter level (5 x background,
-            # >= background + 5 mSv): ~20-32 mSv/day, the order of a moderate SPE behind spacecraft shielding.
-            mods["radiation"] = _rng.uniform(18.0, 30.0)
-            mods["stress"] = 15
-            
+            pass                       # the storm itself is applied below, as a layer for everyone
+
         elif self.config.scenario == "medical_emergency":
             # PROTECT (medical) demo: acute hypoxia in one crew member (e.g. a CO2-scrubber / mask fault).
             # SpO2 falls below PULSE's critical 90 % within ~30 s, with a compensating heart-rate rise ->
@@ -334,10 +344,11 @@ class VitalsSimulator:
                 # sometimes tipping into a critical stress alert.
                 stress_base = self._crew_baselines.get(crew_id or target, {}).get("stress_base", 30)
                 mods["stress"] = max(30, 76 - stress_base)
-                # PULSE warning is >100 bpm: aim for ~108 relative to this crew member's baseline
-                # (+ ~4 activity load), so PULSE joins the cascade from a real heart-rate reading.
+                # PULSE warning is >100 bpm: aim for ~112 relative to this crew member's baseline
+                # (+ ~4 activity load), clear of the line so the ring doesn't flicker amber/red with noise,
+                # and far below the 150 bpm critical level.
                 hr_base = self._crew_baselines.get(crew_id or target, {}).get("heart_rate", 68)
-                mods["heart_rate"] = max(15, 104 - hr_base)
+                mods["heart_rate"] = max(15, 108 - hr_base)
                 mods["sleep"] = -25                             # MIRROR sleep warning (<70%)
 
         elif self.config.scenario in ("buildup_demo", "prevent_recovery"):
@@ -355,6 +366,14 @@ class VitalsSimulator:
                 mods["stress"] = p * max(30, 76 - b.get("stress_base", 30))
                 mods["heart_rate"] = p * max(15, 104 - b.get("heart_rate", 68))
                 mods["sleep"] = -25 * p
+
+        # Solar Particle Event (ship-wide layer): daily dose jumps well above the shelter level (5 x background,
+        # >= background + 5 mSv): ~18-30 mSv/day, the order of a moderate SPE behind spacecraft shielding.
+        # On top of a one-person demo the larger push wins per vital, so that person shows all the demo's
+        # readings plus the storm, and everyone else shows the storm.
+        if self.spe_on():
+            mods["radiation"] = max(mods.get("radiation", 0.0), _rng.uniform(18.0, 30.0))
+            mods["stress"] = max(mods.get("stress", 0), 15)
         
         # Anomalies have their own target (anomaly_crew_id), separate from the scenario's victim (inject_crew_id)
         target_crew = getattr(self.config, 'anomaly_crew_id', None)
@@ -456,8 +475,9 @@ class VitalsSimulator:
         """Update simulation configuration. A scenario change starts clean: no smoothing carried over from the
         previous scenario, no leftover anomaly, and the story timings only while the story's own scenarios run."""
         old_scenario = self.config.scenario
+        old_spe = self.spe_on()
         self.config = config
-        if config.scenario != old_scenario:
+        if config.scenario != old_scenario or self.spe_on() != old_spe:
             self.scenario_started_at = datetime.utcnow()
             self._previous_vitals = {}
             if old_scenario not in ("buildup_demo", "prevent_recovery") or config.scenario is None:
@@ -470,7 +490,7 @@ class VitalsSimulator:
         
         # SPE onset: the hours before the crew reaches the shelter add a one-time dose (fixed 3 mSv so the
         # demo is repeatable; the demo reset restores the seeded cumulative dose).
-        if config.scenario == "spe_event" and old_scenario != "spe_event":
+        if self.spe_on() and not old_spe:
             crew = db.get_all_crew()
             for member in crew:
                 db.update_cumulative_radiation(member.id, 3.0)

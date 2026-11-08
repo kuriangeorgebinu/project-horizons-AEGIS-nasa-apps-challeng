@@ -333,6 +333,7 @@ async def story_stop():
     config = simulator.config.model_copy()
     config.scenario = None
     config.inject_crew_id = None
+    config.spe_active = False
     simulator.set_config(config)
     get_coordinator().protect_mode = False
     get_coordinator().rearm_cascades()
@@ -943,24 +944,30 @@ async def set_scenario(scenario: str, crew_id: Optional[str] = None):
     
     simulator = get_simulator()
     config = simulator.config.model_copy()  # Copy to preserve old scenario for set_config comparison
-    config.scenario = scenario if scenario != "nominal" else None
-    # Single-person scenarios (cascade, build-up, medical) target the crew member selected on the dashboard;
-    # the solar storm hits everyone. Without crew_id each scenario keeps its default crew member.
-    if scenario in ("cascade_demo", "buildup_demo", "medical_emergency"):
+    personal = ("cascade_demo", "buildup_demo", "medical_emergency")
+    if scenario == "nominal":
+        config.scenario, config.inject_crew_id, config.spe_active = None, None, False
+    elif scenario == "spe_event":
+        # The storm is ship-wide and layers under a one-person demo that is already running (it keeps going)
+        config.spe_active = True
+        if config.scenario not in personal:
+            config.scenario, config.inject_crew_id = "spe_event", None
+    else:
+        # One-person demos happen to the crew member selected on the dashboard; a storm already under way
+        # stays on for everyone (spe_active is kept). Without crew_id each scenario keeps its default person.
         if crew_id and not db.get_crew_member(crew_id):
             raise HTTPException(status_code=404, detail=f"Crew member {crew_id} not found")
-        config.inject_crew_id = crew_id
-    else:
-        config.inject_crew_id = None
+        config.scenario, config.inject_crew_id = scenario, crew_id
     simulator.set_config(config)
     # Any scenario change starts a fresh cascade window: re-arms one cascade per crew member and
     # drops warnings the previous scenario left in the cascade history (so an SPE can't add up to a cascade later).
     get_coordinator().rearm_cascades()
     # A declared solar particle event puts AEGIS in PROTECT mode: cascade detection pauses so the crew
     # gets one clear instruction (SHELTER-1) instead of a SHELTER + cascade mix while the dose is still rising.
-    get_coordinator().protect_mode = (scenario == "spe_event")
-    
-    return {"status": "set", "scenario": scenario, "crew_id": config.inject_crew_id}
+    get_coordinator().protect_mode = simulator.spe_on()
+
+    return {"status": "set", "scenario": scenario, "active": config.scenario, "solar_storm": simulator.spe_on(),
+            "crew_id": config.inject_crew_id}
 
 
 # ─────────────────────────────────────────────────────────────────────────────

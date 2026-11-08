@@ -2913,7 +2913,15 @@ function renderLiveAlert(a) {
   // Plain-language headline, explanation and spoken line for each kind of alert
   let headline, plain, spoken;
   if (isShelter) {
-    if (LIVE_ALERT.shelterAll) {
+    const casc = LIVE_ALERT.alsoCascade;
+    if (casc) {
+      const cAgents = ((casc.message || '').match(/Agents reporting:\s*([^.]*)/) || [])[1];
+      (cAgents ? cAgents.split(',').map(x => x.trim()).filter(Boolean) : []).forEach(n => { if (!agents.includes(n)) agents.push(n); });
+      headline = `Radiation storm + health cascade · ${name}`;
+      plain = `The solar storm has ${LIVE_ALERT.shelterAll ? 'everyone' : name} over the shelter level, and ${name}'s ${plainDomains(agents)} are all out of range at the same time. ` +
+              `First the storm shelter (SHELTER-1); once the dose comes down, the recovery plan for the cascade (RECOVER-3).`;
+      spoken = `${name} has a radiation storm and a health cascade at once. Storm shelter first, then the recovery plan.`;
+    } else if (LIVE_ALERT.shelterAll) {
       headline = `Radiation storm: take shelter now · ${name}`;
       plain = 'A solar storm is pushing radiation up fast. The storm shelter is the best-protected spot on the ship, so the crew should head there now.';
       spoken = 'Radiation storm. Everyone needs to get to the storm shelter now.';
@@ -2945,15 +2953,16 @@ function renderLiveAlert(a) {
   agentsEl.innerHTML = agents.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('');
 
   btn.style.display = '';
-  if (isNew) {
+  const speakKey = a.id + (LIVE_ALERT.alsoCascade ? '+' + LIVE_ALERT.alsoCascade.id : '');
+  if (isNew || (LIVE_ALERT.alsoCascade && !LIVE_ALERT.spoken.has(speakKey))) {
     btn.disabled = false;
     btn.style.background = '';
     btn.textContent = PLAIN_BUTTON[LIVE_ALERT.protocol] || `Confirm ${LIVE_ALERT.protocol}`;
     btn.title = `Protocol ${LIVE_ALERT.protocol}`;
     if (typeof playTone === 'function') { playTone(880, 0.12); setTimeout(() => playTone(660, 0.12), 150); }
     // The agent that owns the hazard speaks: SOLARIS for radiation, PULSE for a medical emergency, AEGIS for a cascade
-    if (!LIVE_ALERT.spoken.has(a.id)) {
-      LIVE_ALERT.spoken.add(a.id);
+    if (!LIVE_ALERT.spoken.has(speakKey)) {
+      LIVE_ALERT.spoken.add(speakKey);
       VOICE.nextSpeaker = isShelter ? 'solaris' : isMedic ? 'pulse' : 'aegis';
       if (typeof typeResponse === 'function') typeResponse(withIntro(VOICE.nextSpeaker, spoken));
     }
@@ -2973,7 +2982,11 @@ async function refreshLiveAlerts() {
     const sel = DASH_API.selectedCrewId;
     LIVE_ALERT.shelterAll = new Set(ranked.filter(a => _alertKind(a).isShelter).map(a => a.crew_member_id)).size > 1;
     const mine = ranked.find(a => a.crew_member_id === sel) || null;
-    LIVE_ALERT.other = ranked.find(a => a.crew_member_id !== sel) || null;
+    // Solar storm + this person's own cascade (e.g. Shift+S then Shift+D): the card names both
+    LIVE_ALERT.alsoCascade = mine && _alertKind(mine).isShelter
+      ? ranked.find(a => a.crew_member_id === sel && /CASCADE/i.test(a.title || '')) || null : null;
+    // During a ship-wide storm everyone's shelter alert is the same news: only point out what is different
+    LIVE_ALERT.other = ranked.find(a => a.crew_member_id !== sel && !(LIVE_ALERT.shelterAll && _alertKind(a).isShelter)) || null;
     renderLiveAlert(mine);
     _renderOtherAlert();
     _renderCallLine(mine);

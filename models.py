@@ -232,6 +232,9 @@ class SimulationConfig(BaseModel):
     inject_anomaly: Optional[str] = None  # "cardiac" | "radiation" | "injury"
     inject_crew_id: Optional[str] = None  # the scenario's crew member (cascade / build-up / medical)
     anomaly_crew_id: Optional[str] = None  # an injected anomaly's own target (None = all), kept apart from the scenario
+    # A solar particle event is ship-wide: it stays on as a layer while a one-person demo (cascade, build-up,
+    # medical) runs on top of it, so that person shows the demo AND the storm and everyone else keeps the storm.
+    spe_active: bool = False
 
 
 class SimulationState(BaseModel):

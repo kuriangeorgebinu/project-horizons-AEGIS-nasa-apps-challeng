@@ -1137,6 +1137,15 @@ class AEGISAgent(BaseAgent):
             r.pillar == RecommendationPillar.PROTECT and r.agent == AgentType.SOLARIS
             for r in all_recommendations) or any(
             "SHELTER" in (t or "").upper() for t in existing_alert_titles)
+        # Exception: the crew member a one-person demo is happening to during a solar storm. Their cascade is
+        # their own (heart, sleep, inflammation on top of the storm), so it is still detected and raised.
+        try:
+            from simulator import get_simulator as _gs
+            if protect_active and _gs().spe_on() and _gs().personal_target() == crew_member.id \
+                    and _gs().config.scenario in ("cascade_demo", "buildup_demo"):
+                protect_active = False
+        except Exception:
+            pass
         cascade_alert = None
         if not protect_active:
             self._update_cascade_tracking(crew_member, all_findings)

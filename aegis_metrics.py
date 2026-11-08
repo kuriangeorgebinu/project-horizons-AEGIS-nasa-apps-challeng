@@ -125,7 +125,7 @@ def _refresh_state() -> None:
         from simulator import get_simulator
         sim = get_simulator()
         SIM_RUNNING.set(1 if getattr(sim, "running", False) else 0)
-        SIM_SCENARIO.set(1 if getattr(sim.config, "scenario", None) else 0)
+        SIM_SCENARIO.set(1 if (getattr(sim.config, "scenario", None) or getattr(sim.config, "spe_active", False)) else 0)
     except Exception:
         pass
 
