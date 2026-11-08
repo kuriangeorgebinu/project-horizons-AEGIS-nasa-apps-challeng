@@ -668,16 +668,27 @@ def get_vitals_history(crew_id: str, hours: int = 24) -> list[dict]:
 # Initialize Default Crew
 # ─────────────────────────────────────────────────────────────────────────────
 
+RESET_REASON = "cleared by the demo reset (clean start)"
+
+
 def reset_demo_data() -> dict:
     """Clean demo start: clear alerts, recommendations, events and vitals history, then reseed the crew.
     Returns how many rows were removed per table."""
     removed = {}
     with get_db() as conn:
         cur = conn.cursor()
+        # Open cards are closed with a reason instead of vanishing, so the dashboard shows "Cleared · demo reset"
+        # for them (one consistent lifecycle: every card that leaves the list says why). Everything else goes.
+        stamp = datetime.utcnow().isoformat()
+        cur.execute("UPDATE recommendations SET status = 'completed', resolved_at = ?, resolution = ? "
+                    "WHERE status IN ('pending', 'accepted')", (stamp, RESET_REASON))
         for table in ("alerts", "recommendations", "event_log", "vitals_history"):
             cur.execute(f"SELECT COUNT(*) FROM {table}")
             removed[table] = cur.fetchone()[0]
-            cur.execute(f"DELETE FROM {table}")
+            if table == "recommendations":
+                cur.execute("DELETE FROM recommendations WHERE NOT (resolution = ? AND resolved_at = ?)", (RESET_REASON, stamp))
+            else:
+                cur.execute(f"DELETE FROM {table}")
     # A dose already received can't be undone: the crew upsert keeps MAX(old, seed) in the same statement,
     # so no reader ever sees a lowered mission total
     init_default_crew()                     # back to the canonical crew, day 54, starting readings

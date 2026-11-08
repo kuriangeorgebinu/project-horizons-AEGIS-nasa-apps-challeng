@@ -257,8 +257,10 @@ const AEGIS_API = {
     const vitalsPanel = document.querySelector('.vitals-panel');
     if (!vitalsPanel) return;
     
-    // Find selected crew member or first one
-    const selected = crew.find(c => c.id === this.selectedCrewId) || crew[0];
+    // Only the crew member selected on the dashboard (DASH_API is a const global of the page). Falling back to the
+    // first crew member wrote Chen's heart rate over someone else's tile for a moment after a reload.
+    const selId = (typeof DASH_API !== 'undefined' && DASH_API.selectedCrewId) || null;
+    const selected = selId && crew.find(c => c.id === selId);
     if (!selected || !selected.vitals) return;
     
     const v = selected.vitals;
@@ -307,6 +309,18 @@ const AEGIS_API = {
     const unique = [...groups.values()];
     this._recPrev = new Map(unique.map(r => [r.title, r]));
     const MAX_SHOWN = 8;
+    // A card whose agent's readings are already back in range (same rule as the map rings) but that hasn't been
+    // closed yet (two in-range checks): say so, instead of letting its peak-time wording look current
+    const recovered = rec => {
+      try {
+        if (typeof CM === 'undefined' || typeof CM_AGENTS === 'undefined' || !CM.last) return false;
+        const e = (CM.last.crew || []).find(c => c.crew_member_id === rec.crew_member_id);
+        const ms = CM_AGENTS[String(rec.agent || '').toLowerCase()];
+        if (!e || !ms) return false;
+        const ts = ms.map(m => e.metrics[m]).filter(Boolean);
+        return ts.length > 0 && sysState(ts) === 'ok';
+      } catch (x) { return false; }
+    };
     const hhmmUtc = t => { if (!t) return ''; const d = new Date(t + (/[zZ]|[+-]\d\d:?\d\d$/.test(t) ? '' : 'Z')); return isNaN(d) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
     // Lifecycle lines come from the server (/api/recommendations/recent-changes): what happened and why, for 2 minutes
     const goneEl = document.getElementById('recs-resolved');
@@ -315,7 +329,7 @@ const AEGIS_API = {
       const label = { accepted: 'Accepted', deferred: 'Deferred 4 h', dismissed: 'Dismissed', completed: '✓ Resolved' };
       const seen = new Set();
       const lines = (this._recChanges || []).filter(c => (!sel || c.crew_member_id === sel) && !seen.has(c.title) && seen.add(c.title)).slice(0, 3);
-      goneEl.innerHTML = lines.map(c => `<div class="rec-resolved"><b>${label[c.status] || escG(c.status)}</b> · ${escG(c.title)}` +
+      goneEl.innerHTML = lines.map(c => `<div class="rec-resolved"><b>${/demo reset/.test(c.resolution || '') ? '✓ Cleared' : (label[c.status] || escG(c.status))}</b> · ${escG(c.title)}` +
         `${c.resolution ? ' · ' + escG(c.resolution) : ''} · ${hhmmUtc(c.resolved_at)}</div>`).join('');
     }
     const countEl = document.getElementById('recs-count');
@@ -398,7 +412,7 @@ const AEGIS_API = {
         </div>
         <div class="rec-body">
           <div class="rec-intervention" title="${esc(rec.description)}">↳ ${esc(rec.title)}</div>
-          <div class="rec-raised" title="Numbers in this card are the readings when the agent raised it; Live Vitals shows the current values">Readings when raised ${hhmmUtc(rec.created_at)}</div>
+          <div class="rec-raised" title="Numbers in this card are the readings when the agent raised it; Live Vitals shows the current values">Readings when raised ${hhmmUtc(rec.created_at)}${recovered(rec) ? ' · <b class="rec-recovering">readings back in range, closing after the next checks</b>' : ''}</div>
           ${rec._all.length > 1 ? `<div class="rec-crew-list">For ${esc(rec._all.map(r => crewNames[r.crew_member_id] || r.crew_member_id).join(', '))}. Shown for ${esc(crewNames[rec.crew_member_id] || rec.crew_member_id)}:</div>` : ''}
           ${aiHtml(rec) || `<div class="rec-detection">${verifyHtml(rec)}"${esc(rec.description)}"</div>`}
           ${stepsHtml(rec)}

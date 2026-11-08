@@ -95,6 +95,7 @@ async def lifespan(app: FastAPI):
             print(f"DeepSeek backfill error: {e}")
         last_run = 0.0
         last_scenario = None
+        settle_until = 0.0
         loop = asyncio.get_running_loop()
         while True:
             scenario = simulator.config.scenario
@@ -104,13 +105,16 @@ async def lifespan(app: FastAPI):
                 open_recs = any(r.agent.value != "AEGIS" for r in db.get_recommendations(status=RecommendationStatus.PENDING, limit=20))
             except Exception:
                 open_recs = False
-            interval = 10 if scenario else (30 if open_recs else 120)
             now = loop.time()
+            # For two minutes after a scenario ends, check every 10 s while cards are open, so every card whose
+            # reading has recovered closes (with its Resolved line) within about half a minute, not 1-2 minutes
+            interval = 10 if scenario or (open_recs and now < settle_until) else (30 if open_recs else 120)
             if scenario is None and last_scenario is not None:
                 # Back to nominal: smoothed vitals (EWMA) still carry the scenario for a few ticks,
-                # so wait a full interval before analysing, or we'd raise stale alerts (e.g. SHELTER after an SPE).
-                last_run = now
+                # so wait ~15 s before analysing, or we'd raise stale alerts (e.g. SHELTER after an SPE).
+                last_run = now + 5
                 last_scenario = None
+                settle_until = now + 120
                 await asyncio.sleep(5)
                 continue
             # Run on schedule, or immediately when a scenario starts (e.g. demo just started)

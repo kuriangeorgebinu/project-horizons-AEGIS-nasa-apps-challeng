@@ -945,6 +945,7 @@ body.emergency.acked .confirm-btn{animation:none;}
 .alert-other{margin-top:.45rem;font-size:.76rem;color:var(--yellow);}.alert-other button{margin-left:.35rem;font:inherit;font-size:.72rem;padding:.1rem .5rem;border-radius:8px;border:1px solid var(--yellow);background:transparent;color:var(--yellow);cursor:pointer;}
 .recs-note{font-size:.74rem;color:var(--yellow);}.recs-note:empty{display:none;}
 .rec-raised{font-size:.66rem;color:var(--muted);margin:.1rem 0 .25rem;}
+.rec-recovering{color:var(--green);font-weight:600;}
 .rec-resolved{font-size:.74rem;color:var(--muted);padding:.35rem .6rem;border:1px dashed var(--border);border-radius:8px;}
 .rec-resolved b{color:var(--green);font-weight:600;}
 
@@ -2984,6 +2985,19 @@ function renderLiveAlert(a) {
   const raisedAt = _parseUtc(a.timestamp);
   const raisedTxt = isNaN(raisedAt) ? '' : new Date(raisedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   desc.textContent = plain + (raisedTxt ? ` (Raised ${raisedTxt}; numbers are the readings at that moment, Live Vitals shows them now.)` : '');
+  // Protocol alerts never close themselves: a person confirms them. Once the readings are back in range, say so,
+  // so an open alert reads as "waiting for sign-off", not as a stale one.
+  const nowEntry = CM.last && (CM.last.crew || []).find(c => c.crew_member_id === a.crew_member_id);
+  const recovered = !!(nowEntry && sysAllOk(nowEntry) && !Object.values(sysStates(nowEntry)).includes('watch'));
+  panel.classList.toggle('recovered', recovered);
+  if (recovered) {
+    panel.style.borderColor = 'var(--cm-amber)';
+    title.textContent = `Readings recovered · awaiting confirmation · ${headline}`;
+    title.style.color = 'var(--cm-amber)';
+    desc.textContent = `${name}'s readings are back within range. The ${LIVE_ALERT.protocol} alert stays open until a person confirms it: ` +
+      `a recovered reading does not close an emergency order on its own. Raised ${raisedTxt || 'earlier'}.`;
+  }
+  LIVE_ALERT.recovered = recovered;
   _renderAiNote(aiMsg);
   agentsEl.innerHTML = agents.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('');
 
@@ -3140,7 +3154,11 @@ async function resetDemo() {
     r = await fetch(`${DASH_API.baseUrl}/api/demo/reset`, { method: 'POST' });
     if (!r.ok) throw new Error(r.status);
     _setEmergency(null); closeCallPanel(); CALLS.dismissed.clear(); CALLS.since = Date.now();
-    if (typeof typeResponse === 'function') typeResponse('Demo reset. Clean start: no alerts, everyone back to their normal readings.');
+    // The page reloads: keep ECHO's conversations and show "settling" (not Steady) until two fresh checks agree
+    echoPersist();
+    try { sessionStorage.setItem('aegis.echo.resetNote', '1'); sessionStorage.setItem('aegis.resettingAt', String(Date.now())); } catch (e) {}
+    CM.resetting = { started: Date.now(), doneAt: Date.now(), fresh: 0 };
+    if (typeof typeResponse === 'function') typeResponse('Demo reset. Readings are settling back to normal; the map will say Steady once two fresh checks agree.');
     setTimeout(() => location.reload(), 1800);
   } catch (e) {
     const msg = await _apiRefusal(r && !r.ok ? r : null, 'reset the demo');
@@ -3376,6 +3394,11 @@ function renderPredictPanel(p) {
 // Ring = how far a reading has moved from a healthy value toward its agent's limit (full ring = at the limit).
 // ============================================
 const CM = { last: null, mode: null, etaEnd: null, prevMode: null, tick: null };
+try {      // a reset just reloaded the page: keep showing "settling" until the readings have actually recovered
+  const t = Number(sessionStorage.getItem('aegis.resettingAt') || 0);
+  sessionStorage.removeItem('aegis.resettingAt');
+  if (t && Date.now() - t < 60000) CM.resetting = { started: t, doneAt: t, fresh: 0 };
+} catch (e) {}
 const CM_AGENTS = { solaris: ['radiation_dose_24h'], gene: ['il6'], pulse: ['heart_rate', 'spo2'], mirror: ['sleep_quality'] };
 const CM_HEALTHY = { heart_rate: 60, spo2: 99, il6: 3, sleep_quality: 90, radiation_dose_24h: 1.84 };   // ring = 0 here
 // Mission profile (radiation background + SOLARIS thresholds) from the backend; Mars-transit defaults offline
@@ -3497,6 +3520,7 @@ function _setEmergency(e) {
   const txt = document.getElementById('mb-em-text');
   EMG.label = `${label} · ${e.protocol} · ${e.name}`;
   if (txt) txt.textContent = EMG.label;
+  EMG.baseLabel = EMG.label;
   if (!document.getElementById('alert-timer')) {
     const hdr = document.querySelector('#alert-panel .alert-header');
     if (hdr) { const t = document.createElement('span'); t.id = 'alert-timer'; t.className = 'alert-timer'; hdr.appendChild(t); }
@@ -3505,6 +3529,8 @@ function _setEmergency(e) {
 }
 function _tickEmergency() {
   if (!EMG.level) return;
+  const em = document.getElementById('mb-em-text');
+  if (em && EMG.baseLabel) em.textContent = EMG.baseLabel + (LIVE_ALERT.recovered && LIVE_ALERT.id === EMG.alertId ? ' · readings recovered, awaiting confirmation' : '');
   const s = Math.max(0, Math.floor((Date.now() - EMG.since) / 1000));
   const txt = `Alert +${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   const a = document.getElementById('mb-em-timer'); if (a) a.textContent = txt;
@@ -3955,7 +3981,8 @@ async function refreshPredict() {
     CM.last = d;
     const now = Date.now();
     if (CM.resetting) {
-      const allOk = (d.crew || []).every(c => sysAllOk(c) && c.risk !== 'cascade' && c.risk !== 'converged');
+      const allOk = (d.crew || []).every(c => sysAllOk(c) && c.risk !== 'cascade' && c.risk !== 'converged'
+        && (!c.metrics.radiation_dose_24h || c.metrics.radiation_dose_24h.value <= MISSION.background * 1.03));   // storm residue drained
       if (CM.resetting.doneAt && t0 > CM.resetting.doneAt) CM.resetting.fresh = allOk ? CM.resetting.fresh + 1 : 0;
       if (CM.resetting.fresh >= 2 || now - CM.resetting.started > 90000) CM.resetting = null;
     }
@@ -4531,6 +4558,18 @@ document.getElementById('sim-modal')?.addEventListener('click', e => { if (e.tar
 // Modes (set by the backend rules): companion · checkin · support (crisis). Private by default.
 // ============================================
 const ECHO = { crew: null, mode: null, level: null, reason: null, lastProactive: null, busy: false, esc: null, ready: false, chats: {}, pickedAt: 0 };
+// Conversations are kept in this browser tab (sessionStorage), so a reset (which reloads the page), a storm or a
+// demo chapter adds to the conversation instead of replacing it. Nothing leaves the browser.
+const _ECHO_KEY = 'aegis.echo.chats.v1';
+function echoPersist() {
+  try {
+    const chat = document.getElementById('echo-chat');
+    if (ECHO.crew && chat) { const c = chat.cloneNode(true); c.querySelector('#echo-typing')?.remove(); ECHO.chats[ECHO.crew] = c.innerHTML; }
+    sessionStorage.setItem(_ECHO_KEY, JSON.stringify(ECHO.chats));
+  } catch (e) { /* storage blocked: the conversation still lives in memory for this page */ }
+}
+try { Object.assign(ECHO.chats, JSON.parse(sessionStorage.getItem(_ECHO_KEY) || '{}')); } catch (e) {}
+window.addEventListener('pagehide', echoPersist);
 const ECHO_MOOD_FACE = { 1: '😣 Rough', 2: '😔 Low', 3: '😐 Okay', 4: '🙂 Good', 5: '😄 Great' };
 const _echoEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function echoCrewId() { return DASH_API.selectedCrewId || 'crew-001'; }
@@ -4543,6 +4582,7 @@ function echoBubble(who, text, cls = '') {
     : `<span class="eb-who">${who === 'echo' ? 'ECHO' : _echoEsc(_crewDisplayName(echoCrewId()))}</span>${_echoEsc(text)}`;
   chat.appendChild(b);
   chat.scrollTop = chat.scrollHeight;
+  echoPersist();
   return b;
 }
 function echoTyping(on) {
@@ -4637,7 +4677,11 @@ async function echoRefresh(event, opts = {}) {
       const chat = document.getElementById('echo-chat');
       if (ECHO.crew && chat) ECHO.chats[ECHO.crew] = chat.innerHTML;
       ECHO.crew = crew; ECHO.lastProactive = d.reason;
-      if (ECHO.chats[crew] && chat) { chat.innerHTML = ECHO.chats[crew]; chat.scrollTop = chat.scrollHeight; }
+      if (ECHO.chats[crew] && chat) {
+        chat.innerHTML = ECHO.chats[crew]; chat.scrollTop = chat.scrollHeight;
+        let resetNote = null; try { resetNote = sessionStorage.getItem('aegis.echo.resetNote'); sessionStorage.removeItem('aegis.echo.resetNote'); } catch (e) {}
+        if (resetNote) echoBubble('note', 'Demo reset · your conversation with ECHO is kept');
+      }
       else {
         if (chat) chat.innerHTML = '';
         echoBubble('note', `Daily check-in · Day ${d.facts.mission_day} · readings as of ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (Live Vitals has the current values)`);
