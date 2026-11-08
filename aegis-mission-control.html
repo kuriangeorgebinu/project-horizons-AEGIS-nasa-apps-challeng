@@ -910,6 +910,7 @@ body.emergency.acked .confirm-btn{animation:none;}
 .alert-panel .rec-card{padding:.7rem .8rem;}
 .recs-more{align-self:flex-start;margin-top:.5rem;font:inherit;font-size:.75rem;background:none;border:1px solid var(--border);border-radius:999px;color:var(--aegis);padding:.2rem .7rem;cursor:pointer;}
 .recs-resolved{display:grid;gap:.3rem;margin-top:.45rem;}
+.alert-other{margin-top:.45rem;font-size:.76rem;color:var(--yellow);}.alert-other button{margin-left:.35rem;font:inherit;font-size:.72rem;padding:.1rem .5rem;border-radius:8px;border:1px solid var(--yellow);background:transparent;color:var(--yellow);cursor:pointer;}
 .recs-note{font-size:.74rem;color:var(--yellow);}.recs-note:empty{display:none;}
 .rec-raised{font-size:.66rem;color:var(--muted);margin:.1rem 0 .25rem;}
 .rec-resolved{font-size:.74rem;color:var(--muted);padding:.35rem .6rem;border:1px dashed var(--border);border-radius:8px;}
@@ -2774,7 +2775,7 @@ setTimeout(fetchAndUpdateVitals, 1500);
 // ============================================
 // E2E WIRING: live alerts, roster status, demo controls (Claude, Sep 28)
 // ============================================
-const LIVE_ALERT = { id: null, protocol: 'RECOVER-3', crewName: null, crewKey: 'chen', pauseUntil: 0 };
+const LIVE_ALERT = { id: null, protocol: 'RECOVER-3', crewName: null, crewKey: 'chen', pauseUntil: 0, other: null, spoken: new Set() };
 
 // Plain-language wording for the panel and the voice (protocol codes stay in tooltips and the on-board sim)
 const PLAIN_PROTOCOL = { 'RECOVER-3': 'recovery plan', 'SHELTER-1': 'storm-shelter plan', 'MEDIC-1': 'medical response', 'PREVENT-1': 'prevention plan' };
@@ -2837,6 +2838,32 @@ function _alertRank(a) {
   return 0;
 }
 
+function _alertKind(a) {
+  const isProtect = _alertRank(a) === 2;
+  const isShelter = isProtect && (/SHELTER|RADIATION/i.test(a.title || '') || String(a.source || '').toUpperCase() === 'SOLARIS');
+  const isMedic = isProtect && !isShelter;
+  const m = (a.message || '').match(/(RECOVER-\d|SHELTER-\d|CALM-\d|SLEEP-\d|MEDIC-\d)/);
+  return { isProtect, isShelter, isMedic, protocol: m ? m[1] : (isShelter ? 'SHELTER-1' : isMedic ? 'MEDIC-1' : 'RECOVER-3') };
+}
+function _bannerFor(a) {
+  const k = _alertKind(a);
+  if (EMG.alertId === a.id || (EMG.acked && EMG.protocol === k.protocol)) return;
+  _setEmergency({ level: k.isProtect ? 'protect' : 'cascade', protocol: k.protocol,
+                  name: k.isShelter && LIVE_ALERT.shelterAll ? 'all crew' : _crewDisplayName(a.crew_member_id), since: a.timestamp, alertId: a.id, crewId: a.crew_member_id });
+}
+// An alert for someone other than the selected crew member: one line in the card with a button to switch to them
+function _renderOtherAlert() {
+  const o = LIVE_ALERT.other;
+  let el = document.getElementById('alert-other');
+  if (!o) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div'); el.id = 'alert-other'; el.className = 'alert-other';
+    document.getElementById('alert-desc')?.insertAdjacentElement('afterend', el);
+  }
+  const k = _alertKind(o), who = _crewDisplayName(o.crew_member_id), key = CREW_KEY_BY_ID[o.crew_member_id];
+  const what = k.isShelter ? 'radiation above the shelter level' : k.isMedic ? 'medical emergency' : 'health cascade';
+  el.innerHTML = `⚠ ${_insEsc(who)} has an open alert (${what}). <button type="button" onclick="selectCrew('${key}')">Show ${_insEsc(who)}</button>`;
+}
 function renderLiveAlert(a) {
   const panel = document.getElementById('alert-panel');
   const icon = document.getElementById('alert-icon');
@@ -2849,8 +2876,9 @@ function renderLiveAlert(a) {
   if (!a) {
     // No live alert: show the PREDICT forecast if AEGIS sees a cascade coming, otherwise all clear
     LIVE_ALERT.id = null;
-    if (!EMG.acked) _setEmergency(null);
-    const pvNow = PREDICT_STATE.prevented;
+    // Nothing for the selected person. The banner still shows another crew member's emergency (it names them).
+    if (!EMG.acked) { if (LIVE_ALERT.other) _bannerFor(LIVE_ALERT.other); else _setEmergency(null); }
+    const pvNow = PREDICT_STATE.prevented && PREDICT_STATE.prevented.crew === DASH_API.selectedCrewId ? PREDICT_STATE.prevented : null;
     if (pvNow && !(pvNow.avertedAt && PREDICT_STATE.preventedEntry && !sysAllOk(PREDICT_STATE.preventedEntry))) renderPreventedPanel(PREDICT_STATE.preventedEntry);
     else renderPredictPanel(PREDICT_STATE.top);
     return;
@@ -2865,19 +2893,12 @@ function renderLiveAlert(a) {
   }
   const isNew = a.id !== LIVE_ALERT.id;
   // PROTECT tier: radiation (SOLARIS / SHELTER) -> SHELTER-1; any other critical reading -> MEDIC-1
-  const isProtect = _alertRank(a) === 2;
-  const isShelter = isProtect && (/SHELTER|RADIATION/i.test(a.title || '') || String(a.source || '').toUpperCase() === 'SOLARIS');
-  const isMedic = isProtect && !isShelter;
-  const protoMatch = (a.message || '').match(/(RECOVER-\d|SHELTER-\d|CALM-\d|SLEEP-\d|MEDIC-\d)/);
+  const { isProtect, isShelter, isMedic, protocol } = _alertKind(a);
   LIVE_ALERT.id = a.id;
-  LIVE_ALERT.protocol = protoMatch ? protoMatch[1] : (isShelter ? 'SHELTER-1' : isMedic ? 'MEDIC-1' : 'RECOVER-3');
+  LIVE_ALERT.protocol = protocol;
   LIVE_ALERT.crewName = _crewDisplayName(a.crew_member_id);
   LIVE_ALERT.crewKey = CREW_KEY_BY_ID[a.crew_member_id] || 'chen';
-  if (EMG.alertId !== a.id && !(EMG.acked && EMG.protocol === LIVE_ALERT.protocol)) {
-    const crewCount = isShelter ? 'all crew' : LIVE_ALERT.crewName;
-    _setEmergency({ level: isProtect ? 'protect' : 'cascade', protocol: LIVE_ALERT.protocol, name: crewCount,
-                    since: a.timestamp, alertId: a.id, crewId: a.crew_member_id });
-  }
+  _bannerFor(a);
 
   panel.style.borderColor = 'var(--red)';
   icon.textContent = isShelter ? '☢' : isMedic ? '⚕' : '⚡';
@@ -2892,9 +2913,15 @@ function renderLiveAlert(a) {
   // Plain-language headline, explanation and spoken line for each kind of alert
   let headline, plain, spoken;
   if (isShelter) {
-    headline = `Radiation storm: take shelter now · ${name}`;
-    plain = 'A solar storm is pushing radiation up fast. The storm shelter is the best-protected spot on the ship, so the crew should head there now.';
-    spoken = 'Radiation storm. Everyone needs to get to the storm shelter now.';
+    if (LIVE_ALERT.shelterAll) {
+      headline = `Radiation storm: take shelter now · ${name}`;
+      plain = 'A solar storm is pushing radiation up fast. The storm shelter is the best-protected spot on the ship, so the crew should head there now.';
+      spoken = 'Radiation storm. Everyone needs to get to the storm shelter now.';
+    } else {       // only this crew member's dose is over the line (e.g. the cascade demo)
+      headline = `Radiation above the shelter level · ${name}`;
+      plain = `${name}'s radiation dose rate has passed the shelter level. ${name} should move to the storm shelter, the best-protected spot on the ship, until it comes down.`;
+      spoken = `${name}'s radiation is above the shelter level. Please move to the storm shelter now.`;
+    }
   } else if (isMedic) {
     const pct = (ruleMsg.match(/(\d+(?:\.\d+)?)\s*%/) || [])[1];
     const bpm = (ruleMsg.match(/(\d+)\s*BPM/i) || [])[1];
@@ -2925,8 +2952,11 @@ function renderLiveAlert(a) {
     btn.title = `Protocol ${LIVE_ALERT.protocol}`;
     if (typeof playTone === 'function') { playTone(880, 0.12); setTimeout(() => playTone(660, 0.12), 150); }
     // The agent that owns the hazard speaks: SOLARIS for radiation, PULSE for a medical emergency, AEGIS for a cascade
-    VOICE.nextSpeaker = isShelter ? 'solaris' : isMedic ? 'pulse' : 'aegis';
-    if (typeof typeResponse === 'function') typeResponse(withIntro(VOICE.nextSpeaker, spoken));
+    if (!LIVE_ALERT.spoken.has(a.id)) {
+      LIVE_ALERT.spoken.add(a.id);
+      VOICE.nextSpeaker = isShelter ? 'solaris' : isMedic ? 'pulse' : 'aegis';
+      if (typeof typeResponse === 'function') typeResponse(withIntro(VOICE.nextSpeaker, spoken));
+    }
   }
 }
 
@@ -2936,11 +2966,17 @@ async function refreshLiveAlerts() {
     const r = await fetch(`${DASH_API.baseUrl}/api/alerts?unacknowledged_only=true&limit=50`);
     if (!r.ok) return;                       // keep current display on error
     const alerts = await r.json();
-    const top = alerts
-      .filter(a => _alertRank(a) > 0)
-      .sort((x, y) => _alertRank(y) - _alertRank(x) || new Date(y.timestamp) - new Date(x.timestamp))[0];
-    renderLiveAlert(top);
-    _renderCallLine(top);
+    const ranked = alerts.filter(a => _alertRank(a) > 0)
+      .sort((x, y) => _alertRank(y) - _alertRank(x) || new Date(y.timestamp) - new Date(x.timestamp));
+    // The card is about the selected crew member only. In a real solar storm every crew member gets their own
+    // shelter alert, so each person's card still shows it; a demo that raises one person's dose stays with them.
+    const sel = DASH_API.selectedCrewId;
+    LIVE_ALERT.shelterAll = new Set(ranked.filter(a => _alertKind(a).isShelter).map(a => a.crew_member_id)).size > 1;
+    const mine = ranked.find(a => a.crew_member_id === sel) || null;
+    LIVE_ALERT.other = ranked.find(a => a.crew_member_id !== sel) || null;
+    renderLiveAlert(mine);
+    _renderOtherAlert();
+    _renderCallLine(mine);
   } catch (e) { /* backend offline: keep static demo content */ }
 }
 
@@ -3875,13 +3911,14 @@ async function refreshPredict() {
       if (CM.resetting.doneAt && t0 > CM.resetting.doneAt) CM.resetting.fresh = allOk ? CM.resetting.fresh + 1 : 0;
       if (CM.resetting.fresh >= 2 || now - CM.resetting.started > 90000) CM.resetting = null;
     }
+    const forSel = c => (typeof STORY !== 'undefined' && STORY.on) || c.crew_member_id === DASH_API.selectedCrewId;
     let top = (d.crew || [])
-      .filter(c => c.risk === 'cascade' && !((PREDICT_STATE.suppress[c.crew_member_id] || 0) > now))
+      .filter(c => forSel(c) && c.risk === 'cascade' && !((PREDICT_STATE.suppress[c.crew_member_id] || 0) > now))
       .sort((a, b) => a.cascade_eta_min - b.cascade_eta_min)[0] || null;
     // The forecast came true (≥3 domains now out of range) but AEGIS hasn't raised the cascade yet
     // (next analysis pass, ≤10 s): keep the PREDICT card up as "cascade forming" instead of flashing ALL CLEAR.
     if (!top && PREDICT_STATE.lastCrew) {
-      const c = (d.crew || []).find(x => x.crew_member_id === PREDICT_STATE.lastCrew && x.risk === 'converged');
+      const c = (d.crew || []).find(x => x.crew_member_id === PREDICT_STATE.lastCrew && forSel(x) && x.risk === 'converged');
       if (c) top = c;
     }
     PREDICT_STATE.top = top;
@@ -3914,7 +3951,7 @@ async function refreshPredict() {
     syncVitalsToMap(mine);
     renderCrewStrip();
     if (!LIVE_ALERT.id && Date.now() >= LIVE_ALERT.pauseUntil) {
-      const pvNow = PREDICT_STATE.prevented;
+      const pvNow = PREDICT_STATE.prevented && (STORY.on || PREDICT_STATE.prevented.crew === DASH_API.selectedCrewId) ? PREDICT_STATE.prevented : null;
       if (pvNow && !(pvNow.avertedAt && PREDICT_STATE.preventedEntry && !sysAllOk(PREDICT_STATE.preventedEntry))) renderPreventedPanel(PREDICT_STATE.preventedEntry);
       else renderPredictPanel(PREDICT_STATE.top);
     }
@@ -4772,7 +4809,7 @@ function stopStory() {
 </aside>
 
 <!-- AEGIS API Client - connects frontend to backend -->
-<script src="aegis-api-client.js?v=11"></script>
+<script src="aegis-api-client.js?v=12"></script>
 
 </body>
 </html>
