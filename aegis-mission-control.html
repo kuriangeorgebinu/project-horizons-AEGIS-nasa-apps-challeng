@@ -1002,6 +1002,133 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
 .ab.thinking .ab-text{color:var(--muted);font-style:italic;}
 .chat-panel .ask-form{margin:0;}
 .eb .eb-src{display:inline-block;margin-left:.4rem;font-size:.6rem;letter-spacing:.06em;padding:0 .35rem;border-radius:6px;background:rgba(160,152,200,.15);color:var(--gene);vertical-align:middle;font-weight:600;}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   THEME v4 (Nova's colour scheme, approved by Kurian): depth and focus, colour as state, not decoration.
+   Semantic colours are strict and mean the same in both themes:
+     cyan  = nominal / live data      amber = caution      red = emergency
+   Mars rust orange is the one brand accent: AEGIS wordmark, hero Mars arc, ship→Mars signal pulse. Nothing else.
+   Dark is the hero theme; light is a "day shift" theme (not an inversion). The Cascade Map stays a dark
+   viewport into the ship in both. Layout and behaviour are unchanged.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#04060C;
+  --live:#22D3EE;                                  /* nominal / live data */
+  --green:#22D3EE;                                 /* "ok" states use the nominal colour */
+  --yellow:#F5B544;--cm-amber:#F5B544;--orange:#F59E0B;   /* caution (out-of-range-but-not-emergency = deeper amber) */
+  --red:#FF4D5E;                                   /* emergency */
+  --accent:#FF6B35;--accent-soft:#FFB08A;          /* Mars rust: brand moments only */
+  /* agent identities: outside the semantic families so they never read as a state */
+  --aegis:#9CC3FF;--solaris:#E5D3B3;--gene:#B6A7FF;--pulse:#E879F9;--mirror:#86EFAC;--echo:#FBCFE8;
+  --text:#E6EDF7;--muted:#8D9BB0;
+  --border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.18);
+  --glass:rgba(148,184,255,.04);
+  --panel-shadow:0 22px 44px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.04);
+  --space-bg-opacity:1;
+}
+[data-theme="light"]{
+  --bg:#EEF1F5;
+  --live:#0E7490;--green:#0E7490;
+  --yellow:#B45309;--cm-amber:#B45309;--orange:#B45309;
+  --red:#B91C1C;
+  --accent:#C2410C;--accent-soft:#EA580C;
+  --aegis:#1E40AF;--solaris:#7C5E2A;--gene:#4338CA;--pulse:#A21CAF;--mirror:#15803D;--echo:#9333EA;
+  --text:#0F1B2D;--muted:#53627A;
+  --card:#FFFFFF;--border:#CBD5E1;--border-strong:#94A3B8;
+  --glass:#FFFFFF;
+  --panel-shadow:0 1px 2px rgba(15,23,42,.06),0 4px 10px -4px rgba(15,23,42,.08),0 16px 32px -20px rgba(15,23,42,.22);
+  --space-bg-opacity:1;
+}
+
+/* ── Base ── */
+body{background:radial-gradient(ellipse 120% 90% at 50% 38%,#0A1120 0%,#070C18 52%,#04060C 100%) fixed,#04060C;}
+.space-bg{background:none;z-index:-2;}
+.space-bg::after{content:"";position:absolute;inset:0;          /* faint starfield / dust */
+  background-image:
+    radial-gradient(1px 1px at 22px 34px,#fff 50%,transparent 51%),radial-gradient(1px 1px at 140px 96px,#fff 50%,transparent 51%),
+    radial-gradient(1.4px 1.4px at 260px 170px,#dbeafe 50%,transparent 51%),radial-gradient(1px 1px at 330px 40px,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 80px 210px,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 200px 260px,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 300px 280px,#fff 50%,transparent 51%),radial-gradient(1px 1px at 10px 150px,#fff 50%,transparent 51%);
+  background-size:360px 300px;opacity:.28;}
+[data-theme="light"] body{background:
+    linear-gradient(rgba(30,58,95,.035) 1px,transparent 1px) 0 0/28px 28px,          /* blueprint grid */
+    linear-gradient(90deg,rgba(30,58,95,.035) 1px,transparent 1px) 0 0/28px 28px,
+    linear-gradient(180deg,#F4F6F9 0%,#E8ECF1 100%) fixed;}
+[data-theme="light"] .space-bg::after{display:none;}
+
+/* ── Panels: glassy slate (dark), white with layered shadows (light) ── */
+.header,.mission-bar,.graph-panel,.vitals-panel,.voice-panel,.alert-panel,.recs-panel,.echo-panel,.nasa-panel{
+  background:var(--glass);border-color:var(--border);box-shadow:var(--panel-shadow);}
+:root:not([data-theme="light"]) :is(.header,.mission-bar,.graph-panel,.vitals-panel,.voice-panel,.alert-panel,.recs-panel,.echo-panel,.nasa-panel){
+  -webkit-backdrop-filter:blur(10px) saturate(120%);backdrop-filter:blur(10px) saturate(120%);}
+
+/* The Cascade Map: the room's main screen. Dark in both themes (a viewport into the ship), with an inner glow. */
+.graph-panel,[data-theme="light"] .graph-panel{
+  --text:#E6EDF7;--muted:#8D9BB0;--border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.18);
+  --live:#22D3EE;--green:#22D3EE;--yellow:#F5B544;--cm-amber:#F5B544;--orange:#F59E0B;--red:#FF4D5E;
+  --aegis:#9CC3FF;--solaris:#E5D3B3;--gene:#B6A7FF;--pulse:#E879F9;--mirror:#86EFAC;--echo:#FBCFE8;
+  color:var(--text);
+  background:radial-gradient(560px 320px at 50% 52%,rgba(34,211,238,.07),transparent 70%),
+             radial-gradient(ellipse at 50% 45%,#0C1526 0%,#070C18 100%);
+  border-color:rgba(34,211,238,.16);
+  box-shadow:inset 0 0 70px rgba(34,211,238,.07),inset 0 1px 0 rgba(255,255,255,.05),0 24px 50px -28px rgba(0,0,0,.9);}
+[data-theme="light"] .graph-panel{border-color:#1E293B;
+  box-shadow:inset 0 0 70px rgba(34,211,238,.07),0 2px 4px rgba(15,23,42,.10),0 18px 36px -18px rgba(15,23,42,.45);}
+/* the dark-theme map details, applied inside the dark island in light mode too */
+[data-theme="light"] .graph-panel .cm-core{fill:url(#cm-core-grad);stroke:rgba(140,180,230,.25);}
+[data-theme="light"] .graph-panel .cm-gauge,[data-theme="light"] .graph-panel .cm-seg{filter:url(#cm-glow);}
+[data-theme="light"] .graph-panel .cm-track{stroke:rgba(140,170,210,.18);opacity:1;}
+[data-theme="light"] .graph-panel .cm-link.warm,[data-theme="light"] .graph-panel .cm-link.hot,
+[data-theme="light"] .graph-panel .conn-line.s-watch,[data-theme="light"] .graph-panel .conn-line.s-out{filter:url(#cm-glow);}
+#cm-aura-grad stop{stop-color:#22D3EE;}
+.graph-panel:has(.node-aegis[data-mode="averted"]) #cm-aura-grad stop,.graph-panel:has(.node-aegis[data-mode="prevent"]) #cm-aura-grad stop{stop-color:#22D3EE;}
+.graph-panel:has(.node-aegis[data-mode="cascade"]) #cm-aura-grad stop{stop-color:#F5B544;}
+.graph-panel:has(.node-aegis[data-mode="alert"]) #cm-aura-grad stop{stop-color:#FF4D5E;}
+
+/* ── Brand accent: Mars rust, only here ── */
+.logo{background:linear-gradient(90deg,var(--accent-soft),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;}
+[data-theme="light"] .logo{background:none;color:var(--accent);}
+.hg-a{stop-color:#C9D6EA;} .hg-b{stop-color:#FF6B35;}
+[data-theme="light"] .hg-a{stop-color:#64748B;} [data-theme="light"] .hg-b{stop-color:#C2410C;}
+.hero-mars-glow{fill:rgba(255,107,53,.22);}
+[data-theme="light"] .hero-mars-glow{fill:rgba(194,65,12,.16);}
+.hero-signal{fill:var(--accent);}
+.hero-earth-glow{fill:rgba(201,214,234,.14);}
+/* the one-way delay is live data */
+.hero-delay,[data-theme="light"] .hero-delay{color:var(--live);}
+[data-theme="light"] .hero-ship-body{fill:#1E293B;}
+
+/* ── No decorative glow: chrome is neutral, emphasis is for live data and the current alert ── */
+.nav-tab.active{background:rgba(255,255,255,.12);color:var(--text);box-shadow:none;}
+[data-theme="light"] .nav-tab.active{background:#1E293B;color:#fff;}
+.run-demo-btn{background:#E6EDF7;color:#0A1120;box-shadow:0 1px 0 rgba(255,255,255,.2) inset;}
+.run-demo-btn:hover{background:#fff;box-shadow:0 6px 18px -10px rgba(255,255,255,.45);}
+[data-theme="light"] .run-demo-btn{background:#0F172A;color:#fff;box-shadow:0 1px 2px rgba(15,23,42,.2);}
+[data-theme="light"] .run-demo-btn:hover{background:#1E293B;}
+.run-demo-btn.on{background:rgba(255,255,255,.14);color:var(--text);}
+[data-theme="light"] .run-demo-btn.on{background:#CBD5E1;color:#0F172A;}
+/* the current alert is the one panel that may glow */
+body.emergency .alert-panel{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 46px -10px rgba(255,77,94,.55);}
+[data-theme="light"] body.emergency .alert-panel{box-shadow:0 0 0 1px var(--red),0 10px 30px -12px rgba(185,28,28,.45);}
+body.emergency .confirm-btn{background:var(--red);border-color:var(--red);}
+body.emergency .emergency-edge{box-shadow:inset 0 0 0 3px var(--red),inset 0 0 140px rgba(255,40,60,.32);}
+
+/* ── Emergency theatre: the room itself changes temperature (a slow red vignette breathes in at the edges) ── */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity 1.4s ease;
+  background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 45%,rgba(255,40,60,.16) 78%,rgba(255,40,60,.34) 100%);}
+body.emergency::before{opacity:1;animation:room-temp 5.5s ease-in-out infinite;}
+body.cascade-alert:not(.emergency)::before{opacity:.75;animation:room-temp 7s ease-in-out infinite;
+  background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 50%,rgba(245,181,68,.10) 80%,rgba(245,181,68,.22) 100%);}
+body.acked::before{animation:none;opacity:.35;}
+[data-theme="light"] body::before{background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 45%,rgba(185,28,28,.10) 78%,rgba(185,28,28,.24) 100%);}
+[data-theme="light"] body.cascade-alert:not(.emergency)::before{background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 50%,rgba(180,83,9,.08) 80%,rgba(180,83,9,.18) 100%);}
+@keyframes room-temp{0%,100%{opacity:.55;}50%{opacity:1;}}
+@media (prefers-reduced-motion:reduce){body.emergency::before,body.cascade-alert::before{animation:none;opacity:.8;}}
+
+/* light mode: source tags and ECHO's active mode keep their contrast on white */
+[data-theme="light"] .src-tag{border-color:#CBD5E1;background:#F1F5F9;color:var(--muted);}
+[data-theme="light"] .src-tag.model{color:#6D28D9;border-color:rgba(109,40,217,.35);background:rgba(109,40,217,.06);}
+[data-theme="light"] .echo-mode.on{color:#fff;box-shadow:none;}
 </style>
 </head>
 <body>
@@ -1044,7 +1171,7 @@ details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa
         <defs>
           <radialGradient id="hg-earth" cx="35%" cy="35%"><stop offset="0" stop-color="#b8e4ff"/><stop offset=".55" stop-color="#3d8fdc"/><stop offset="1" stop-color="#123c75"/></radialGradient>
           <radialGradient id="hg-mars" cx="35%" cy="35%"><stop offset="0" stop-color="#ffc9a3"/><stop offset=".55" stop-color="#d0643a"/><stop offset="1" stop-color="#6b2412"/></radialGradient>
-          <linearGradient id="hg-done" x1="0" x2="1"><stop offset="0" stop-color="#5cb4ff"/><stop offset="1" stop-color="#ff9d57"/></linearGradient>
+          <linearGradient id="hg-done" x1="0" x2="1"><stop class="hg-a" offset="0" stop-color="#C9D6EA"/><stop class="hg-b" offset="1" stop-color="#FF6B35"/></linearGradient>
           <filter id="hg-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
         <path class="hero-orbit" d="M40,96 C 200,-4 440,-4 600,96"/>
