@@ -65,7 +65,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <section>
   <h2>Findings at a glance</h2>
   <div class="verdicts">
-    <div class="verdict ok"><span class="num">0/4 → 3/4</span><span class="lbl">Real post-flight IL-6 rises (Inspiration4) that GENE detects, now that it compares against each person's own pre-flight baseline. 1 false alarm in 12 pre-flight samples.</span></div>
+    <div class="verdict ok"><span class="num">0/4 → 3/4</span><span class="lbl">Real post-flight IL-6 rises (Inspiration4) that GENE detects, now that it compares against each person's own pre-flight baseline. 1 false alarm in 12 pre-flight samples. Caveat: the rule was tuned on this same data, so this is a consistency check, not an independent test.</span></div>
     <div class="verdict ok"><span class="num">3/8 → 8/8</span><span class="lbl">Radiation cases where SOLARIS makes the right call, now that it judges dose against the mission's normal background. Normal deep-space cruise no longer triggers the storm shelter.</span></div>
     <div class="verdict ok"><span class="num">9 of 10</span><span class="lbl">AI recommendations that pass every fact check (8 on the first try). The tenth falls back to the rule-based advice.</span></div>
     <div class="verdict ok"><span class="num">184 of 195</span><span class="lbl">Planted hallucinations the checker caught. Numbers, citations and medicines: all caught. Paraphrased actions: 73 of 84.</span></div>
@@ -83,7 +83,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <tr><td>SOLARIS rule</td><td>Fixed: warning above 0.5, shelter above 1.0 mSv in 24 h</td><td>Relative to the mission background (<code>aegis_mission.py</code>): warning at 2× background, shelter at 5× background and at least background + 5 mSv. Mars transit: 1.84 / 3.68 / 9.2 mSv</td></tr>
       <tr><td>GENE rule</td><td>Fixed: IL-6 above 8 pg/mL</td><td>≥ 1.5× own pre-flight baseline and +1.5 pg/mL, with &gt; 12 pg/mL as a backstop. Baselines seeded inside the real Inspiration4 pre-flight range</td></tr>
       <tr><td>IL-6 model</td><td>Two different formulas (agent and forecast)</td><td>One shared, labelled-as-modelled formula used by GENE, the forecasts, the What-If tool and the dashboard</td></tr>
-      <tr><td>Simulator dose history</td><td>135–145 mSv at day 54 (≈2.6 mSv/day)</td><td>95–103 mSv (day 54 × 1.84 mSv/day). Solar storm demo now reaches 20–32 mSv/day</td></tr>
+      <tr><td>Simulator dose history</td><td>135–145 mSv at day 54 (≈2.6 mSv/day)</td><td>Seeded at 95–103 mSv (day 54 × 1.84 mSv/day). The live total then rises with every simulated storm and every minute of the demo, so the dashboard reads higher (around 110 mSv) after a few storms. Solar storm demo now reaches 20–32 mSv/day</td></tr>
       <tr><td>Radiation projection</td><td>Yearly total from history (~1,240 mSv/year)</td><td>To the end of the mission phase against NASA's 600 mSv career limit, shown only if it passes 80% of it</td></tr>
       <tr><td>Recommendation steps</td><td>AI rewording shown on the card</td><td>Approved steps shown word for word; the AI only picks and orders them</td></tr>
       <tr><td>Voice answers</td><td>Numbers checked</td><td>Numbers, units (whitelist) and medicines checked; the AI may only repeat actions already in the findings</td></tr>
@@ -125,7 +125,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <tr><td>Alternative: ≥ 2× own baseline and +1.5</td><td class="n">1 / 4</td><td class="n">1 / 12</td></tr>
     </tbody></table></div>
   <p>The miss is C002 (4.40 → 5.76, a rise of 1.36, below the +1.5 floor). The false alarm is C001's L-3 sample (5.94), compared leave-one-out against the other two pre-flight samples. With four people this is a sanity check, not a validation, and the 1.5× / +1.5 values were chosen on this same small dataset.</p>
-  <p class="note">In the live system IL-6 is <b>modelled</b> from stress and radiation (no blood sensor feeds AEGIS), and the dashboard labels it that way. The model is centred on each person's own pre-flight baseline (at rest it equals that baseline) and saturates just under 12.07 pg/mL, the highest value in this Inspiration4 data, so it never shows values outside the real range the rule was tested on. The real data tests the rule, not the model.</p>
+  <p class="note">In the live system IL-6 is <b>modelled</b> from stress and radiation (no blood sensor feeds AEGIS), and the dashboard labels it that way. The model is centred on each person's own pre-flight baseline (at rest it equals that baseline) and saturates just under 12.07 pg/mL, the highest value in this Inspiration4 data, so it never shows values outside the real range the rule was tested on. The real data tests the rule, not the model. On the live dashboard the modelled value is also smoothed (it moves at most 0.12 pg/mL per second, so it cannot jump from baseline to 10 pg/mL in one sample), and demo time is compressed: a solar storm that would last hours plays in about 2.5 minutes, so real IL-6 would change far more slowly. The smoothing is not a model of real IL-6 kinetics.</p>
 
   <h3>SOLARIS and measured radiation environments</h3>
   <p>Each environment is judged against its own mission profile, as AEGIS would be configured for that mission.</p>

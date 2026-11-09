@@ -41,6 +41,7 @@ import aegis_trends
 import aegis_llm
 import aegis_notify
 import aegis_mission
+aegis_mission.IL6_SMOOTHING = True     # the live dashboard: modest IL-6 smoothing (see aegis_mission.il6_smoothed)
 import aegis_echo
 import aegis_tts
 import aegis_metrics
@@ -297,6 +298,7 @@ async def demo_reset():
     with get_coordinator()._lock:
         removed = db.reset_demo_data()
         get_coordinator().reset_state()
+    aegis_mission.il6_reset_smoothing()
     get_coordinator().protect_mode = False
     aegis_notify.reset_log()
     aegis_notify.DEMO_QUIET["on"] = False

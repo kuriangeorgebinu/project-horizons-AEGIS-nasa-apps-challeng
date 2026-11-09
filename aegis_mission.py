@@ -94,6 +94,48 @@ def il6_model(stress_index: float, dose_24h: float, bg: float = None, baseline: 
     return base + room * (1.0 - math.exp(-excess / room))
 
 
+# Modest smoothing of the MODELLED IL-6 (no real lag model): a blood marker does not jump from 3.9 to 10 pg/mL in one
+# 10-second sample, so the value shown and checked moves at most IL6_MAX_RATE pg/mL per second toward the model's
+# target. The demo also compresses time (a storm that would take hours plays in ~2.5 minutes); this only stops the
+# one-tick jump, it does not claim real IL-6 kinetics. Both disclosed on the dashboard and in the accuracy report.
+IL6_MAX_RATE = 0.12               # pg/mL per second of demo time
+_IL6_LIVE: dict = {}              # crew_id -> (value, time.monotonic())
+IL6_SMOOTHING = False             # switched on by the live server (main.py); evals and tests see the raw model
+
+
+def il6_step(prev: float, target: float, dt_s: float) -> float:
+    cap = IL6_MAX_RATE * max(0.0, dt_s)
+    return prev + max(-cap, min(cap, target - prev))
+
+
+def il6_smoothed(crew_id: str, target: float) -> float:
+    """Live smoothed IL-6 for one crew member (restarts at the target after a pause of more than 60 s)."""
+    if not IL6_SMOOTHING:
+        return target
+    import time as _t
+    now = _t.monotonic()
+    prev = _IL6_LIVE.get(crew_id)
+    val = target if prev is None or now - prev[1] > 60 else il6_step(prev[0], target, now - prev[1])
+    _IL6_LIVE[crew_id] = (val, now)
+    return val
+
+
+def il6_smooth_series(points: list) -> list:
+    """Same cap over a history series [(seconds, raw_target), ...] so forecasts and the live value agree."""
+    if not IL6_SMOOTHING:
+        return [raw for _, raw in points]
+    out, prev, pt = [], None, None
+    for t, raw in points:
+        prev = raw if prev is None or t - pt > 60 else il6_step(prev, raw, t - pt)
+        pt = t
+        out.append(prev)
+    return out
+
+
+def il6_reset_smoothing():
+    _IL6_LIVE.clear()
+
+
 def il6_baseline(crew_id: str) -> float:
     return PREFLIGHT_IL6.get(crew_id, DEFAULT_PREFLIGHT_IL6)
 

@@ -418,8 +418,8 @@ body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60
 
 .whatif-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(8px);}
 .whatif-modal.open{display:flex;}
-.whatif-content{background:var(--card);border:2px solid var(--aegis);border-radius:20px;padding:2rem;width:95%;max-width:800px;position:relative;box-shadow:0 0 60px rgba(90,159,215,.3);}
-.whatif-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;}
+.whatif-content{background:var(--card);border:2px solid var(--aegis);border-radius:20px;padding:2rem;width:95%;max-width:800px;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 0 60px rgba(90,159,215,.3);}
+.whatif-close{position:sticky;top:0;float:right;margin:-1rem -1rem 0 0;z-index:3;width:2.4rem;height:2.4rem;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:1.5rem;line-height:1;cursor:pointer;}
 .whatif-close:hover{color:var(--text);}
 .whatif-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
 .whatif-header h2{color:var(--aegis);font-size:1.3rem;margin:0;}
@@ -1151,6 +1151,8 @@ body.acked::before{animation:none;opacity:.35;}
 [data-theme="light"] .src-tag{border-color:#CBD5E1;background:#F1F5F9;color:var(--muted);}
 [data-theme="light"] .src-tag.model{color:#6D28D9;border-color:rgba(109,40,217,.35);background:rgba(109,40,217,.06);}
 [data-theme="light"] .echo-mode.on{color:#fff;box-shadow:none;}
+.link-btn{background:none;border:none;padding:.2rem 0;margin-left:.4rem;color:var(--aegis);font:inherit;font-size:.8rem;text-decoration:underline;cursor:pointer;}
+.link-btn:hover{color:var(--text);}
 </style>
 </head>
 <body>
@@ -1383,8 +1385,8 @@ body.acked::before{animation:none;opacity:.35;}
       <span class="trend-chip" id="trend-spo2" hidden></span>
     </div>
     
-    <div class="vital-row" id="il6-row" data-metric="il6" onclick="openTrend('il6')" title="GENE · IL-6 inflammatory marker (pg/mL)">
-      <div class="vital-label">IL-6<span class="agent-tag gene" title="Monitored by GENE">GENE</span><span class="src-tag model" title="Modelled from stress and radiation; no in-flight blood sensor">MODELLED</span></div>
+    <div class="vital-row" id="il6-row" data-metric="il6" onclick="openTrend('il6')" title="GENE · IL-6 inflammatory marker (pg/mL). Modelled, smoothed (moves at most 0.12 pg/mL per second), and demo time is compressed: a storm that would take hours plays in about 2.5 minutes.">
+      <div class="vital-label">IL-6<span class="agent-tag gene" title="Monitored by GENE">GENE</span><span class="src-tag model" title="Modelled from stress and radiation; no in-flight blood sensor. Smoothed so it cannot jump in one sample; demo time is compressed (hours play in minutes), so real IL-6 would change more slowly.">MODELLED</span></div>
       <div class="vital-value" style="color:var(--muted)" id="il6-value">…</div>
       <div class="vital-bar"><div class="vital-fill" id="il6-fill" style="width:0%;background:var(--green)"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="il6-status">Connecting…</div>
@@ -1533,7 +1535,7 @@ body.acked::before{animation:none;opacity:.35;}
         <h3 class="nd-name">Inspiration4 crew blood data</h3>
         <div class="nd-num">2.5–5.9 <small>pg/mL</small></div>
         <p class="nd-use">Real pre-flight IL-6 range of the 4 civilian astronauts. GENE seeds each crew member's personal baseline inside it.</p>
-        <div class="nd-test"><b>Tested:</b> replayed through GENE: 3 of 4 real post-flight IL-6 rises caught, 1 false alarm in 12 pre-flight samples</div>
+        <div class="nd-test"><b>Tested:</b> replayed through GENE: 3 of 4 real post-flight IL-6 rises caught, 1 false alarm in 12 pre-flight samples. <i>Caveat: the rule was tuned on this same data, so this is a consistency check, not an independent test.</i></div>
         <a class="nd-link" href="https://osdr.nasa.gov/bio/repo/data/studies/OSD-575" target="_blank" rel="noopener">osdr.nasa.gov · OSD-575 ↗</a>
       </article>
       <article class="nd-card" style="--c:var(--solaris)">
@@ -1555,8 +1557,8 @@ body.acked::before{animation:none;opacity:.35;}
       <article class="nd-card" style="--c:var(--aegis)">
         <div class="nd-src">NASA-STD-3001 · NASA OCHMO · Human Research Roadmap</div>
         <h3 class="nd-name">NASA limits and risks</h3>
-        <div class="nd-num">600 <small>mSv career</small> · 250 <small>per storm</small></div>
-        <p class="nd-use">NASA's radiation limits, plus the countermeasures and Human Research Program risks the AI must cite when it gives advice.</p>
+        <div class="nd-num">600 <small>mSv career</small> · 250 <small>mGy-Eq / 30 days</small></div>
+        <p class="nd-use">NASA's radiation limits (600 mSv career effective dose; 250 mGy-Eq to the blood-forming organs in any 30 days, the short-term limit that matters in a storm), plus the countermeasures and Human Research Program risks the AI must cite when it gives advice.</p>
         <div class="nd-test"><b>Tested:</b> the fact checker caught 21 of 21 invented numbers, 45 of 45 fake citations and 45 of 45 invented medicines</div>
         <a class="nd-link" href="https://humanresearchroadmap.nasa.gov/" target="_blank" rel="noopener">humanresearchroadmap.nasa.gov ↗</a>
       </article>
@@ -2274,7 +2276,7 @@ const AGENT_VOICE = {
   gene:    { pref: /sonia|libby|maisie|natasha|clara|google uk english female|linda|hazel|susan|karen/i,  rate: 0.98, pitch: 1.08 }, // gentle
   pulse:   { pref: /ryan|tony|jason|brandon|roger|steffan|richard|thomas|george|\bmark\b|david/i,        rate: 1.08, pitch: 1.05 }, // upbeat coach
   mirror:  { pref: /emma|michelle|ana\b|jane|nancy|sara|moira|tessa|linda|zira/i,                     rate: 0.94, pitch: 1.0  }, // warm
-  echo:    { pref: /ava\b|jenny|emma|aria|libby|sonia|samantha|serena|zira/i,                        rate: 0.95, pitch: 1.12 }, // companion: soft, friendly
+  echo:    { pref: /libby|sonia|serena|emma|ava\b|michelle|hazel|susan|samantha|zira/i,              rate: 0.92, pitch: 1.18 }, // companion: soft, friendly, unlike AEGIS
 };
 const _shortVoiceName = v => v ? v.name.replace(/^Microsoft\s+/, '').replace(/\s*Online.*$/, '').replace(/\s*-\s*English.*$/, '') : 'Default';
 
@@ -2287,7 +2289,10 @@ function assignAgentVoices() {
     if (chosen) { VOICE.byAgent[a] = chosen; return; }
     const ranked = vs.map(v => ({ v, s: _voiceScore(v) + (AGENT_VOICE[a].pref.test(v.name) ? 60 : 0) }))
                      .sort((x, y) => y.s - x.s);
-    const pick = (ranked.find(r => !used.has(r.v.name)) || ranked[0] || {}).v || null;
+    let pick = (ranked.find(r => !used.has(r.v.name)) || null);
+    // Few voices installed: agents may share, but ECHO never sounds like AEGIS if any other voice exists
+    if (!pick) pick = (a === 'echo' && ranked.find(r => VOICE.byAgent.aegis && r.v.name !== VOICE.byAgent.aegis.name)) || ranked[0] || null;
+    pick = pick ? pick.v : null;
     if (pick) used.add(pick.name);
     VOICE.byAgent[a] = pick;
   });
@@ -2403,7 +2408,7 @@ function ttsStop() {
 function ttsSayAll(text, agent, { onstart, onend, fallback } = {}) {
   const parts = splitSentences(text).map(speechify).filter(Boolean);
   if (!ttsFor(agent) || !parts.length || parts.some(p => p.length > TTS.MAX)) { fallback && fallback(); return; }
-  stopVoice();
+  VOICE.run++;
   const run = VOICE.run;
   parts.forEach(p => ttsAudio(p, agent));            // fetch them all now so there are no gaps
   let i = 0, first = true;
@@ -2454,33 +2459,81 @@ function splitSentences(text) {
     .map(s => s.trim()).filter(Boolean);
 }
 
+// Stops the voice. Whatever was being typed is completed on screen at once (never left cut off mid-word),
+// and the floor passes to the next speaker in line.
 function stopVoice() {
   VOICE.run++;
   if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
   ttsStop();
   if ('speechSynthesis' in window) speechSynthesis.cancel();
+  const cur = FLOOR.current; FLOOR.current = null;
+  if (cur) { try { cur.flush && cur.flush(); } catch (e) {} cur.release && cur.release(); }
 }
 
-function typeResponse(text, isLiveAnswer = false, onDone = null) {
-  stopVoice();
-  document.querySelector('.voice-panel')?.classList.add('has-reply');
-  const run = VOICE.run;
+// ── THE FLOOR: agents take turns. A new message waits until the current speaker has finished; nobody cuts in.
+// An emergency message goes to the front of the line (still without cutting anyone off). A message that has
+// waited too long is shown as text without being read out, so the voice never falls far behind the ship.
+const FLOOR = { current: null, q: [], lastSpeaker: null, lastEchoAt: 0, recent: [] };
+const FLOOR_STALE_MS = 25000;
+function floorRequest(item) {
+  // Sense: the same agent saying the same thing again within a minute is dropped
+  const sig = `${item.speaker}|${String(item.text || '').slice(0, 120)}`;
+  const now = Date.now();
+  FLOOR.recent = FLOOR.recent.filter(r => now - r.at < 60000);
+  if (item.text && !item.force && FLOOR.recent.some(r => r.sig === sig)) { item.onSkip && item.onSkip(); return; }
+  FLOOR.recent.push({ sig, at: now });
+  item.at = now;
+  if (FLOOR.current) {
+    if (item.urgent) { const i = FLOOR.q.findIndex(x => !x.urgent); FLOOR.q.splice(i < 0 ? FLOOR.q.length : i, 0, item); }
+    else FLOOR.q.push(item);
+    return;
+  }
+  _floorStart(item);
+}
+function _floorStart(item) {
+  let released = false;
+  const slot = { item, flush: null, release: () => {
+    if (released) return; released = true;
+    if (FLOOR.current === slot) FLOOR.current = null;
+    FLOOR.lastSpeaker = item.speaker; if (item.speaker === 'echo') FLOOR.lastEchoAt = Date.now();
+    const next = FLOOR.q.shift();
+    if (next) setTimeout(() => (FLOOR.current ? FLOOR.q.unshift(next) : _floorStart(next)), 450);   // a breath between speakers
+  } };
+  FLOOR.current = slot;
+  const stale = Date.now() - item.at > FLOOR_STALE_MS;
+  try { item.run(slot, stale); } catch (e) { slot.release(); }
+}
+
+function typeResponse(text, isLiveAnswer = false, onDone = null, opts = {}) {
   // Who is talking: set by askAgent / alerts via VOICE.nextSpeaker (AEGIS by default)
   const speaker = AGENT_VOICE[VOICE.nextSpeaker] ? VOICE.nextSpeaker : 'aegis';
   VOICE.nextSpeaker = null;
+  const tag = isLiveAnswer ? VOICE.nextTag : null;
+  VOICE.nextTag = null;
+  floorRequest({ speaker, text, urgent: !!opts.urgent, force: !!opts.force || isLiveAnswer,
+                 onSkip: () => { if (typeof onDone === 'function') onDone(); },
+                 run: (slot, stale) => _typeResponseNow(text, speaker, tag, onDone, slot, stale) });
+}
+
+function _typeResponseNow(text, speaker, tag, onDone, slot, stale) {
+  VOICE.run++;
+  if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+  document.querySelector('.voice-panel')?.classList.add('has-reply');
+  const run = VOICE.run;
   const sVoice = (VOICE.byAgent && VOICE.byAgent[speaker]) || VOICE.voice;
   const sRate = VOICE.rate * AGENT_VOICE[speaker].rate, sPitch = VOICE.pitch * AGENT_VOICE[speaker].pitch;
-  const el = chatAgentBubble(speaker, isLiveAnswer ? VOICE.nextTag : null);
-  VOICE.nextTag = null;
+  const el = chatAgentBubble(speaker, tag);
   el.innerHTML = '';
   const cursor = document.createElement('span');
   cursor.className = 'typing-cursor';
   const sentences = splitSentences(text);
   let shown = '';                                   // sentences already spoken in full
   const render = partial => { el.textContent = shown + partial; el.appendChild(cursor); };
-  // onDone runs once the whole answer has been shown and spoken (not if it was interrupted)
+  // onDone runs once the whole answer has been shown (and spoken), also if it was finished early
   const done = () => { if (typeof onDone === 'function') { const f = onDone; onDone = null; f(); } };
-  const finish = () => { if (run !== VOICE.run) return; el.textContent = sentences.join(' '); cursor.remove(); done(); };
+  slot.flush = () => { el.textContent = sentences.join(' ') || String(text || ''); cursor.remove(); done(); };
+  const finish = () => { if (run !== VOICE.run) return; el.textContent = sentences.join(' '); cursor.remove(); done(); slot.release(); };
+  if (stale) { finish(); return; }                  // waited too long in line: show it, don't read it out
 
   // No speech available (or blocked): type the remaining text at reading speed
   const typeRest = () => {
@@ -2580,7 +2633,7 @@ function typeResponse(text, isLiveAnswer = false, onDone = null) {
     const step = () => {
       if (r !== VOICE.run) return;
       if (i < rest.length) { el.textContent = shown + rest.slice(0, ++i); el.appendChild(cursor); typingTimer = setTimeout(step, 22); }
-      else { el.textContent = sentences.join(' '); cursor.remove(); done(); }
+      else { el.textContent = sentences.join(' '); cursor.remove(); done(); slot.release(); }
     };
     step();
   };
@@ -2675,7 +2728,9 @@ function confirmProtocol() {
   if (!(typeof STORY !== 'undefined' && STORY.on)) setTimeout(() => openSimForProtocol(ackProtocol, ackCrewKey), 1700);
   if (ackId) {
     const B = DASH_API.baseUrl;
-    const ack = id => fetch(`${B}/api/alerts/${encodeURIComponent(id)}/acknowledge`, { method: 'POST' });
+    const src = _ackSource();
+    const ack = id => { ACKED_HERE.set(id, src); return fetch(`${B}/api/alerts/${encodeURIComponent(id)}/acknowledge`, { method: 'POST' }); };
+    ACKED_HERE.set(ackId, src);
     (async () => {
       await ack(ackId);
       // RECOVER-3 resolves the cascade (story: Day 61 "all indicators normalized");
@@ -2850,7 +2905,8 @@ async function fetchAndUpdateVitals() {
         if (il6Status) { il6Status.textContent = label; il6Status.style.color = color; }
         if (il6Row) il6Row.title = `GENE · IL-6 ${bm.il6} ${bm.il6_unit} (MODELLED from stress + radiation, no blood sensor)` +
           ` · pre-flight baseline ${bm.baseline} pg/mL · flags at ${bm.personal_limit} pg/mL (1.5× baseline and +1.5)` +
-          ` · baseline seeded inside the Inspiration4 crew's real pre-flight range (2.5-5.9 pg/mL, NASA OSDR OSD-575)`;
+          ` · baseline seeded inside the Inspiration4 crew's real pre-flight range (2.5-5.9 pg/mL, NASA OSDR OSD-575)` +
+          ` · smoothed (at most 0.12 pg/mL per second); demo time is compressed, so a real rise would take hours, not minutes`;
       }
     } catch (e) { /* keep last value */ }
     
@@ -2860,6 +2916,8 @@ async function fetchAndUpdateVitals() {
     if (radEl && crew.cumulative_radiation !== undefined) {
       const rad = Math.round(crew.cumulative_radiation);
       radEl.textContent = `${rad} / 600 mSv`;
+      radEl.title = `Mission total so far: ${rad} mSv. Seeded at day 54 of the cruise × 1.84 mSv/day ≈ 95–103 mSv (Curiosity RAD); ` +
+        'every simulated solar storm and every minute of the demo adds to it, so it reads higher after storms have run.';
       const radPct = Math.min(100, (rad / 600) * 100);
       if (radFill) radFill.style.width = radPct + '%';
       const radColor = rad > 400 ? 'var(--red)' : rad > 250 ? 'var(--yellow)' : 'var(--green)';
@@ -2960,6 +3018,9 @@ setTimeout(fetchAndUpdateVitals, 1500);
 // ============================================
 // E2E WIRING: live alerts, roster status, demo controls (Claude, Sep 28)
 // ============================================
+// Alerts acknowledged from THIS tab: id -> 'here' (a person clicked) or 'script' (the 2-minute demo confirmed it)
+const ACKED_HERE = new Map();
+function _ackSource() { return (typeof STORY !== 'undefined' && STORY.on) ? 'script' : 'here'; }
 const LIVE_ALERT = { id: null, protocol: 'RECOVER-3', crewName: null, crewKey: 'chen', pauseUntil: 0, other: null, spoken: new Set() };
 
 // Plain-language wording for the panel and the voice (protocol codes stay in tooltips and the on-board sim)
@@ -3065,7 +3126,7 @@ function _renderProtocolState() {
   const forSel = c => c && (c.protocol === 'SHELTER-1' || c.crewId === sel);
   let mode = null, info = null;
   if (EMG.level && EMG.acked && forSel({ protocol: EMG.protocol, crewId: EMG.crewId })) {
-    mode = 'confirmed'; info = { protocol: EMG.protocol, at: EMG.ackedAt, name: EMG.label.split(' · ').pop() };
+    mode = 'confirmed'; info = { protocol: EMG.protocol, at: EMG.ackedAt, name: EMG.label.split(' · ').pop(), source: EMG.ackSource || 'here' };
   } else if (done && Date.now() < done.until && forSel(done)) { mode = 'complete'; info = done; }
   if (!mode) return false;
   const panel = document.getElementById('alert-panel'), icon = document.getElementById('alert-icon'), title = document.getElementById('alert-title'),
@@ -3077,15 +3138,20 @@ function _renderProtocolState() {
   if (mode === 'confirmed') {
     panel.style.borderColor = 'var(--cm-amber)'; icon.textContent = '⛨'; title.style.color = 'var(--cm-amber)';
     title.textContent = `${info.protocol} confirmed · in effect · ${info.name}`;
-    desc.textContent = `Confirmed by the crew at ${hhmm(info.at)}. The protocol stays in effect until the readings that raised it are back in a safe range.`;
+    desc.textContent = (info.source === 'script' ? `Confirmed by the demo script at ${hhmm(info.at)} (on a mission a crew member would press Confirm). `
+                                                : `Confirmed by the crew at ${hhmm(info.at)}. `) +
+      'The protocol stays in effect until the readings that raised it are back in a safe range.';
   } else {
     panel.style.borderColor = 'var(--green)'; icon.textContent = '✓'; title.style.color = 'var(--green)';
     if (info.elsewhere) {
       title.textContent = `${info.protocol} confirmed on another screen · ${info.name}`;
       desc.textContent = `Someone confirmed this alert from another open dashboard at about ${hhmm(info.at)} (the demo is shared). It did not close on its own.`;
     } else {
-      title.textContent = `${info.protocol} complete · readings recovered · ${info.name}`;
-      desc.textContent = `Confirmed by the crew at ${hhmm(info.at)}; the readings that raised it were back in range at ${hhmm(info.doneAt)}. Nothing closed on its own: a person confirmed, and the readings confirmed it worked.`;
+      const settling = Object.values(CM.prevStates || {}).some(v => v !== 'ok');   // say only what the rings show now
+      title.textContent = `${info.protocol} complete · ${settling ? 'back below the alert level, still settling' : 'readings recovered'} · ${info.name}`;
+      desc.textContent = info.source === 'script'
+        ? `Confirmed by the demo script at ${hhmm(info.at)}; the readings that raised it were back in range at ${hhmm(info.doneAt)}. On a mission a crew member presses Confirm; nothing closes on its own.`
+        : `Confirmed by the crew at ${hhmm(info.at)}; the readings that raised it were back in range at ${hhmm(info.doneAt)}. Nothing closed on its own: a person confirmed, and the readings confirmed it worked.`;
     }
   }
   return true;
@@ -3167,7 +3233,9 @@ function renderLiveAlert(a) {
     headline = `${cleanTitle.charAt(0) + cleanTitle.slice(1).toLowerCase()} · ${name}`;
     spoken = plain + ' I recommend starting a medical response.';
   } else {
-    headline = `Health cascade: ${agents.length} problems at once · ${name}`;
+    const nOut = _crewOutCount(a.crew_member_id) ?? agents.length;     // current rings, not the count when it was raised
+    headline = nOut >= 2 ? `Health cascade: ${nOut} systems out of range now · ${name}`
+             : nOut === 1 ? `Health cascade: 1 system still out of range · ${name}` : `Health cascade · ${name}`;
     plain = `${name}'s ${plainDomains(agents)} are all out of range at the same time, and they tend to make each other worse. Tackling them together works better than one at a time.`;
     spoken = `${name} needs attention: ${plainDomains(agents)} are all out of range at once. I recommend starting the recovery plan.`;
   }
@@ -3182,7 +3250,7 @@ function renderLiveAlert(a) {
   // Only once the alert is 45 s old: right after it is raised, the last forecast can still show the readings from
   // just before it (which would flash "recovered" at the start of a storm)
   const alertAgeS = isNaN(raisedAt) ? 0 : (Date.now() - raisedAt) / 1000;
-  const recovered = !!(alertAgeS > 45 && nowEntry && sysAllOk(nowEntry) && !Object.values(sysStates(nowEntry)).includes('watch'));
+  const recovered = !!(alertAgeS > 45 && nowEntry && _crewRecovered(a.crew_member_id, LIVE_ALERT.protocol));
   panel.classList.toggle('recovered', recovered);
   if (recovered) {
     panel.style.borderColor = 'var(--cm-amber)';
@@ -3233,7 +3301,7 @@ async function refreshLiveAlerts() {
     // During a ship-wide storm everyone's shelter alert is the same news: only point out what is different
     LIVE_ALERT.other = ranked.find(a => a.crew_member_id !== sel && !(LIVE_ALERT.shelterAll && _alertKind(a).isShelter)) || null;
     const prevId = LIVE_ALERT.id, prevProto = LIVE_ALERT.protocol, prevCrew = sel, prevName = LIVE_ALERT.crewName;
-    if (prevId && !mine && !EMG.acked && !(LIVE_ALERT.completed && LIVE_ALERT.completed.alertId === prevId)) {
+    if (prevId && !mine && !EMG.acked && !ACKED_HERE.has(prevId) && !(LIVE_ALERT.completed && LIVE_ALERT.completed.alertId === prevId)) {
       // The shared demo: someone may have confirmed it on another screen. Ask the backend before saying so.
       fetch(`${DASH_API.baseUrl}/api/alerts/${encodeURIComponent(prevId)}/state`).then(r => r.ok ? r.json() : null).then(st => {
         if (st && st.acknowledged) {
@@ -3458,7 +3526,10 @@ function renderAllClear() {
     const names = strained.map(k => k.toUpperCase()).join(', ');
     panel.style.borderColor = 'var(--cm-amber)';
     icon.textContent = '◔';
-    title.textContent = `Watching ${strained.length} system${strained.length > 1 ? 's' : ''} · no alert yet`;
+    const nOutSel = strained.filter(k => st[k] === 'out').length;
+    title.textContent = nOutSel >= 3 ? `${nOutSel} systems out of range · AEGIS is confirming the cascade alert`
+                      : nOutSel ? `${strained.length} system${strained.length > 1 ? 's' : ''} strained · ${nOutSel} out of range · agents checking`
+                      : `${strained.length} system${strained.length > 1 ? 's' : ''} heading for ${strained.length > 1 ? 'their limits' : 'its limit'} · no action needed yet`;
     title.style.color = 'var(--cm-amber)';
     desc.textContent = `${names} ${strained.length > 1 ? 'are' : 'is'} heading toward ${strained.length > 1 ? 'their limits' : 'its limit'} for ${who}. ` +
       (strained.some(k => st[k] === 'out') ? 'At least one is already out of range; the agents are confirming it on their next check. '
@@ -3509,7 +3580,8 @@ async function startPrevention() {
     PREDICT_STATE.lastCrew = null;
     if (typeof playTone === 'function') { playTone(523, 0.12); setTimeout(() => playTone(784, 0.15), 150); }
     const crewKey = CREW_KEY_BY_ID[crewId] || 'chen';
-    if (!(typeof STORY !== 'undefined' && STORY.on)) setTimeout(() => openSimForProtocol('PREVENT-1', crewKey), 900);
+    // No pop-up: the plan is shown in the card, with a link to the spacecraft view for anyone who wants it
+    PREDICT_STATE.preventKey = crewKey;
     if (typeof typeResponse === 'function') {
       typeResponse(`Prevention plan started for ${_crewDisplayName(crewId)}. We're fixing their ${plainDomains(d.domains)} early, before anything piles up. I'll keep an eye on how it goes.`);
     }
@@ -3544,13 +3616,26 @@ function renderPreventedPanel(entry) {
     : `Small fixes started early.${outNow.length ? ` ${name}'s ${plainDomains(outNow)} ${outNow.length > 1 ? 'are' : 'is'} still out of range, so` : ''} I'll keep watching until everything is back to normal.`;
   desc.title = 'Demo scenario: the simulator reverses the drift once PREVENT-1 is accepted. With real telemetry AEGIS only reports whether readings recover.';
   agentsEl.innerHTML = `<ol class="prevent-steps">${pv.actions.map(a => `<li>${String(a).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</li>`).join('')}</ol>` +
-    pv.domains.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}${outNow.includes(n) ? '' : ' ✓'}</span>`).join('');
+    pv.domains.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}${outNow.includes(n) ? '' : ' ✓'}</span>`).join('') +
+    (averted ? '' : ` <button type="button" class="link-btn" onclick="openSimForProtocol('PREVENT-1', '${CREW_KEY_BY_ID[pv.crew] || PREDICT_STATE.preventKey || 'chen'}')">See it on the spacecraft →</button>`);
   if (btn) btn.style.display = 'none';
   _showPreventBtn(false);
   _renderAiNote('');
 }
 
 // Shown only when there is no live alert: a predicted cascade (≥3 domains out of range or forecast to cross soon)
+// The early-warning title and the map's centre clock read the same countdown, so they never disagree
+function _predictTitleText() {
+  const t = PREDICT_STATE.titleFor; if (!t) return '';
+  const sameClock = CM.mode === 'cascade' && CM.etaEnd && CM.prevCrew === t.crew;
+  const c = sameClock ? _cmClock() : null;
+  if (t.forming || c === 'NOW') return `Early warning: it's happening now · ${t.name}`;
+  return `Early warning: cascade in ${c || fmtEta(t.eta)} · ${t.name}`;
+}
+function _syncPredictTitle() {
+  const panel = document.getElementById('alert-panel'), title = document.getElementById('alert-title');
+  if (panel && title && panel.classList.contains('predict') && PREDICT_STATE.titleFor) title.textContent = _predictTitleText();
+}
 function renderPredictPanel(p) {
   if (!p) { PREDICT_STATE.announcedKey = null; PREDICT_STATE.lastCrew = null; renderAllClear(); return; }
   PREDICT_STATE.lastCrew = p.crew_member_id;
@@ -3567,7 +3652,8 @@ function renderPredictPanel(p) {
   icon.textContent = '🔮';
   title.style.color = 'var(--yellow)';
   const forming = p.risk === 'converged';
-  title.textContent = forming ? `Early warning: it's happening now · ${name}` : `Early warning: trouble likely in ${fmtEta(p.cascade_eta_min)} · ${name}`;
+  PREDICT_STATE.titleFor = { crew: p.crew_member_id, name, forming, eta: p.cascade_eta_min };
+  title.textContent = _predictTitleText();
   title.title = 'PREDICT: forecast from the last few minutes of readings'; desc.title = '';
   // Plain sentence: what's already off + what's heading the wrong way
   const parts = [];
@@ -3740,7 +3826,8 @@ function _setEmergency(e) {
 function _tickEmergency() {
   if (!EMG.level) return;
   const em = document.getElementById('mb-em-text');
-  if (em && EMG.baseLabel) em.textContent = EMG.baseLabel + (LIVE_ALERT.recovered && LIVE_ALERT.id === EMG.alertId ? ' · readings recovered, awaiting confirmation' : '');
+  const emRec = !EMG.acked && (Date.now() - EMG.since) / 1000 > 45 && _crewRecovered(EMG.crewId, EMG.protocol);
+  if (em && EMG.baseLabel) em.textContent = EMG.baseLabel + (emRec ? ' · readings recovered, awaiting confirmation' : '');
   const s = Math.max(0, Math.floor((Date.now() - EMG.since) / 1000));
   const txt = `Alert +${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   const a = document.getElementById('mb-em-timer'); if (a) a.textContent = txt;
@@ -3752,7 +3839,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) _tic
 // triggered it are back in a safe range, because a confirmed plan is not yet a solved problem.
 function _ackEmergency() {
   if (!EMG.level) return;
-  EMG.acked = true; EMG.ackedAt = Date.now();
+  EMG.acked = true; EMG.ackedAt = Date.now(); EMG.ackSource = _ackSource();
   document.body.classList.add('acked');
   const txt = document.getElementById('mb-em-text');
   if (txt) txt.textContent = `${EMG.protocol} confirmed · ${EMG.label.split(' · ').pop()} · waiting for readings to return to a safe range`;
@@ -3775,8 +3862,8 @@ async function _checkResolved() {
       ok = !me || (me.out_now || []).length < 3;
     }
     if (ok) {
-      LIVE_ALERT.completed = { protocol: EMG.protocol, crewId: EMG.crewId, at: EMG.ackedAt, doneAt: Date.now(),
-                               until: Date.now() + 45000, name: EMG.label.split(' · ').pop() };
+      LIVE_ALERT.completed = { alertId: EMG.alertId, protocol: EMG.protocol, crewId: EMG.crewId, at: EMG.ackedAt, doneAt: Date.now(),
+                               until: Date.now() + 45000, name: EMG.label.split(' · ').pop(), source: EMG.ackSource || 'here' };
       _setEmergency(null);
     }
   } catch (e) { /* keep waiting */ }
@@ -3928,6 +4015,20 @@ function sysStates(entry) {
   return st;
 }
 const sysAllOk = entry => { const st = sysStates(entry); return Object.keys(st).length > 0 && Object.values(st).every(v => v === 'ok'); };
+// One source for "have the readings recovered?": the alert crew member's current forecast entry, whoever is selected.
+// A shelter order is crew-wide, so it counts as recovered only when every crew member's radiation is steady.
+function _crewRecovered(crewId, protocol) {
+  const crew = (CM.last && CM.last.crew) || [];
+  if (String(protocol || '').startsWith('SHELTER')) {
+    return crew.length > 0 && crew.every(c => (sysStates(c).solaris || 'ok') === 'ok');
+  }
+  const e = crew.find(c => c.crew_member_id === crewId);
+  return !!(e && sysAllOk(e) && !Object.values(sysStates(e)).includes('watch'));
+}
+function _crewOutCount(crewId) {
+  const e = CM.last && (CM.last.crew || []).find(c => c.crew_member_id === crewId);
+  return e ? Object.values(sysStates(e)).filter(v => v === 'out').length : null;
+}
 const SYS_WORD = { ok: 'Steady', watch: 'Heading for limit', out: 'Out of range' };
 
 function renderCascadeMap(fc) {
@@ -4012,6 +4113,10 @@ function renderCascadeMap(fc) {
     cap = p.startsWith('SHELTER') ? `<b>Radiation storm.</b> ${name} and the crew should be in the storm shelter.`
         : p.startsWith('MEDIC') ? `<b>${name} needs medical attention now.</b> See the alert panel.`
         : `<b>Cascade:</b> ${name}'s ${plainDomains(outDom)} are out of range together and feeding each other.`;
+    if (LIVE_ALERT.recovered || (EMG.level && !EMG.acked && (Date.now() - EMG.since) / 1000 > 45 && _crewRecovered(EMG.crewId, EMG.protocol))) {   // same rule as the card and the banner: current readings decide the words
+      sub = 'CONFIRM TO CLOSE';
+      cap = `<b>Readings recovered.</b> The ${p || 'protocol'} alert stays open until a person confirms it.`;
+    }
   } else if (pv) {
     mode = pv.avertedAt ? 'averted' : 'prevent';
     big = pv.avertedAt ? 'Avoided' : 'Fixing';
@@ -4024,7 +4129,7 @@ function renderCascadeMap(fc) {
     mode = 'cascade';
     const end = Date.now() + fc.cascade_eta_min * 60000;
     if (!CM.etaEnd || Math.abs(CM.etaEnd - end) > 15000 || CM.mode !== 'cascade') CM.etaEnd = end;
-    big = _cmClock(); sub = 'TO CASCADE';
+    big = outDom.length >= 3 ? 'NOW' : _cmClock(); sub = big === 'NOW' ? 'CASCADE FORMING' : 'TO CASCADE';
     const parts = fc.upcoming.map(u => PLAIN_TREND[u.metric]).filter(Boolean);
     cap = `<b>Early warning:</b> ${name}'s ${plainList(parts) || plainDomains(watchDom) + ' are drifting'}. ` +
           `Three systems will be strained in ${fmtEta(fc.cascade_eta_min).replace('~', 'about ')} unless we act.`;
@@ -4033,11 +4138,25 @@ function renderCascadeMap(fc) {
     cap = `<b>It's happening:</b> ${name}'s ${plainDomains(outDom)} are out of range together. AEGIS is raising the alert.`;
   } else if (strained.length) {
     mode = 'watch'; big = `${strained.length} of 4`; sub = 'STRAINED';
+    if (outDom.length >= 3) { mode = 'alert'; big = 'NOW'; sub = 'CASCADE FORMING'; }
     cap = `Keeping an eye on ${name}'s ${plainDomains([...outDom, ...watchDom])}. ` +
           (strained.length >= 2 ? 'One more strained system would make a cascade.' : 'Nothing needs action yet.');
   } else {
     mode = 'none'; big = 'Steady'; sub = 'ALL SYSTEMS';
     cap = `All four systems are steady for ${name}. Each ring shows how close a reading is to its limit.`;
+  }
+  // A confirmed protocol is still news: the map says so instead of "Steady" / "N of 4" (same rule as the alert card)
+  if (mode !== 'alert' && !CM.resetting) {
+    const forMe = c => c && (String(c.protocol || '').startsWith('SHELTER') || c.crewId === fc.crew_member_id);
+    const done = LIVE_ALERT.completed;
+    if (EMG.level && EMG.acked && forMe({ protocol: EMG.protocol, crewId: EMG.crewId })) {
+      mode = 'watch'; big = String(EMG.protocol || '').split('-')[0]; sub = 'IN EFFECT';
+      cap = `<b>${EMG.protocol} confirmed</b> and in effect. Waiting for ${name}'s readings to return to a safe range.`;
+    } else if (done && Date.now() < done.until && forMe(done) && !outDom.length) {
+      mode = strained.length ? 'watch' : 'averted'; big = 'Done'; sub = strained.length ? 'SETTLING' : `${done.protocol} ✓`;
+      cap = strained.length ? `<b>${done.protocol} complete.</b> ${name}'s readings are back below the alert level and still settling.`
+                            : `<b>${done.protocol} complete.</b> The readings that raised it are back in range for ${name}.`;
+    }
   }
   if (CM.resetting) {        // Stop / reset in progress: the readings are still settling, so don't call them steady yet
     mode = 'watch'; big = 'RESET'; sub = 'SETTLING';
@@ -4101,6 +4220,7 @@ function _cmPropagate(agent, state) {
 
 function _cmClock() {
   const s = Math.max(0, Math.round((CM.etaEnd - Date.now()) / 1000));
+  if (s === 0) return 'NOW';
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 function _cmRipple() {
@@ -4113,7 +4233,12 @@ function _cmRipple() {
 }
 // Countdown ticks every second between data refreshes
 setInterval(() => {
-  if (CM.mode === 'cascade' && CM.etaEnd) { const b = document.getElementById('cm-big'); if (b) b.textContent = _cmClock(); }
+  if (CM.mode === 'cascade' && CM.etaEnd) {
+    const b = document.getElementById('cm-big'), c = _cmClock();
+    if (b && b.textContent !== 'NOW') b.textContent = c;
+    const sub = document.getElementById('cm-sub'); if (sub && c === 'NOW') sub.textContent = 'CASCADE FORMING';
+    _syncPredictTitle();
+  }
 }, 1000);
 
 // Crew at a glance: one row per crew member, a dot per system (shown in the alert panel when all is clear)
@@ -4808,24 +4933,56 @@ function echoTyping(on) {
     chat.appendChild(t); chat.scrollTop = chat.scrollHeight;
   } else if (!on && t) t.remove();
 }
-function echoSpeak(text) {
-  const panel = document.getElementById('echo-panel');
-  if ((!('speechSynthesis' in window) && !TTS.on) || !VOICE.unlocked) { if (panel) { panel.classList.add('speaking'); setTimeout(() => panel.classList.remove('speaking'), 2200); } return; }
-  const on = () => panel && panel.classList.add('speaking'), off = () => panel && panel.classList.remove('speaking');
-  ttsSayAll(text, 'echo', { onstart: on, onend: off, fallback: () => echoSpeakBrowser(text, panel) });
+// ECHO introduces itself when it takes the floor ("ECHO here." / "Hi, ECHO here!"): when someone else spoke last,
+// or it has been quiet for a while. Inside an ongoing one-to-one chat it doesn't repeat its name every line.
+function echoIntro(text) {
+  const t = String(text || '').trim();
+  if (!t || /^\W*(hi|hey|hello)?[,!\s]*echo here\b/i.test(t)) return t;
+  const ownTurn = FLOOR.lastSpeaker === 'echo' && Date.now() - FLOOR.lastEchoAt < 90000;
+  if (ownTurn) return t;
+  const greet = t.match(/^(hi|hey|hello|good (?:morning|afternoon|evening))(?:\s+there)?\s*[!,.]?\s*/i);
+  if (greet) return `${greet[1].charAt(0).toUpperCase() + greet[1].slice(1).toLowerCase()}, ECHO here! ${t.slice(greet[0].length)}`.trim();
+  return `ECHO here. ${t}`;
 }
-function echoSpeakBrowser(text, panel) {
-  if (!('speechSynthesis' in window)) return;
+// ECHO's message waits for its turn (typing dots meanwhile), then appears and is spoken. Returns nothing;
+// `after(bubble)` runs when it is shown.
+function echoSay(text, cls = '', { speak = true, after = null } = {}) {
+  const line = echoIntro(text);
+  echoTyping(true);
+  floorRequest({ speaker: 'echo', text: line, force: true, run: (slot, stale) => {
+    echoTyping(false);
+    const b = echoBubble('echo', line, cls);
+    try { after && after(b); } catch (e) {}
+    if (!speak || stale) { slot.release(); return; }
+    slot.flush = null;
+    echoSpeak(line, () => slot.release());
+  } });
+}
+function echoSpeak(text, onDone) {
+  const panel = document.getElementById('echo-panel');
+  const fin = () => { panel && panel.classList.remove('speaking'); if (typeof onDone === 'function') { const f = onDone; onDone = null; f(); } };
+  if ((!('speechSynthesis' in window) && !TTS.on) || !VOICE.unlocked || VOICE.muted) {
+    if (panel) { panel.classList.add('speaking'); setTimeout(fin, 1600); } else fin();
+    return;
+  }
+  const on = () => panel && panel.classList.add('speaking');
+  ttsSayAll(text, 'echo', { onstart: on, onend: fin, fallback: () => echoSpeakBrowser(text, panel, fin) });
+}
+function echoSpeakBrowser(text, panel, onDone) {
+  const fin = () => { panel && panel.classList.remove('speaking'); onDone && onDone(); };
+  if (!('speechSynthesis' in window)) { fin(); return; }
   try {
-    stopVoice();
+    VOICE.run++;
     const u = new SpeechSynthesisUtterance(speechify(text));
     const v = (VOICE.byAgent && VOICE.byAgent.echo) || VOICE.voice;
     if (v) { u.voice = v; u.lang = v.lang; }
     u.rate = VOICE.rate * AGENT_VOICE.echo.rate; u.pitch = VOICE.pitch * AGENT_VOICE.echo.pitch;
-    u.onstart = () => panel && panel.classList.add('speaking');
-    u.onend = u.onerror = () => panel && panel.classList.remove('speaking');
+    let started = false;
+    u.onstart = () => { started = true; panel && panel.classList.add('speaking'); };
+    u.onend = u.onerror = fin;
     setTimeout(() => speechSynthesis.speak(u), 80);
-  } catch (e) {}
+    setTimeout(() => { if (!started) { speechSynthesis.cancel(); fin(); } }, 4000);   // blocked audio: don't hold the floor
+  } catch (e) { fin(); }
 }
 // "Talk to the medical officer": names come from the backend's escalation path (medic first, the Commander for the medic)
 function echoRenderSupport(d) {
@@ -4899,15 +5056,14 @@ async function echoRefresh(event, opts = {}) {
       else {
         if (chat) chat.innerHTML = '';
         echoBubble('note', `Daily check-in · Day ${d.facts.mission_day} · readings as of ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (Live Vitals has the current values)`);
-        echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
-        if (ECHO.ready && opts.speak) echoSpeak(d.text);
+        if (ECHO.ready && opts.speak) echoSay(d.text, d.level === 'urgent' ? 'urgent' : '');
+        else echoBubble('echo', echoIntro(d.text), d.level === 'urgent' ? 'urgent' : '');
       }
       ECHO.ready = true;
     } else if (d.reason && d.reason !== ECHO.lastProactive && ['after_emergency', 'poor_sleep'].includes(d.reason)) {
       ECHO.lastProactive = d.reason;
       echoBubble('note', d.reason === 'after_emergency' ? 'ECHO is checking in after the emergency' : 'MIRROR flagged poor sleep · ECHO checks in');
-      echoTyping(true);
-      setTimeout(() => { echoTyping(false); echoBubble('echo', d.text); echoSpeak(d.text); }, 1100);
+      setTimeout(() => echoSay(d.text), 1100);
     } else if (!d.reason) ECHO.lastProactive = null;
     echoSetMode(d.mode, d.level);
     echoRenderSupport(d);
@@ -4926,13 +5082,13 @@ async function echoReply(promise) {
   try {
     const [d] = await Promise.all([promise, new Promise(res => setTimeout(res, 700))]);
     echoTyping(false);
-    const eb = echoBubble('echo', d.text, d.level === 'urgent' ? 'urgent' : '');
-    if (eb && d.source === 'deepseek') { const t = document.createElement('span'); t.className = 'eb-src'; t.textContent = '🧠 DeepSeek'; t.title = 'Worded by DeepSeek, checked before it was shown'; eb.querySelector('.eb-who')?.appendChild(t); }
-    if (d.alerted) echoBubble('note', `ECHO alerted ${d.alerted.name} · nothing from the chat was shared`);
-    if (d.shared_with) echoBubble('note', `Shared with ${d.shared_with.name} · only that you'd like to talk`);
     echoSetMode(d.mode, d.level);
     echoRenderSupport(d);
-    echoSpeak(d.text);
+    echoSay(d.text, d.level === 'urgent' ? 'urgent' : '', { after: eb => {
+      if (eb && d.source === 'deepseek') { const t = document.createElement('span'); t.className = 'eb-src'; t.textContent = '🧠 DeepSeek'; t.title = 'Worded by DeepSeek, checked before it was shown'; eb.querySelector('.eb-who')?.appendChild(t); }
+      if (d.alerted) echoBubble('note', `ECHO alerted ${d.alerted.name} · nothing from the chat was shared`);
+      if (d.shared_with) echoBubble('note', `Shared with ${d.shared_with.name} · only that you'd like to talk`);
+    } });
   } catch (e) {
     echoTyping(false);
     echoBubble('echo', "I can't reach the ship's systems right now, but I'm still here. Try me again in a moment.");
@@ -4989,10 +5145,11 @@ async function _storyAckShelter() {
     const B = DASH_API.baseUrl;
     const open = await (await fetch(`${B}/api/alerts?unacknowledged_only=true&limit=200`)).json();
     await Promise.all(open.filter(a => /SHELTER|radiation storm/i.test(`${a.title} ${a.message}`))
-      .map(a => fetch(`${B}/api/alerts/${encodeURIComponent(a.id)}/acknowledge`, { method: 'POST' })));
+      .map(a => { ACKED_HERE.set(a.id, 'script'); return fetch(`${B}/api/alerts/${encodeURIComponent(a.id)}/acknowledge`, { method: 'POST' }); }));
   } catch (e) {}
 }
 function _storyLocalReset() {
+  FLOOR.q.length = 0; stopVoice();                 // nothing queued from before the reset keeps talking
   _setEmergency(null); closeCallPanel(); closeSimModal();
   CALLS.dismissed.clear(); CALLS.since = Date.now();
   Object.assign(PREDICT_STATE, { top: null, announcedKey: null, lastCrew: null, suppress: {}, prevented: null, preventedEntry: null });

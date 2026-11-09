@@ -347,7 +347,7 @@ hallucinations the fact checker catches. Results: `eval/results.json` and `artif
 
 The October 2026 run fixed the two gaps the first run found: SOLARIS now judges dose against the mission
 background (8/8 measured environments and regression cases correct, up from 3/8), and GENE uses a personal
-baseline (3/4 real Inspiration4 post-flight rises detected, up from 0/4, with 1/12 pre-flight false alarms).
+baseline (3/4 real Inspiration4 post-flight rises detected, up from 0/4, with 1/12 pre-flight false alarms; the rule was tuned on this same data, so this is a consistency check, not an independent test).
 
 ---
 

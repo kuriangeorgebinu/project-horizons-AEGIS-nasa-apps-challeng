@@ -777,7 +777,8 @@ class GENEAgent(BaseAgent):
         if not v:
             return None
         base = aegis_mission.il6_baseline(crew_member.id)
-        il6 = aegis_mission.il6_model(v.stress_index, v.radiation_dose_24h, baseline=base)
+        il6 = aegis_mission.il6_smoothed(crew_member.id,
+                                         aegis_mission.il6_model(v.stress_index, v.radiation_dose_24h, baseline=base))
         limit = aegis_mission.il6_personal_limit(base)
         if il6 >= limit or il6 > cls.IL6_WARNING:
             status = "elevated"
@@ -1367,8 +1368,23 @@ class AEGISAgent(BaseAgent):
         # 2. Context: open alerts, crew overview, knowledge base
         open_alerts = db.get_alerts(unacknowledged_only=True, limit=50)
         role = lambda c: getattr(c.role, "value", c.role).replace("_", " ")
-        alerts_txt = "; ".join(f"{a.title.replace('🔺', '').strip()} ({role(by_id[a.crew_member_id]) if a.crew_member_id in by_id else 'crew'})"
-                               for a in open_alerts[:6]) or "none"
+        # An open alert is not proof the problem is current: say whether that person's readings are abnormal NOW,
+        # so the "top concern" in an answer reflects the current readings, not whatever was true when it was raised
+        _now_cache = {}
+        def _abnormal_now(cid):
+            if cid not in _now_cache:
+                c = by_id.get(cid); hits = 0
+                for sp in (self.specialists if c else []):
+                    try:
+                        hits += sum(1 for f in sp.analyze(c) if f.get("type") in ("warning", "critical"))
+                    except Exception:
+                        pass
+                _now_cache[cid] = hits > 0
+            return _now_cache[cid]
+        alerts_txt = "; ".join(
+            f"{a.title.replace('🔺', '').strip()} ({role(by_id[a.crew_member_id]) if a.crew_member_id in by_id else 'crew'}"
+            f"{'' if _abnormal_now(a.crew_member_id) else ', readings now back in range, awaiting a person to confirm'})"
+            for a in open_alerts[:6]) or "none"
         if agent_name == "AEGIS":
             # Crew-wide questions ("who needs attention?"): live abnormal findings for every crew member
             def _top(c):

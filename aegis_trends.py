@@ -71,6 +71,11 @@ def _recent(crew_id: str, n: int) -> list[tuple[datetime, dict]]:
         v = json.loads(r["vitals_json"])
         v["il6"] = _il6(v, crew_id)
         out.append((_parse_ts(r["timestamp"]), v))
+    if out:     # same rate cap as the live value (aegis_mission.il6_smoothed), so the rings and the panel agree
+        t0 = out[0][0]
+        sm = aegis_mission.il6_smooth_series([((t - t0).total_seconds(), v["il6"]) for t, v in out])
+        for (t, v), x in zip(out, sm):
+            v["il6"] = x
     # Keep only the latest contiguous run: a gap means the feed restarted (new baselines), and fitting a
     # trend across it would forecast a jump that never happened.
     for i in range(len(out) - 1, 0, -1):
