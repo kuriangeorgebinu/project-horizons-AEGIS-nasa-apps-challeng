@@ -529,7 +529,7 @@ class SOLARISAgent(BaseAgent):
                     "type": "critical", "metric": "radiation_24h", "value": dose,
                     "message": (f"Solar particle event: {dose:.1f} mSv in 24 h, {ratio:.0f}x the normal "
                                 f"{th['background']:.2f} mSv/day background (NASA limit: "
-                                f"{aegis_mission.SPE_EVENT_LIMIT_MSV:.0f} mSv per event)"),
+                                f"{aegis_mission.SPE_EVENT_LIMIT_MSV:.0f} mGy-Eq to the blood-forming organs in any 30 days)"),
                     "pillar": "PROTECT"})
             elif dose >= th["warning"]:
                 findings.append({

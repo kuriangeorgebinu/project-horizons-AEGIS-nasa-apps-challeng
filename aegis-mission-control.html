@@ -3625,16 +3625,32 @@ function renderPreventedPanel(entry) {
 
 // Shown only when there is no live alert: a predicted cascade (≥3 domains out of range or forecast to cross soon)
 // The early-warning title and the map's centre clock read the same countdown, so they never disagree
+// ONE countdown for every place that shows "time to cascade": the map centre, the early-warning title and text,
+// AEGIS's spoken heads-up and the crew list. Whoever sees the forecast first starts it; later forecasts only move it
+// if they disagree by more than 15 s.
+function _syncEtaEnd(crewId, etaMin) {
+  if (etaMin === null || etaMin === undefined) return;
+  const end = Date.now() + etaMin * 60000;
+  if (CM.etaCrew !== crewId || !CM.etaEnd || Math.abs(CM.etaEnd - end) > 15000) { CM.etaEnd = end; CM.etaCrew = crewId; }
+}
+function _etaText(crewId, etaMin) {
+  if (CM.etaCrew === crewId && CM.etaEnd) { const c = _cmClock(); return c === 'NOW' ? 'moments' : c; }
+  return fmtEta(etaMin);
+}
 function _predictTitleText() {
   const t = PREDICT_STATE.titleFor; if (!t) return '';
-  const sameClock = CM.mode === 'cascade' && CM.etaEnd && CM.prevCrew === t.crew;
+  const sameClock = CM.etaEnd && CM.etaCrew === t.crew;
   const c = sameClock ? _cmClock() : null;
   if (t.forming || c === 'NOW') return `Early warning: it's happening now · ${t.name}`;
   return `Early warning: cascade in ${c || fmtEta(t.eta)} · ${t.name}`;
 }
 function _syncPredictTitle() {
   const panel = document.getElementById('alert-panel'), title = document.getElementById('alert-title');
-  if (panel && title && panel.classList.contains('predict') && PREDICT_STATE.titleFor) title.textContent = _predictTitleText();
+  if (panel && title && panel.classList.contains('predict') && PREDICT_STATE.titleFor) {
+    title.textContent = _predictTitleText();
+    const d = PREDICT_STATE.descFor, desc = document.getElementById('alert-desc');
+    if (d && desc) desc.textContent = d.pre + _etaText(d.crew, d.eta) + d.post;
+  }
 }
 function renderPredictPanel(p) {
   if (!p) { PREDICT_STATE.announcedKey = null; PREDICT_STATE.lastCrew = null; renderAllClear(); return; }
@@ -3652,6 +3668,7 @@ function renderPredictPanel(p) {
   icon.textContent = '🔮';
   title.style.color = 'var(--yellow)';
   const forming = p.risk === 'converged';
+  if (!forming) _syncEtaEnd(p.crew_member_id, p.cascade_eta_min);
   PREDICT_STATE.titleFor = { crew: p.crew_member_id, name, forming, eta: p.cascade_eta_min };
   title.textContent = _predictTitleText();
   title.title = 'PREDICT: forecast from the last few minutes of readings'; desc.title = '';
@@ -3662,7 +3679,9 @@ function renderPredictPanel(p) {
   const upTxt = plainList(parts);
   desc.textContent = forming
     ? `The warning came true: ${name}'s ${plainDomains(p.out_now)} are now out of range. I'm raising the alert.`
-    : `${name}'s ${upTxt}. If nothing changes, these will pile up into a bigger problem in ${fmtEta(p.cascade_eta_min)}. Acting now can stop it.`;
+    : `${name}'s ${upTxt}. If nothing changes, these will pile up into a bigger problem in ${_etaText(p.crew_member_id, p.cascade_eta_min)}. Acting now can stop it.`;
+  PREDICT_STATE.descFor = forming ? null : { crew: p.crew_member_id, eta: p.cascade_eta_min,
+    pre: `${name}'s ${upTxt}. If nothing changes, these will pile up into a bigger problem in `, post: '. Acting now can stop it.' };
   agentsEl.innerHTML =
     p.out_now.map(n => `<span class="alert-badge" style="${AGENT_BADGE_STYLE[n] || AGENT_BADGE_STYLE.AEGIS}">${n}</span>`).join('') +
     p.upcoming.map(u => `<span class="alert-badge forecast" title="Forecast to cross in ${fmtEta(u.eta_min)}" style="${AGENT_BADGE_STYLE[u.agent] || AGENT_BADGE_STYLE.AEGIS}">${u.agent} ⏱</span>`).join('');
@@ -3677,7 +3696,7 @@ function renderPredictPanel(p) {
     PREDICT_STATE.announcedKey = key;
     if (typeof playTone === 'function') { playTone(520, 0.1); setTimeout(() => playTone(620, 0.1), 140); }
     if (typeof typeResponse === 'function') {
-      typeResponse(`AEGIS here, heads up. ${name}'s ${upTxt}. At this rate it could turn into a bigger problem in ${fmtEta(p.cascade_eta_min).replace('~', 'about ')}. Starting the prevention plan now should head it off.`);
+      typeResponse(`AEGIS here, heads up. ${name}'s ${upTxt}. At this rate it could turn into a bigger problem in ${_etaText(p.crew_member_id, p.cascade_eta_min).replace(/^(\d+):(\d+)$/, (m, a, b) => +a ? `${a} minute${+a > 1 ? 's' : ''} ${+b} seconds` : `${+b} seconds`).replace('~', 'about ')}. Starting the prevention plan now should head it off.`);
     }
   }
 }
@@ -3798,7 +3817,7 @@ function _setEmergency(e) {
   const body = document.body;
   if (!e) {
     // An emergency just ended (readings recovered): ECHO checks in on that person. The story demo does its own.
-    if (EMG.level && !(typeof STORY !== 'undefined' && STORY.on) && typeof echoRefresh === 'function') {
+    if (EMG.level && EMG.echoedFor !== EMG.alertId && !(typeof STORY !== 'undefined' && STORY.on) && typeof echoRefresh === 'function') {
       const kind = EMG.level === 'protect' ? (EMG.protocol === 'SHELTER-1' ? 'shelter' : 'medical') : 'cascade';
       setTimeout(() => { if (typeof ECHO !== 'undefined') ECHO.lastProactive = null; echoRefresh(kind); }, 1500);
     }
@@ -3828,6 +3847,13 @@ function _tickEmergency() {
   const em = document.getElementById('mb-em-text');
   const emRec = !EMG.acked && (Date.now() - EMG.since) / 1000 > 45 && _crewRecovered(EMG.crewId, EMG.protocol);
   if (em && EMG.baseLabel) em.textContent = EMG.baseLabel + (emRec ? ' · readings recovered, awaiting confirmation' : '');
+  // ECHO checks in once the readings recover, whether or not anyone has confirmed yet: a check-in closes nothing,
+  // the alert still waits for its person. (The 2-minute demo runs its own ECHO beat.)
+  if (emRec && EMG.echoedFor !== EMG.alertId && !(typeof STORY !== 'undefined' && STORY.on) && typeof echoRefresh === 'function') {
+    EMG.echoedFor = EMG.alertId;
+    const kind = EMG.level === 'protect' ? (EMG.protocol === 'SHELTER-1' ? 'shelter' : 'medical') : 'cascade';
+    setTimeout(() => { if (typeof ECHO !== 'undefined') ECHO.lastProactive = null; echoRefresh(kind); }, 1500);
+  }
   const s = Math.max(0, Math.floor((Date.now() - EMG.since) / 1000));
   const txt = `Alert +${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   const a = document.getElementById('mb-em-timer'); if (a) a.textContent = txt;
@@ -4127,12 +4153,11 @@ function renderCascadeMap(fc) {
   } else if (fc.risk === 'cascade' && fc.cascade_eta_min !== null &&
              !((PREDICT_STATE.suppress[fc.crew_member_id] || 0) > Date.now())) {
     mode = 'cascade';
-    const end = Date.now() + fc.cascade_eta_min * 60000;
-    if (!CM.etaEnd || Math.abs(CM.etaEnd - end) > 15000 || CM.mode !== 'cascade') CM.etaEnd = end;
+    _syncEtaEnd(fc.crew_member_id, fc.cascade_eta_min);
     big = outDom.length >= 3 ? 'NOW' : _cmClock(); sub = big === 'NOW' ? 'CASCADE FORMING' : 'TO CASCADE';
     const parts = fc.upcoming.map(u => PLAIN_TREND[u.metric]).filter(Boolean);
     cap = `<b>Early warning:</b> ${name}'s ${plainList(parts) || plainDomains(watchDom) + ' are drifting'}. ` +
-          `Three systems will be strained in ${fmtEta(fc.cascade_eta_min).replace('~', 'about ')} unless we act.`;
+          `Three systems will be strained in ${_etaText(fc.crew_member_id, fc.cascade_eta_min)} unless we act.`;
   } else if (fc.risk === 'converged') {
     mode = 'alert'; big = 'NOW'; sub = 'CASCADE FORMING';
     cap = `<b>It's happening:</b> ${name}'s ${plainDomains(outDom)} are out of range together. AEGIS is raising the alert.`;
@@ -4237,8 +4262,8 @@ setInterval(() => {
     const b = document.getElementById('cm-big'), c = _cmClock();
     if (b && b.textContent !== 'NOW') b.textContent = c;
     const sub = document.getElementById('cm-sub'); if (sub && c === 'NOW') sub.textContent = 'CASCADE FORMING';
-    _syncPredictTitle();
   }
+  if (CM.etaEnd) _syncPredictTitle();
 }, 1000);
 
 // Crew at a glance: one row per crew member, a dot per system (shown in the alert panel when all is clear)
@@ -4251,7 +4276,7 @@ function renderCrewGlance() {
     const st = sysStates(c);
     const worst = Object.values(st).includes('out') ? 'out' : Object.values(st).includes('watch') ? 'watch' : 'ok';
     const off = order.filter(a => st[a] === 'out').map(a => a.toUpperCase());
-    const word = c.risk === 'cascade' ? `cascade ${fmtEta(c.cascade_eta_min)}` :
+    const word = c.risk === 'cascade' ? `cascade in ${_etaText(c.crew_member_id, c.cascade_eta_min)}` :
                  worst === 'out' ? `${plainDomains(off)} off` : worst === 'watch' ? 'drifting' : 'steady';
     const role = String(c.role || '').replace(/_/g, ' ');
     return `<button type="button" class="cg-row${c.crew_member_id === DASH_API.selectedCrewId ? ' sel' : ''}" data-key="${key || ''}"

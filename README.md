@@ -76,7 +76,7 @@ ECHO alerts the medical officer. ECHO always says it is an AI and is not a couns
 **Mission profile** (`aegis_mission.py`, set with `AEGIS_MISSION`): Mars transit by default, with a normal
 background of 1.84 mSv/day measured by Curiosity RAD on its cruise to Mars, so SOLARIS warns at 3.68 and orders
 the shelter at 9.2 mSv per 24 h. Profiles for the Mars surface (0.64), lunar surface (1.37) and ISS (0.5) are
-included. NASA limits used: 600 mSv career, 250 mSv per solar particle event. GENE's pre-flight IL-6 baselines are
+included. NASA limits used: 600 mSv career, and the 30-day limit of 250 mGy-Eq to the blood-forming organs (not a per-storm dose). GENE's pre-flight IL-6 baselines are
 seeded inside the Inspiration4 crew's real pre-flight range (2.5-5.9 pg/mL, NASA OSDR OSD-575).
 
 **What is real and what is simulated** - the dashboard tags each reading: **SIM** = simulated feed in this demo

@@ -81,7 +81,7 @@
       "types": ["GCR", "SPE", "trapped_belt"],
       "limits": {
         "career_limit_REID": "3% at 95% CI",
-        "30_day_limit": "250 mSv",
+        "30_day_limit": "250 mGy-Eq to the blood-forming organs (NASA-STD-3001; a 30-day limit, not per event)",
         "annual_limit": "500 mSv"
       },
       "countermeasures": ["shielding", "storm_shelter", "SPE_forecasting", "pharmaceutical_radioprotectants"],

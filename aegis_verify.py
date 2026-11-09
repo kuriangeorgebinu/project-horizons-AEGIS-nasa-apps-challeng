@@ -386,6 +386,23 @@ def check_prose_actions(text: str, menu: list[str]) -> dict:
     return {"instructions": len(detail), "unsupported": bad, "detail": detail, "ok": not bad}
 
 
+# NASA's 250 figure is a 30-day limit (250 mGy-Eq to the blood-forming organs, NASA-STD-3001), not a per-storm or
+# per-event dose. Any wording that ties 250 to a single event/storm/SPE is rejected, even though the number appears
+# in the sources (so the numbers check alone can't catch it).
+LIMIT_FRAMING_RE = re.compile(
+    r"\b250\s*(?:m?sv|mgy(?:-eq)?|millisieverts?|milligrays?)?\s*(?:\(?\s*)?"
+    r"(?:(?:per|each|every|a|for\s+(?:a|one|each))\s+(?:solar\s+)?(?:particle\s+)?(?:event|storm|spe|flare)s?"
+    r"|(?:solar\s+)?(?:particle\s+)?(?:event|storm|spe|flare|per-event|per-storm)\s+(?:dose\s+)?(?:limit|cap|ceiling|threshold))"
+    r"|\b(?:event|storm|spe|per-event|per-storm)\s+(?:dose\s+)?(?:limit|cap|ceiling)\s+(?:of\s+)?250\b",
+    re.I)
+
+
+def check_limit_framing(text: str) -> dict:
+    bad = [m.group(0) for m in LIMIT_FRAMING_RE.finditer(text or "")]
+    return {"unsupported": [f"misframed NASA limit: '{b}' (250 is a 30-day limit, mGy-Eq to the blood-forming organs)"
+                            for b in bad], "ok": not bad}
+
+
 def verify(text: str, actions: list[str], menu: list[str], passages: list[str], context: str,
            weak: Optional[list[bool]] = None, verbatim_actions: bool = False) -> dict:
     """Run all four checks. `context` = everything numeric the model was given (readings, thresholds)."""
@@ -397,6 +414,7 @@ def verify(text: str, actions: list[str], menu: list[str], passages: list[str], 
         "actions": check_actions(actions, menu, verbatim_actions),
         "medicine": check_medicine(text + " " + act_text, "\n".join([*menu, *passages])),
         "prose_actions": check_prose_actions(text, menu),
+        "limits": check_limit_framing(text + " " + act_text),
     }
     problems = [p for c in checks.values() for p in c["unsupported"]]
     passed = sum(1 for c in checks.values() if c["ok"])
@@ -423,6 +441,7 @@ def verify_note(text: str, context: str, menu: Optional[list[str]] = None) -> di
         "medicine": check_medicine(text, "\n".join(menu)),
         "units": check_units(text),
         "prose_actions": check_prose_actions(text, menu),
+        "limits": check_limit_framing(text),
     }
     problems = [p for c in checks.values() for p in c["unsupported"]]
     return {"ok": not problems, "problems": problems, "checks": checks}

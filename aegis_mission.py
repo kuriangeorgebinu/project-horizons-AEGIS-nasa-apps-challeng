@@ -10,8 +10,8 @@ Radiation (SOLARIS) - why these rules:
     - shelter  : 24 h dose >= 5 x background and >= background + 5 mSv (the step change of a solar
                  particle event). These two factors are AEGIS engineering choices, not NASA limits:
                  NASA's operational storm-shelter calls are made on proton-flux alerts.
-    - NASA limits used: 600 mSv career effective dose (NASA-STD-3001) and 250 mSv per solar particle event
-      (NASA OCHMO technical brief).
+    - NASA limits used: 600 mSv career effective dose and the 30-day short-term limit of 250 mGy-Eq to the
+      blood-forming organs (both NASA-STD-3001). 250 is NOT a per-storm or per-event dose.
 IL-6 (GENE) - modelled, not measured:
   No blood sensor feeds AEGIS, so IL-6 is MODELLED from stress and radiation relative to background. The
   pre-flight baseline per crew member is seeded to sit inside the Inspiration4 crew's real pre-flight range
@@ -22,7 +22,7 @@ import math
 import os
 
 CAREER_LIMIT_MSV = 600.0          # NASA-STD-3001 career effective dose limit
-SPE_EVENT_LIMIT_MSV = 250.0       # NASA OCHMO: 250 mSv per solar particle event
+SPE_EVENT_LIMIT_MSV = 250.0       # NASA-STD-3001 30-day limit: 250 mGy-Eq to the blood-forming organs (not per event)
 WARN_FACTOR = 2.0
 SHELTER_FACTOR = 5.0
 SHELTER_MIN_EXCESS_MSV = 5.0
