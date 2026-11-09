@@ -26,6 +26,8 @@ echo "== python environment"
 echo "== static dashboard (only the public files, never the code or .env)"
 rm -rf "$BASE/web.new" && mkdir -p "$BASE/web.new"
 cp "$REL/aegis-mission-control.html" "$REL/aegis-spacecraft-sim-2d.html" "$REL/aegis-api-client.js" "$BASE/web.new/"
+# The dashboard's styles and scripts (split out of the HTML, loaded in the same order)
+cp -r "$REL/css" "$REL/js" "$BASE/web.new/"
 [ -d "$REL/artifacts" ] && cp -r "$REL/artifacts" "$BASE/web.new/"
 mkdir -p "$BASE/web.new/docs" && [ -d "$REL/docs/screenshots" ] && cp -r "$REL/docs/screenshots" "$BASE/web.new/docs/"
 rm -rf "$BASE/web.old"; [ -d "$BASE/web" ] && mv "$BASE/web" "$BASE/web.old"; mv "$BASE/web.new" "$BASE/web"

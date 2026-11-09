@@ -1,0 +1,1174 @@
+/* AEGIS Mission Control styles (moved verbatim from aegis-mission-control.html).
+   Rules that paint with in-page SVG gradients/filters (url(#...)) keep that one declaration in a small
+   <style> block in the HTML, because some browsers resolve url(#id) in an external sheet against the sheet. */
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0c10;--card:#12171e;--border:#1a2230;
+  --text:#d0daea;--muted:#6a7a8a;
+  --aegis:#5a9fd7;--gene:#a098c8;--pulse:#c88888;--solaris:#c8b070;--mirror:#7aad9a;
+  --green:#5aad8c;--yellow:#c8b45a;--orange:#d48a5a;--red:#c86a6a;
+  --space-bg-opacity:1;
+}
+[data-theme="light"]{
+  --bg:#f0f4f8;--card:#ffffff;--border:#d0d8e0;
+  --text:#1a2431;--muted:#5a6a7a;
+  --aegis:#3a7ab0;--gene:#6a5a9a;--pulse:#a06060;--solaris:#9a8040;--mirror:#4a8a6a;
+  --green:#3a8a6a;--yellow:#8a7a30;--orange:#a06030;--red:#a04040;
+  --space-bg-opacity:0;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;transition:background .3s,color .3s;}
+
+/* Accessibility */
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+.skip-link{position:absolute;top:-40px;left:0;background:var(--aegis);color:#fff;padding:.5rem 1rem;z-index:1000;border-radius:0 0 8px 0;transition:top .2s;}
+.skip-link:focus{top:0;}
+*:focus-visible{outline:2px solid var(--aegis);outline-offset:2px;}
+
+/* WOW Animations */
+@keyframes vital-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+@keyframes flow-line{0%{stroke-dashoffset:20;}100%{stroke-dashoffset:0;}}
+@keyframes hover-glow{0%,100%{box-shadow:0 0 15px var(--node-color);}50%{box-shadow:0 0 25px var(--node-color),0 0 40px var(--node-color);}}
+@keyframes breathing{0%,100%{box-shadow:0 0 20px var(--aegis),0 0 40px rgba(90,159,215,.3);}50%{box-shadow:0 0 35px var(--aegis),0 0 60px rgba(90,159,215,.5);}}
+@keyframes boot-fade{from{opacity:0;transform:scale(.8);}to{opacity:1;transform:scale(1);}}
+@keyframes particle-burst{0%{transform:scale(0);opacity:1;}100%{transform:scale(2);opacity:0;}}
+.vital-pulse{animation:vital-pulse 1s ease-in-out infinite;}
+.conn-line.flowing{stroke-dasharray:10 5;animation:flow-line .5s linear infinite;}
+.node-aegis.active{animation:breathing 3s ease-in-out infinite;}
+.agent-node.boot{opacity:0;}
+.agent-node:not(.node-aegis):hover{animation:hover-glow 1s ease-in-out infinite;}
+.particle-ring{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid var(--node-color);pointer-events:none;animation:particle-burst .6s ease-out forwards;}
+
+/* Background */
+.space-bg{position:fixed;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(30,58,95,.3) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(90,159,215,.1) 0%,transparent 50%);pointer-events:none;opacity:var(--space-bg-opacity);transition:opacity .3s;}
+
+/* Grid Layout */
+.shell{position:relative;z-index:1;display:grid;min-height:100vh;padding:1rem;gap:1rem;
+  grid-template-rows:auto auto 1fr auto auto;
+  grid-template-columns:1fr 1fr;
+  grid-template-areas:"header header" "mission mission" "graph vitals" "voice alert" "recs recs";
+}
+
+/* Recommendations Panel */
+.recs-panel{grid-area:recs;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.25rem;transition:background .3s;}
+.recs-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.recs-title .icon{font-size:1rem;}
+.recs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:1rem;padding-bottom:.5rem;}
+.recs-count{margin-left:auto;font-size:.7rem;letter-spacing:1px;color:var(--muted);text-transform:none;}
+.recs-empty{grid-column:1/-1;color:var(--muted);font-size:.85rem;padding:.5rem 0;}
+
+/* Voice Terminal: typed questions + live-answer label */
+.ask-form{display:flex;gap:.5rem;margin:.25rem 0 .75rem;}
+.ask-input{flex:1;min-width:0;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:.5rem .75rem;font:inherit;font-size:.85rem;}
+.ask-input:focus{outline:none;border-color:var(--aegis);}
+.ask-btn{background:rgba(90,159,215,.15);color:var(--aegis);border:1px solid var(--aegis);border-radius:10px;padding:.5rem .9rem;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;}
+.ask-btn:disabled{opacity:.5;cursor:wait;}
+.response-source{margin-left:.5rem;font-size:.65rem;letter-spacing:1px;padding:.1rem .45rem;border-radius:8px;background:rgba(160,152,200,.15);color:var(--gene);}
+.response-source.rules{background:rgba(90,159,215,.12);color:var(--aegis);}
+
+/* DeepSeek assessment (alert panel + recommendation cards) */
+.alert-ai,.rec-ai{margin:.6rem 0;padding:.55rem .7rem;border-left:3px solid var(--gene);background:rgba(160,152,200,.08);border-radius:0 8px 8px 0;font-size:.82rem;line-height:1.45;color:var(--text);}
+.alert-ai-tag,.rec-ai-tag{display:block;font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gene);margin-bottom:.2rem;}
+.rec-ai{font-size:.78rem;}   /* full DeepSeek assessment, no truncation */
+.rec-verify{display:inline-block;font-size:.62rem;font-weight:700;padding:.05rem .4rem;border-radius:3px;margin:0 .4rem .2rem 0;cursor:help;}
+.rec-verify.ok{background:rgba(80,170,110,.18);color:#2f8a4f;}
+.rec-verify.rules{background:rgba(200,160,60,.2);color:#9a6f10;}
+.rec-crew-list{font-size:.72rem;color:var(--muted);margin:-.2rem 0 .2rem;}
+/* RAG recommendations: tailored actions + cited sources */
+.rec-steps{margin:.4rem 0 .5rem 1.1rem;padding:0;font-size:.78rem;line-height:1.4;color:var(--text);}
+.rec-steps li{margin:.15rem 0;}
+.rec-sources{display:flex;flex-direction:column;gap:.2rem;margin:.4rem 0 .2rem;font-size:.72rem;}
+.rec-sources-tag{font-size:.62rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.rec-sources a,.rec-sources span[title]{color:var(--aegis);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-sources a:hover{text-decoration:underline;}
+
+/* Spacecraft sim pop-up (opens when a protocol is confirmed) */
+.sim-modal{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:rgba(4,8,14,.72);backdrop-filter:blur(3px);padding:16px;}
+.sim-modal.open{display:flex;}
+.sim-modal-box{width:min(1180px,100%);height:min(720px,100%);display:flex;flex-direction:column;background:var(--card);border:1px solid var(--aegis);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+.sim-modal-head{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;border-bottom:1px solid var(--border);font-size:.8rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.sim-modal-head strong{color:var(--text);letter-spacing:.5px;}
+.sim-modal-status{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--aegis);}
+.sim-modal-status.done{color:var(--green);}
+.sim-modal-head a,.sim-modal-head button{background:none;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.3rem .6rem;font-size:.75rem;cursor:pointer;text-decoration:none;text-transform:none;letter-spacing:0;}
+.sim-modal-head button:hover,.sim-modal-head a:hover{border-color:var(--aegis);}
+.sim-modal iframe{flex:1;width:100%;border:0;background:#0c1018;}
+@media (max-width:640px){.sim-modal{padding:0;}.sim-modal-box{border-radius:0;height:100%;}.sim-modal-head a{display:none;}}
+.rec-card{min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1rem;transition:all .3s;}
+.rec-card:hover{border-color:var(--aegis);transform:translateY(-2px);}
+.rec-card.urgent{border-color:var(--yellow);box-shadow:0 0 15px rgba(200,180,90,.2);}
+.rec-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+.rec-agents{display:flex;align-items:center;gap:.25rem;font-size:.8rem;}
+.rec-agent{padding:.2rem .5rem;border-radius:12px;font-size:.7rem;font-weight:600;}
+.rec-arrow{color:var(--muted);font-size:.8rem;}
+.rec-target{margin-left:auto;font-size:.75rem;color:var(--muted);}
+.rec-body{margin-bottom:.75rem;}
+.rec-detection{font-size:.85rem;color:var(--text);margin-bottom:.5rem;line-height:1.4;}
+.rec-intervention{font-size:.9rem;font-weight:600;color:var(--aegis);margin-bottom:.5rem;}
+.rec-evidence{font-size:.7rem;color:var(--muted);font-style:italic;}
+.rec-actions{display:flex;gap:.5rem;}
+.rec-btn{flex:1;padding:.5rem;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--border);}
+.rec-btn.accept{background:rgba(90,173,140,.15);color:var(--green);border-color:var(--green);}
+.rec-btn.accept:hover{background:rgba(90,173,140,.25);}
+.rec-btn.defer{background:rgba(200,180,90,.1);color:var(--yellow);border-color:var(--yellow);}
+.rec-btn.defer:hover{background:rgba(200,180,90,.2);}
+.rec-btn.dismiss{background:transparent;color:var(--muted);}
+.rec-btn.dismiss:hover{background:rgba(255,255,255,.05);}
+
+/* Header */
+.header{grid-area:header;display:flex;justify-content:space-between;align-items:center;padding:.5rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:background .3s;}
+.logo{font-size:1.5rem;font-weight:700;color:var(--aegis);letter-spacing:2px;}
+.mission-day{color:var(--muted);font-size:.9rem;}
+.mission-day span{color:var(--text);font-weight:600;}
+.theme-toggle{background:rgba(128,128,128,.15);border:1px solid var(--border);border-radius:20px;padding:.4rem .8rem;font-size:1rem;cursor:pointer;transition:all .3s;}
+.theme-toggle:hover{background:rgba(128,128,128,.25);}
+
+/* Agent Network Graph */
+.graph-panel{grid-area:graph;background:var(--card);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;gap:.5rem;padding:1rem 1.25rem 1.1rem;position:relative;overflow:hidden;transition:background .3s;min-width:0;}
+.graph-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
+
+/* CASCADE MAP: the four specialists around AEGIS, live. Gauge = how close each reading is to its agent's
+   threshold; links light up when strain spreads between systems; the centre counts down to a cascade. */
+.cm-head{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem;flex-wrap:wrap;}
+.cm-legend{display:flex;gap:.8rem;font-size:.68rem;color:var(--muted);}
+.cm-legend span{display:inline-flex;align-items:center;gap:.3rem;}
+.cm-legend i{width:.55rem;height:.55rem;border-radius:50%;display:inline-block;}
+.cm-svg{width:100%;height:auto;max-height:340px;display:block;overflow:visible;}
+.cm-caption{font-size:.86rem;line-height:1.45;color:var(--text);min-height:2.6em;text-align:center;max-width:52ch;margin:0 auto;}
+.cm-caption b{font-weight:600;}
+/* Map amber: a clearer warning tone than the panel's olive --yellow, tuned per theme */
+:root{--cm-amber:#d9a441;}
+[data-theme="light"]{--cm-amber:#c27c0e;}
+.cm-svg,.cm-legend,.crew-glance{--yellow:var(--cm-amber);}
+.agent-node{cursor:pointer;--state:var(--green);}
+.agent-node[data-state="watch"]{--state:var(--yellow);}
+.agent-node[data-state="out"]{--state:var(--red);}
+.agent-node:focus{outline:none;}
+.agent-node:focus-visible .cm-core{stroke:var(--aegis);stroke-width:3;}
+.cm-core{fill:var(--card);stroke:var(--border);stroke-width:1.5;transition:stroke .3s;}
+.agent-node.active .cm-core{stroke:var(--node-color);stroke-width:3;}
+.agent-node:hover .cm-core{stroke:var(--node-color);}
+.cm-track{fill:none;stroke:var(--border);stroke-width:5;opacity:.6;}
+.cm-gauge{fill:none;stroke:var(--state);stroke-width:5;stroke-linecap:round;transition:stroke-dasharray .9s ease,stroke .4s;}
+.cm-tick{stroke:var(--muted);stroke-width:2;}
+.cm-halo{fill:var(--state);opacity:0;transform-box:fill-box;transform-origin:center;}
+.agent-node[data-state="watch"] .cm-halo{animation:cm-breathe 2.6s ease-in-out infinite;}
+.agent-node[data-state="out"] .cm-halo{animation:cm-breathe 1.2s ease-in-out infinite;}
+@keyframes cm-breathe{0%,100%{opacity:.06;transform:scale(1);}50%{opacity:.26;transform:scale(1.14);}}
+.cm-icon{font-size:15px;}
+.cm-val{font-size:19px;font-weight:700;fill:var(--text);font-variant-numeric:tabular-nums;}
+.cm-unit{font-size:9px;fill:var(--muted);}
+.cm-name{font-size:10px;font-weight:700;letter-spacing:1.5px;fill:var(--node-color);}
+.cm-state{font-size:10px;font-weight:600;fill:var(--state);}
+.node-solaris{--node-color:var(--solaris);} .node-gene{--node-color:var(--gene);}
+.node-pulse{--node-color:var(--pulse);} .node-mirror{--node-color:var(--mirror);} .node-aegis{--node-color:var(--aegis);}
+/* Links between neighbouring systems: dotted when calm, flowing amber/red when strain is spreading */
+.cm-link{fill:none;stroke:var(--border);stroke-width:2;stroke-dasharray:2 7;stroke-linecap:round;transition:stroke .4s,stroke-width .4s;}
+.cm-link.warm{stroke:var(--yellow);stroke-width:2.5;stroke-dasharray:7 7;animation:cm-flow 1.4s linear infinite;}
+.cm-link.hot{stroke:var(--red);stroke-width:3.5;stroke-dasharray:12 7;animation:cm-flow .7s linear infinite;}
+@keyframes cm-flow{to{stroke-dashoffset:-28;}}
+/* Spokes to AEGIS (also used by the voice / protocol animations: .active, .flowing) */
+.conn-line{stroke:var(--border);stroke-width:2;fill:none;transition:stroke .4s;}
+.conn-line.s-watch{stroke:var(--yellow);}
+.conn-line.s-out{stroke:var(--red);}
+.conn-line.active{stroke:var(--aegis);stroke-width:3;}
+.cm-particle{display:none;}
+.cm-particle.on{display:inline;}
+/* AEGIS centre: three segments = the three strained systems that make a cascade */
+.cm-seg{fill:none;stroke:var(--border);stroke-width:7;stroke-linecap:round;transition:stroke .4s;}
+.cm-seg.watch{stroke:var(--yellow);} .cm-seg.out{stroke:var(--red);} .cm-seg.ok{stroke:var(--green);}
+.node-aegis .cm-core{stroke:var(--aegis);stroke-width:2;}
+.node-aegis[data-mode="cascade"] .cm-core{stroke:var(--yellow);stroke-width:3;}
+.node-aegis[data-mode="alert"] .cm-core{stroke:var(--red);stroke-width:3;}
+.node-aegis[data-mode="prevent"] .cm-core,.node-aegis[data-mode="averted"] .cm-core{stroke:var(--green);stroke-width:3;}
+.node-aegis[data-mode="alert"] .cm-big{animation:cm-blink 1s steps(2,start) infinite;}
+@keyframes cm-blink{50%{opacity:.35;}}
+.cm-big{font-size:20px;font-weight:800;fill:var(--text);font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+.cm-small{font-size:8.5px;font-weight:700;letter-spacing:1.6px;fill:var(--muted);}
+.cm-ripple{fill:none;stroke:var(--green);stroke-width:3;pointer-events:none;animation:cm-ripple 1.4s ease-out forwards;}
+@keyframes cm-ripple{from{r:52px;opacity:.9;}to{r:260px;opacity:0;}}
+.cm-burst{fill:none;stroke:var(--node-color);stroke-width:2;pointer-events:none;animation:cm-burst .6s ease-out forwards;}
+@keyframes cm-burst{from{r:40px;opacity:.9;}to{r:62px;opacity:0;}}
+@media (prefers-reduced-motion:reduce){.cm-link,.cm-halo,.cm-ripple,.cm-burst,.cm-big{animation:none!important;}.cm-particle.on{display:none;}}
+
+/* Crew at a glance (alert panel, when everything is clear) */
+.crew-glance{display:grid;gap:.45rem;margin-top:.25rem;width:100%;}
+.alert-panel:has(.crew-glance) .alert-body{flex:0 0 auto;}
+.cg-head{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.cg-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.8rem;padding:.5rem .7rem;border:1px solid var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font:inherit;color:var(--text);text-align:left;}
+.cg-row:hover{border-color:var(--aegis);}
+.cg-row.sel{border-color:var(--aegis);box-shadow:inset 3px 0 0 var(--aegis);}
+.cg-name{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cg-name small{display:block;font-weight:400;font-size:.7rem;color:var(--muted);}
+.cg-dots{display:flex;gap:.35rem;}
+.cg-dot{width:.62rem;height:.62rem;border-radius:50%;background:var(--green);}
+.cg-dot.watch{background:var(--yellow);} .cg-dot.out{background:var(--red);}
+.cg-state{font-size:.72rem;color:var(--muted);min-width:5.5rem;text-align:right;}
+.cg-state.watch{color:var(--yellow);font-weight:600;} .cg-state.out{color:var(--red);font-weight:600;}
+
+/* Vitals Panel */
+.vitals-panel{grid-area:vitals;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;transition:background .3s;}
+.vitals-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;}
+.vital-row{display:flex;align-items:center;gap:1rem;}
+.vital-label{width:74px;flex-shrink:0;font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:2px;line-height:1.1;}
+/* Which agent monitors each metric */
+.agent-tag{display:inline-flex;align-items:center;gap:4px;font-size:.58rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.agent-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+.agent-tag.pulse{color:var(--pulse);} .agent-tag.gene{color:var(--gene);} .agent-tag.mirror{color:var(--mirror);} .agent-tag.solaris{color:var(--solaris);}
+.vitals-legend{font-size:.65rem;color:var(--muted);margin-top:-.5rem;}
+.rad-sub{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--muted);margin-top:.5rem;}
+.vital-value{width:50px;font-size:1.4rem;font-weight:700;}
+.vital-bar{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
+.vital-fill{height:100%;border-radius:4px;transition:width .5s;}
+.vital-status{width:60px;font-size:.7rem;text-align:right;}
+/* PREDICT: trend chips appear only when a metric is trending; click a row for history + forecast */
+.vital-row[data-metric]{position:relative;cursor:pointer;border-radius:6px;}
+.vital-row[data-metric]:hover{background:rgba(255,255,255,.03);}
+.trend-chip{position:absolute;right:0;bottom:-13px;font-size:.6rem;white-space:nowrap;color:var(--muted);pointer-events:none;letter-spacing:.2px;}
+.trend-chip.inline{position:static;margin-left:.35rem;}
+.trend-chip.eta{color:var(--yellow);font-weight:700;}
+.trend-chip.out{color:var(--orange);}
+.alert-panel.predict .alert-badge.forecast{opacity:.65;border:1px dashed currentColor;}
+.confirm-btn.prevent-btn{border-color:var(--yellow);color:var(--yellow);background:rgba(200,180,90,.1);}
+.confirm-btn.prevent-btn:hover{background:rgba(200,180,90,.2);}
+.prevent-steps{margin:.25rem 0 .75rem;padding-left:1.1rem;font-size:.8rem;color:var(--text);line-height:1.5;}
+.chart-threshold{stroke:var(--orange);stroke-width:1;stroke-dasharray:4 4;opacity:.9;}
+.chart-forecast{fill:none;stroke:var(--aegis);stroke-width:2;stroke-dasharray:6 4;}
+.chart-now{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3;}
+
+.radiation-section{margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);}
+.rad-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;}
+.rad-icon{font-size:1.2rem;}
+.rad-bar{height:12px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden;}
+.rad-fill{height:100%;width:23%;background:linear-gradient(90deg,var(--green),var(--yellow));border-radius:6px;}
+
+/* Voice Terminal */
+.voice-panel{grid-area:voice;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;transition:background .3s;}
+.voice-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
+.voice-select{font-size:.7rem;letter-spacing:0;text-transform:none;max-width:45%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:.15rem .4rem;cursor:pointer;}
+.voice-input{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;}
+.mic-btn{width:60px;height:60px;border-radius:50%;border:2px solid var(--aegis);background:transparent;color:var(--aegis);font-size:1.5rem;cursor:pointer;transition:all .3s;}
+.mic-btn:hover{background:rgba(90,159,215,.1);}
+.mic-btn.listening{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+.voice-status{flex:1;font-size:.9rem;color:var(--muted);}
+.voice-status.listening{color:var(--red);}
+.response-area{flex:1;padding:1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.95rem;line-height:1.6;overflow-y:auto;transition:background .3s;}
+.response-label{font-size:.7rem;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase;}
+.response-text{min-height:60px;}
+.typing-cursor{display:inline-block;width:2px;height:1em;background:var(--aegis);animation:blink 1s infinite;}
+@keyframes blink{0%,50%{opacity:1;}51%,100%{opacity:0;}}
+
+/* Alert Panel */
+.alert-panel{grid-area:alert;background:var(--card);border:2px solid var(--red);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;transition:background .3s;}
+.alert-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;}
+.alert-icon{font-size:1.5rem;animation:flash 2s infinite;}
+@keyframes flash{0%,50%,100%{opacity:1;}25%,75%{opacity:.5;}}
+.alert-title{font-size:1rem;font-weight:600;color:var(--red);}
+.alert-body{flex:1;font-size:.9rem;color:var(--muted);line-height:1.5;margin-bottom:1rem;}
+.alert-agents{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.alert-badge{padding:.25rem .75rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;}
+.confirm-btn{padding:.75rem 1.5rem;border:1px solid var(--green);background:rgba(90,173,140,.1);color:var(--green);border-radius:8px;font-size:.9rem;cursor:pointer;transition:all .3s;}
+.confirm-btn:hover{background:rgba(90,173,140,.2);}
+.alert-call{font-size:.8rem;margin:-.4rem 0 .8rem;padding:.4rem .6rem;border-radius:8px;background:rgba(90,159,215,.1);color:var(--aegis);cursor:help;}
+.alert-call.failed{background:rgba(200,106,106,.12);color:var(--red);}
+
+/* Protocol Celebration */
+@keyframes celebration-pulse{0%{opacity:0;}50%{opacity:.3;}100%{opacity:0;}}
+@keyframes checkmark-pop{0%{transform:scale(0);opacity:0;}50%{transform:scale(1.3);}100%{transform:scale(1);opacity:1;}}
+.celebration-overlay{position:fixed;inset:0;background:var(--green);pointer-events:none;animation:celebration-pulse 1s ease-out forwards;z-index:100;}
+.agent-node .checkmark{position:absolute;font-size:1.5rem;opacity:0;}
+.agent-node .checkmark.show{animation:checkmark-pop .4s ease-out forwards;}
+
+/* Expanded Graph Modal */
+.graph-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(5px);}
+.graph-modal.open{display:flex;}
+.graph-modal-content{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:90%;max-width:600px;position:relative;}
+.graph-modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;}
+.graph-modal-close:hover{color:var(--text);}
+.graph-modal h2{margin:0 0 1rem;color:var(--aegis);font-size:1.2rem;}
+.expanded-chart{width:100%;height:200px;background:var(--bg);border-radius:8px;padding:1rem;position:relative;}
+.chart-svg{width:100%;height:100%;}
+.chart-label{font-size:.7rem;fill:var(--muted);}
+.chart-value{font-size:.65rem;fill:var(--yellow);}
+.chart-grid{stroke:var(--border);stroke-width:1;}
+.chart-line{fill:none;stroke:var(--yellow);stroke-width:2;}
+.chart-dot{fill:var(--yellow);}
+.chart-stats{display:flex;justify-content:space-around;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);}
+.stat-item{text-align:center;}
+.stat-value{font-size:1.5rem;font-weight:700;color:var(--yellow);}
+.stat-label{font-size:.75rem;color:var(--muted);}
+
+/* Navigation Tabs */
+.nav-tabs{display:flex;gap:.25rem;background:var(--bg);padding:.25rem;border-radius:10px;border:1px solid var(--border);}
+.nav-tab{padding:.5rem 1rem;border:none;background:transparent;color:var(--muted);font-size:.85rem;cursor:pointer;border-radius:8px;transition:all .2s;display:flex;align-items:center;gap:.5rem;}
+.nav-tab:hover{color:var(--text);background:rgba(255,255,255,.05);}
+.nav-tab.active{background:var(--aegis);color:#fff;}
+.nav-tab .icon{font-size:.9rem;}
+
+/* Page containers */
+.page{display:none;}
+.page.active{display:contents;}
+
+.src-tag{display:inline-block;margin-left:.3rem;padding:0 .3rem;border-radius:4px;font-size:.58rem;letter-spacing:.04em;font-weight:600;vertical-align:middle;border:1px solid rgba(255,255,255,.18);color:var(--muted);background:rgba(255,255,255,.04);}
+.src-tag.model{color:#c9b6ff;border-color:rgba(201,182,255,.45);background:rgba(160,152,200,.12);}
+.demo-note{display:inline-block;margin-left:.4rem;padding:0 .35rem;border-radius:4px;font-size:.62rem;color:var(--muted);border:1px dashed rgba(255,255,255,.25);vertical-align:middle;}
+/* ── Mission bar: where the ship is and how far away Earth's help is ── */
+.mission-bar{grid-area:mission;position:relative;display:flex;align-items:center;gap:1rem;padding:.5rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:.8rem;color:var(--muted);min-width:0;min-height:44px;transition:background .35s,border-color .35s,color .35s;}
+.mb-normal,.mb-em{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;width:100%;min-width:0;}
+.mb-em{display:none;font-weight:600;letter-spacing:.03em;color:#fff;}
+.mb-phase{white-space:nowrap;} .mb-phase b{color:var(--text);font-weight:600;}
+.mb-track{position:relative;flex:1 1 200px;min-width:140px;height:26px;}
+.mb-line{position:absolute;left:12px;right:12px;top:50%;height:2px;transform:translateY(-50%);border-radius:2px;background:var(--border);}
+.mb-done{position:absolute;left:12px;top:50%;height:2px;transform:translateY(-50%);border-radius:2px;background:linear-gradient(90deg,var(--aegis),var(--orange));}
+.mb-planet{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);}
+.mb-earth{left:12px;background:radial-gradient(circle at 35% 35%,#8fd0ff,#1f6fb5);box-shadow:0 0 8px rgba(80,160,230,.6);}
+.mb-mars{left:calc(100% - 12px);background:radial-gradient(circle at 35% 35%,#f4ad84,#b04e2a);box-shadow:0 0 8px rgba(210,110,70,.5);}
+.mb-ship{position:absolute;top:50%;transform:translate(-50%,-55%);font-size:1rem;line-height:1;filter:drop-shadow(0 0 4px rgba(90,159,215,.6));}
+.mb-signal{position:absolute;top:50%;width:6px;height:6px;border-radius:50%;background:var(--aegis);box-shadow:0 0 8px var(--aegis);transform:translate(-50%,-50%);left:var(--from,50%);animation:mb-sig 2.4s linear infinite;}
+@keyframes mb-sig{0%{left:var(--from,50%);opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{left:12px;opacity:0;}}
+.mb-delay{white-space:nowrap;cursor:help;} .mb-delay b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:600;}
+.mb-pill{white-space:nowrap;padding:.15rem .6rem;border-radius:20px;border:1px solid var(--aegis);color:var(--aegis);font-size:.72rem;cursor:help;}
+.mb-em-timer{font-family:ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;background:rgba(0,0,0,.22);padding:.1rem .5rem;border-radius:6px;}
+.mb-em-call{margin-left:auto;font-weight:500;opacity:.95;}
+body.emergency .mission-bar{background:#b3363a;border-color:#b3363a;}
+body.cascade-alert .mission-bar{background:#b07a1e;border-color:#b07a1e;}
+body.emergency .mb-normal,body.cascade-alert .mb-normal{display:none;}
+body.emergency .mb-em,body.cascade-alert .mb-em{display:flex;}
+/* ── Emergency mode: the whole screen changes when a PROTECT alert fires ── */
+.emergency-edge{position:fixed;inset:0;pointer-events:none;z-index:90;opacity:0;transition:opacity .45s;box-shadow:inset 0 0 0 3px var(--red),inset 0 0 110px rgba(200,60,60,.42);}
+body.emergency .emergency-edge{opacity:1;animation:em-pulse 1.6s ease-in-out infinite;}
+body.cascade-alert .emergency-edge{opacity:1;box-shadow:inset 0 0 0 2px #c8901e,inset 0 0 80px rgba(200,150,40,.28);animation:em-pulse 2.8s ease-in-out infinite;}
+@keyframes em-pulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+body.acked .emergency-edge{animation:none;opacity:.35;}
+body.emergency.acked .mission-bar{background:#8f2f33;border-color:#8f2f33;}
+body.cascade-alert.acked .mission-bar{background:#8a6018;border-color:#8a6018;}
+body.emergency .alert-panel{box-shadow:0 0 0 2px var(--red),0 0 34px rgba(200,60,60,.35);}
+.alert-timer{margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:.8rem;font-variant-numeric:tabular-nums;color:var(--red);white-space:nowrap;}
+/* ── Live call panel: AEGIS phoning the flight surgeon, shown on screen ── */
+.call-panel{position:fixed;right:16px;bottom:16px;z-index:96;width:min(370px,calc(100vw - 32px));background:var(--card);color:var(--text);border:2px solid var(--aegis);border-radius:14px;padding:.9rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,.28);display:grid;gap:.6rem;transform:translateY(calc(100% + 40px));opacity:0;transition:transform .4s cubic-bezier(.2,.9,.3,1.2),opacity .3s;}
+.call-panel.show{transform:none;opacity:1;}
+.call-panel.fail{border-color:var(--red);}
+.call-panel.ok{border-color:var(--green);}
+.cp-head{display:flex;gap:.7rem;align-items:flex-start;}
+.cp-icon{font-size:1.4rem;line-height:1;}
+.call-panel.ringing .cp-icon{animation:cp-ring .9s ease-in-out infinite;}
+@keyframes cp-ring{0%,100%{transform:rotate(0);}20%{transform:rotate(-14deg);}40%{transform:rotate(14deg);}60%{transform:rotate(-8deg);}80%{transform:rotate(8deg);}}
+.cp-title{font-weight:600;font-size:.95rem;}
+.cp-sub{font-size:.78rem;color:var(--muted);margin-top:.1rem;}
+.cp-close{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.3rem;line-height:1;cursor:pointer;padding:0 .2rem;}
+.cp-steps{list-style:none;display:flex;gap:.3rem;font-size:.72rem;color:var(--muted);}
+.cp-steps li{flex:1;text-align:center;padding:.3rem .2rem;border-radius:6px;background:var(--bg);border:1px solid var(--border);white-space:nowrap;}
+.cp-steps li.done{color:var(--green);border-color:var(--green);}
+.cp-steps li.now{color:#fff;background:var(--aegis);border-color:var(--aegis);}
+.cp-steps li.fail{color:#fff;background:var(--red);border-color:var(--red);}
+.cp-transcript{font-size:.85rem;line-height:1.45;max-height:8.5em;overflow-y:auto;padding:.55rem .7rem;border-radius:8px;background:var(--bg);border-left:3px solid var(--aegis);min-height:2.2em;}
+.cp-transcript:empty::before{content:'Waiting for someone to pick up…';color:var(--muted);font-style:italic;}
+.cp-foot{font-size:.7rem;color:var(--muted);line-height:1.4;}
+@media (prefers-reduced-motion:reduce){body.emergency .emergency-edge,body.cascade-alert .emergency-edge,.mb-signal,.call-panel.ringing .cp-icon{animation:none;}}
+@media (max-width:640px){.call-panel{right:8px;left:8px;top:8px;bottom:auto;width:auto;transform:translateY(calc(-100% - 40px));}.call-panel.show{transform:none;}.cp-transcript{max-height:5.5em;}.mb-pill{display:none;}.mb-delay{white-space:normal;}}
+/* What-If Simulator */
+.whatif-btn{background:linear-gradient(135deg,rgba(90,159,215,.2),rgba(160,152,200,.2));border:1px solid var(--aegis);border-radius:8px;padding:.5rem 1rem;color:var(--aegis);font-size:.85rem;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:.5rem;}
+.whatif-btn:hover{background:linear-gradient(135deg,rgba(90,159,215,.3),rgba(160,152,200,.3));transform:translateY(-1px);}
+.whatif-btn .icon{font-size:1rem;}
+
+/* Crew Roster Page */
+.roster-page{grid-area:graph / graph / alert / vitals;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow-y:auto;}
+.crew-card{background:var(--bg);border:2px solid var(--border);border-radius:16px;padding:1.5rem;cursor:pointer;transition:all .3s;position:relative;}
+.crew-card:hover{border-color:var(--aegis);transform:translateY(-4px);box-shadow:0 8px 30px rgba(90,159,215,.2);}
+.crew-card.selected{border-color:var(--green);box-shadow:0 0 20px rgba(90,173,140,.3);}
+.crew-card .status-badge{position:absolute;top:1rem;right:1rem;padding:.25rem .75rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;}
+.crew-card .status-badge.nominal{background:rgba(90,173,140,.2);color:var(--green);}
+.crew-card .status-badge.elevated{background:rgba(200,180,90,.2);color:var(--yellow);}
+.crew-card .status-badge.alert{background:rgba(200,106,106,.2);color:var(--red);}
+.crew-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--aegis),var(--gene));display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 1rem;}
+.crew-name{text-align:center;font-size:1.1rem;font-weight:600;margin-bottom:.25rem;}
+.crew-role{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:1rem;}
+.crew-vitals{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.crew-vital{background:rgba(255,255,255,.03);padding:.5rem;border-radius:8px;text-align:center;}
+.crew-vital-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;margin-bottom:.25rem;}
+.crew-vital-value{font-size:1rem;font-weight:600;}
+
+/* Agent Insights Page */
+.insights-page{grid-area:graph / graph / alert / vitals;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow-y:auto;}
+.insight-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;transition:all .3s;}
+.insight-card:hover{border-color:var(--node-color,var(--aegis));}
+.insight-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+.insight-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border:2px solid var(--node-color,var(--aegis));}
+.insight-agent-name{font-weight:600;font-size:1rem;}
+.insight-agent-role{font-size:.75rem;color:var(--muted);}
+.insight-status{margin-left:auto;padding:.25rem .75rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;background:rgba(90,173,140,.15);color:var(--green);}
+.insight-log{max-height:180px;overflow-y:auto;}
+.insight-entry{padding:.75rem 0;border-bottom:1px solid var(--border);font-size:.85rem;line-height:1.5;}
+.insight-entry:last-child{border-bottom:none;}
+.insight-time{font-size:.7rem;color:var(--muted);margin-bottom:.25rem;}
+.insight-action{color:var(--text);}
+.insights-intro{grid-column:1/-1;font-size:.85rem;color:var(--muted);}
+.insight-empty{font-size:.82rem;color:var(--muted);padding:.6rem 0;}
+.insight-entry.sev-critical .insight-action{color:var(--red);font-weight:600;}
+.insight-entry.sev-warning .insight-action,.insight-entry.sev-high .insight-action{color:var(--orange);font-weight:600;}
+.insight-status.busy{background:rgba(243,192,79,.15);color:var(--yellow);}
+.insight-status.alerting{background:rgba(255,92,92,.15);color:var(--red);}
+.insight-log{max-height:260px;}
+.insight-reasoning{color:var(--muted);font-style:italic;margin-top:.25rem;padding-left:.75rem;border-left:2px solid var(--border);}
+
+.whatif-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(8px);}
+.whatif-modal.open{display:flex;}
+.whatif-content{background:var(--card);border:2px solid var(--aegis);border-radius:20px;padding:2rem;width:95%;max-width:800px;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 0 60px rgba(90,159,215,.3);}
+.whatif-close{position:sticky;top:0;float:right;margin:-1rem -1rem 0 0;z-index:3;width:2.4rem;height:2.4rem;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:1.5rem;line-height:1;cursor:pointer;}
+.whatif-close:hover{color:var(--text);}
+.whatif-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
+.whatif-header h2{color:var(--aegis);font-size:1.3rem;margin:0;}
+.whatif-header .icon{font-size:1.5rem;}
+
+.scenario-select{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.scenario-btn{padding:.6rem 1rem;border:1px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text);cursor:pointer;transition:all .3s;font-size:.85rem;}
+.scenario-btn:hover{border-color:var(--aegis);background:rgba(90,159,215,.1);}
+.scenario-btn.active{border-color:var(--aegis);background:rgba(90,159,215,.2);color:var(--aegis);}
+
+.simulation-area{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+.sim-column{background:var(--bg);border-radius:12px;padding:1.25rem;}
+.sim-column h3{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.sim-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);}
+.sim-row:last-child{border-bottom:none;}
+.sim-label{color:var(--muted);font-size:.9rem;}
+.sim-value{font-size:1.1rem;font-weight:600;transition:all .5s;}
+.sim-value.warning{color:var(--yellow);}
+.sim-value.critical{color:var(--red);}
+.sim-value.normal{color:var(--green);}
+.sim-arrow{color:var(--muted);font-size:1.2rem;margin:0 auto;}
+
+.agent-cascade{background:var(--bg);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;}
+.agent-cascade h3{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:1rem;}
+.cascade-timeline{display:flex;flex-direction:column;gap:.75rem;}
+.cascade-step{display:flex;align-items:center;gap:1rem;opacity:.3;transition:all .4s;}
+.cascade-step.active{opacity:1;}
+.cascade-step .agent-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;border:2px solid currentColor;}
+.cascade-step .step-text{flex:1;font-size:.9rem;}
+.cascade-step .step-status{font-size:.7rem;padding:.25rem .5rem;border-radius:10px;text-transform:uppercase;}
+.cascade-step .step-status.detecting{background:rgba(200,136,136,.2);color:var(--pulse);}
+.cascade-step .step-status.analyzing{background:rgba(90,159,215,.2);color:var(--aegis);}
+.cascade-step .step-status.consulting{background:rgba(122,173,154,.2);color:var(--mirror);}
+.cascade-step .step-status.complete{background:rgba(90,173,140,.2);color:var(--green);}
+
+.aegis-recommendation{background:linear-gradient(135deg,rgba(90,159,215,.1),rgba(90,173,140,.1));border:1px solid var(--aegis);border-radius:12px;padding:1rem;display:flex;align-items:flex-start;gap:1rem;}
+.rec-icon{font-size:1.5rem;}
+.rec-text h4{color:var(--aegis);margin:0 0 .25rem;font-size:.9rem;}
+.rec-text p{color:var(--text);margin:0;font-size:.9rem;line-height:1.5;}
+
+.run-sim-btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--aegis),var(--gene));border:none;border-radius:10px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s;}
+.run-sim-btn:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(90,159,215,.4);}
+.run-sim-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* What-If: agent evaluation chips + intro */
+.whatif-intro{font-size:.8rem;color:var(--muted);margin:-.5rem 0 1rem;line-height:1.5;}
+.slider-hint{font-size:.65rem;color:var(--muted);opacity:.85;}
+.step-status.ok{color:var(--green);border-color:var(--green);}
+.step-status.watch{color:var(--yellow);border-color:var(--yellow);}
+.step-status.alert{color:var(--red);border-color:var(--red);}
+/* What-If Sliders */
+.slider-controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.slider-group{background:var(--bg);border-radius:12px;padding:1rem;}
+.slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
+.slider-label{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:.5rem;}
+.slider-label .icon{font-size:1rem;}
+.slider-value{font-size:1.3rem;font-weight:700;min-width:80px;text-align:right;transition:color .3s;}
+.slider-value.normal{color:var(--green);}
+.slider-value.warning{color:var(--yellow);}
+.slider-value.critical{color:var(--red);}
+.slider-track{position:relative;height:8px;background:rgba(255,255,255,.1);border-radius:4px;margin-bottom:.5rem;}
+.slider-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;transition:width .1s,background .3s;}
+.slider-input{width:100%;height:8px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;position:relative;z-index:2;margin:-8px 0 0 0;}
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--aegis);border:3px solid var(--card);cursor:grab;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .2s;}
+.slider-input::-webkit-slider-thumb:hover{transform:scale(1.2);}
+.slider-input::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.1);}
+.slider-input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--aegis);border:3px solid var(--card);cursor:grab;}
+.slider-range{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);}
+.slider-zones{display:flex;gap:2px;margin-top:.5rem;}
+.zone{flex:1;height:4px;border-radius:2px;opacity:.5;}
+.zone.green{background:var(--green);}
+.zone.yellow{background:var(--yellow);}
+.zone.red{background:var(--red);}
+
+/* Live status indicator */
+.live-status{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--bg);border-radius:8px;margin-bottom:1rem;}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite;}
+.status-dot.warning{background:var(--yellow);}
+.status-dot.critical{background:var(--red);animation:pulse-dot .5s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(1.2);}}
+.status-text{font-size:.85rem;color:var(--muted);}
+.status-text strong{color:var(--text);}
+
+/* M6: Mobile responsive layout */
+@media (max-width: 900px) {
+  /* One column: the Cascade Map first, then vitals, alerts, voice, recommendations */
+  .shell { grid-template-columns: minmax(0, 1fr); padding: .6rem; gap: .75rem;
+           grid-template-areas: "header" "mission" "graph" "vitals" "alert" "voice" "recs"; }
+  .cm-legend { gap: .6rem; }
+}
+@media (max-width: 700px) {
+  .dashboard { flex-direction: column; }
+  .left-column, .right-column { width: 100%; max-width: 100%; }
+  .crew-grid { grid-template-columns: 1fr; }
+  .vitals-grid { grid-template-columns: 1fr; }
+  .recs-grid { grid-template-columns: 1fr; }
+  .aegis-terminal { height: auto; min-height: 200px; }
+  .nav-bar { flex-wrap: wrap; gap: .5rem; }
+  .nav-btn { flex: 1 1 45%; min-width: 0; }
+  .scenario-grid { grid-template-columns: repeat(2, 1fr); }
+  body { padding: .5rem; }
+  /* M2: Fix header and tabs overflow */
+  .header { flex-wrap: wrap; gap: .5rem; padding: .75rem; }
+  .logo { font-size: 1.1rem; }
+  .nav-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .nav-tab { font-size: .75rem; padding: .4rem .6rem; white-space: nowrap; }
+  .mission-badge { font-size: .7rem; padding: .3rem .5rem; }
+  .scenario-btn { font-size: .7rem; padding: .4rem .6rem; }
+  .agent-network { max-width: 100%; overflow-x: auto; }
+  .panel { padding: .75rem; }
+  .vital-row { flex-wrap: wrap; }
+  .vital-label { min-width: 50px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   AEGIS v2 DESIGN SYSTEM: one set of tokens, one panel style, one type scale, one set of status colours.
+   Dark mission control is the default; [data-theme="light"] keeps a clean light variant.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#04070d;--card:#0b1322;--border:rgba(120,160,215,.15);--border-strong:rgba(120,175,235,.34);
+  --text:#e3ecf8;--muted:#8a9cb4;
+  --aegis:#5cb4ff;--gene:#b6a7ff;--pulse:#ff8f8f;--solaris:#f5c451;--mirror:#4fd6a6;--echo:#ffb085;
+  --green:#36d695;--yellow:#f3c04f;--orange:#ff9d57;--red:#ff5c5c;--cm-amber:#f3b23c;
+  --glass:linear-gradient(180deg,rgba(16,26,44,.86),rgba(8,14,26,.9));
+  --panel-shadow:0 22px 48px -26px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.045);
+  --font-ui:"Segoe UI Variable Text","Segoe UI",Inter,system-ui,-apple-system,sans-serif;
+  --font-num:Bahnschrift,"DIN Alternate","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --r:16px;--space-bg-opacity:1;
+}
+[data-theme="light"]{
+  --bg:#eef3f9;--card:#ffffff;--border:#d3dce7;--border-strong:#aebdd0;--text:#162232;--muted:#566578;
+  --aegis:#2f74b5;--gene:#6450a8;--pulse:#b24f4f;--solaris:#9a7a1c;--mirror:#2f8a69;--echo:#c4622f;
+  --green:#22865f;--yellow:#8f7a1c;--orange:#b3601f;--red:#b8383d;--cm-amber:#c27c0e;
+  --glass:linear-gradient(180deg,#ffffff,#f9fbfe);--panel-shadow:0 10px 30px -18px rgba(20,40,70,.35);
+  --space-bg-opacity:0;
+}
+html,body{font-family:var(--font-ui);}
+body{background:radial-gradient(1200px 700px at 78% -10%,rgba(60,110,200,.16),transparent 60%),
+  radial-gradient(900px 600px at -10% 110%,rgba(255,140,90,.08),transparent 60%),var(--bg);background-attachment:fixed;}
+[data-theme="light"] body{background:var(--bg);}
+.space-bg{background-image:
+  radial-gradient(1px 1px at 22px 34px,rgba(255,255,255,.75) 50%,transparent 51%),
+  radial-gradient(1px 1px at 140px 96px,rgba(255,255,255,.45) 50%,transparent 51%),
+  radial-gradient(1.4px 1.4px at 260px 170px,rgba(190,225,255,.7) 50%,transparent 51%),
+  radial-gradient(1px 1px at 330px 40px,rgba(255,255,255,.35) 50%,transparent 51%),
+  radial-gradient(1px 1px at 80px 210px,rgba(255,230,210,.5) 50%,transparent 51%),
+  radial-gradient(1.2px 1.2px at 200px 260px,rgba(255,255,255,.55) 50%,transparent 51%);
+  background-size:360px 300px;}
+
+/* Layout: hero, Cascade Map + vitals, ECHO / alerts / voice, recommendations, NASA data */
+.shell{grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:auto;gap:14px;padding:14px 16px 22px;
+  max-width:1680px;margin:0 auto;grid-template-areas:"header header header header header header header header header header header header" "mission mission mission mission mission mission mission mission mission mission mission mission" "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals" "echo echo echo echo alert alert alert alert voice voice voice voice" "recs recs recs recs recs recs recs recs recs recs recs recs" "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}
+.header,.mission-bar,.graph-panel,.vitals-panel,.voice-panel,.alert-panel,.recs-panel,.echo-panel,.nasa-panel{
+  background:var(--glass);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--panel-shadow);
+  min-width:0;}
+.alert-panel{border-width:1px;border-top-width:3px;}
+.graph-panel,.vitals-panel,.voice-panel,.alert-panel,.recs-panel{padding:1.1rem 1.25rem;}
+
+/* One type scale for panel labels */
+.graph-title,.vitals-title,.voice-title,.recs-title,.cg-head,.response-label,.panel-kicker,.hero-kicker{
+  font-family:var(--font-num);font-size:.7rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+.graph-title{color:var(--text);opacity:.85;}
+.vital-value,.cm-val,.cm-big,.stat-value,.hero-big,.nd-num,.mission-day span{font-family:var(--font-num);font-variant-numeric:tabular-nums;}
+
+/* Header */
+.header{padding:.55rem .9rem;gap:.75rem;}
+.logo{font-family:var(--font-num);letter-spacing:.28em;font-size:1.35rem;background:linear-gradient(90deg,#9fd3ff,#5cb4ff 45%,#b6a7ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;}
+[data-theme="light"] .logo{background:none;color:var(--aegis);}
+.nav-tabs{background:rgba(0,0,0,.22);border-color:var(--border);}
+.nav-tab.active{background:linear-gradient(135deg,#3d8fe0,#5cb4ff);box-shadow:0 6px 16px -8px rgba(92,180,255,.8);}
+.run-demo-btn{border:none;cursor:pointer;color:#fff;font:inherit;font-weight:700;font-size:.85rem;letter-spacing:.04em;
+  padding:.5rem 1.1rem;border-radius:999px;background:linear-gradient(135deg,#ff9d57,#ff5c8a);
+  box-shadow:0 8px 22px -8px rgba(255,110,110,.75);transition:transform .2s,box-shadow .2s;}
+.run-demo-btn:hover{transform:translateY(-1px);box-shadow:0 12px 26px -8px rgba(255,110,110,.9);}
+.run-demo-btn.on{background:linear-gradient(135deg,#5a6b85,#3d4a60);box-shadow:none;}
+.whatif-btn{border-radius:999px;}
+.theme-toggle{border-radius:999px;}
+#api-status{font-family:var(--font-num);letter-spacing:.08em;}
+
+.ai-mode{font-family:var(--font-num);font-size:.66rem;letter-spacing:.08em;padding:.25rem .55rem;border-radius:12px;cursor:help;
+  border:1px solid var(--border);color:var(--muted);white-space:nowrap;}
+.ai-mode.on{border-color:rgba(182,167,255,.5);color:var(--gene);}
+/* ── Hero mission header: the Mars transit ── */
+.mission-bar{padding:.75rem 1.2rem;min-height:132px;overflow:hidden;}
+.mb-normal.hero{display:grid;grid-template-columns:minmax(160px,210px) minmax(0,1fr) minmax(220px,270px);align-items:center;gap:1.2rem;flex-wrap:nowrap;}
+.hero-col{display:flex;flex-direction:column;gap:.2rem;min-width:0;}
+.hero-right{align-items:flex-end;text-align:right;}
+.hero-day{display:flex;align-items:baseline;gap:.45rem;}
+.hero-big{font-size:2.6rem;font-weight:600;line-height:1;color:var(--text);letter-spacing:.01em;}
+.hero-delay{font-size:2rem;color:#9fd3ff;cursor:help;white-space:nowrap;}
+[data-theme="light"] .hero-delay{color:var(--aegis);}
+.hero-of{font-family:var(--font-num);color:var(--muted);font-size:.95rem;}
+.hero-sub{font-size:.78rem;color:var(--muted);white-space:normal;}
+.hero-sub b{color:var(--text);font-weight:600;}
+.hero-arc{width:100%;height:128px;display:block;overflow:visible;}
+.hero-orbit{fill:none;stroke:rgba(140,170,210,.28);stroke-width:1.5;stroke-dasharray:3 6;}
+.hero-done{fill:none;stroke-width:3;stroke-linecap:round;}
+.hero-earth-glow{fill:rgba(92,180,255,.18);} .hero-mars-glow{fill:rgba(255,140,90,.16);}
+.hero-planet{font-family:var(--font-num);font-size:9.5px;letter-spacing:.25em;fill:var(--muted);}
+.hero-ship-halo{fill:rgba(255,255,255,.08);stroke:rgba(255,255,255,.35);stroke-width:1;animation:ship-halo 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+.hero-ship-body{fill:#fff;}
+[data-theme="light"] .hero-ship-body{fill:#2f74b5;}
+.hero-ship-label{font-family:var(--font-num);font-size:9px;letter-spacing:.18em;fill:var(--muted);text-transform:uppercase;}
+.hero-signal{fill:#9fd3ff;}
+@keyframes ship-halo{0%,100%{transform:scale(1);opacity:.7;}50%{transform:scale(1.35);opacity:.25;}}
+.mb-pill{margin-top:.35rem;border-color:rgba(92,180,255,.45);background:rgba(92,180,255,.08);white-space:nowrap;}
+
+/* Emergency mode: dramatic but instantly readable */
+.mb-em{min-height:108px;justify-content:center;gap:1.4rem;font-family:var(--font-num);}
+#mb-em-text{font-size:1.55rem;font-weight:700;letter-spacing:.06em;text-shadow:0 2px 12px rgba(0,0,0,.35);}
+.mb-em-timer{font-size:1.3rem;padding:.25rem .7rem;background:rgba(0,0,0,.3);border-radius:10px;}
+.mb-em-call{font-family:var(--font-ui);font-size:.9rem;}
+body.emergency .mission-bar{background:linear-gradient(100deg,#4a070c,#b0222c 45%,#4a070c);border-color:#ff6b6b;
+  box-shadow:0 0 0 1px rgba(255,90,90,.6),0 0 60px -10px rgba(255,60,60,.6);}
+body.cascade-alert .mission-bar{background:linear-gradient(100deg,#3f2a05,#a8701a 45%,#3f2a05);border-color:#f3b23c;}
+body.emergency .mission-bar::before,body.cascade-alert .mission-bar::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 16px,transparent 16px 32px);animation:hazard 1.2s linear infinite;}
+body.acked .mission-bar::before{animation:none;opacity:.4;}
+@keyframes hazard{to{background-position:45px 0;}}
+body.emergency .emergency-edge{box-shadow:inset 0 0 0 3px #ff5c5c,inset 0 0 160px rgba(255,40,40,.4);}
+body.emergency .alert-panel{border-color:#ff5c5c;box-shadow:0 0 0 1px #ff5c5c,0 0 50px -8px rgba(255,60,60,.55);}
+body.emergency .alert-title{font-size:1.15rem;}
+body.emergency .confirm-btn{background:#ff5c5c;color:#fff;border-color:#ff5c5c;font-weight:700;font-size:1rem;padding:.85rem 1.4rem;
+  animation:btn-pulse 1.4s ease-in-out infinite;}
+body.emergency.acked .confirm-btn{animation:none;}
+@keyframes btn-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,92,92,.6);}50%{box-shadow:0 0 0 10px rgba(255,92,92,0);}}
+.confirm-btn{border-radius:10px;font-weight:600;}
+
+/* ── Cascade Map: the glowing centrepiece ── */
+.graph-panel{background:radial-gradient(520px 300px at 50% 52%,rgba(92,180,255,.10),transparent 70%),var(--glass);}
+[data-theme="light"] .graph-panel{background:var(--glass);}
+.cm-svg{max-height:400px;}
+.cm-aura{animation:cm-aura 4s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+@keyframes cm-aura{0%,100%{opacity:.6;transform:scale(.96);}50%{opacity:1;transform:scale(1.04);}}
+#cm-aura-grad stop{stop-color:#5cb4ff;transition:stop-color .6s;}
+.graph-panel:has(.node-aegis[data-mode="cascade"]) #cm-aura-grad stop{stop-color:#f3b23c;}
+.graph-panel:has(.node-aegis[data-mode="alert"]) #cm-aura-grad stop{stop-color:#ff5c5c;}
+.graph-panel:has(.node-aegis[data-mode="alert"]) .cm-aura{animation-duration:1.4s;}
+.graph-panel:has(.node-aegis[data-mode="averted"]) #cm-aura-grad stop,.graph-panel:has(.node-aegis[data-mode="prevent"]) #cm-aura-grad stop{stop-color:#36d695;}
+:root:not([data-theme="light"]) .cm-core{stroke:rgba(140,180,230,.25);}
+/* :root:not([data-theme="light"]) .cm-gauge,:root:not([data-theme="light"]) .cm-seg: url(#…) paint/filter kept inline in the HTML */
+:root:not([data-theme="light"]) .cm-track{stroke:rgba(140,170,210,.18);opacity:1;}
+.cm-link{stroke:rgba(140,170,210,.28);}
+/* :root:not([data-theme="light"]) .cm-link.warm,:root:not([data-theme="light"]) .cm-link.hot,:root:not([data-theme="light"]) .conn-line.s-watch,:root:not([data-theme="light"]) .conn-line.s-out: url(#…) paint/filter kept inline in the HTML */
+.conn-line{stroke:rgba(140,170,210,.22);}
+.cm-comet{display:none;fill:var(--cm-amber);}
+.cm-comet.on{display:inline;}
+.cm-comet.hot{fill:var(--red);}
+.cm-spark{fill:#fff;pointer-events:none;}
+.cm-spark.watch{fill:var(--cm-amber);} .cm-spark.out{fill:var(--red);}
+.cm-name{letter-spacing:.24em;font-family:var(--font-num);}
+.cm-caption{font-size:.9rem;}
+.cm-tether{fill:none;stroke:var(--echo);stroke-width:1.5;stroke-dasharray:2 4;opacity:.55;}
+.echo-mini{cursor:pointer;}
+.echo-mini .em-halo{fill:var(--echo);opacity:.12;transform-box:fill-box;transform-origin:center;animation:cm-breathe 3.2s ease-in-out infinite;}
+.echo-mini[data-mode="support"] .em-halo{opacity:.3;animation-duration:1.6s;}
+/* .echo-mini .em-core: url(#…) paint/filter kept inline in the HTML */
+.echo-mini .em-eye{fill:#3a1a10;animation:ea-blink 5s infinite;transform-box:fill-box;transform-origin:center;}
+.echo-mini .em-smile{fill:none;stroke:#3a1a10;stroke-width:1.4;stroke-linecap:round;}
+.echo-mini .em-name{font-family:var(--font-num);font-size:10px;font-weight:700;letter-spacing:.24em;fill:var(--echo);}
+.echo-mini:focus-visible .em-core{stroke:var(--aegis);stroke-width:2;}
+
+/* Vitals */
+.vital-row{border-radius:10px;padding:.35rem .4rem;transition:background .2s;}
+.vital-row:hover{background:rgba(255,255,255,.035);}
+.vital-value{font-weight:600;}
+.vital-bar,.rad-bar{background:rgba(140,170,210,.14);}
+.vital-fill,.rad-fill{box-shadow:0 0 12px -2px currentColor;}
+
+/* ── ECHO panel ── */
+.echo-panel{grid-area:echo;position:relative;display:flex;flex-direction:column;gap:.7rem;padding:1.1rem 1.2rem;overflow:hidden;
+  border-top:3px solid var(--echo);background:radial-gradient(420px 180px at 0% 0%,rgba(255,176,133,.14),transparent 70%),var(--glass);
+  transition:box-shadow .5s,border-color .5s;}
+.echo-panel[data-mode="support"]{box-shadow:0 0 0 1px rgba(255,176,133,.45),0 0 50px -12px rgba(255,150,110,.55),var(--panel-shadow);}
+.echo-panel[data-level="urgent"]{border-top-color:#ff8aa8;box-shadow:0 0 0 1px rgba(255,138,168,.6),0 0 60px -10px rgba(255,120,150,.6);}
+.echo-panel.spotlight{animation:echo-spot 2.4s ease-out 1;}
+@keyframes echo-spot{0%{box-shadow:0 0 0 0 rgba(255,176,133,.9),var(--panel-shadow);}100%{box-shadow:0 0 0 24px rgba(255,176,133,0),var(--panel-shadow);}}
+.echo-head{display:flex;align-items:center;gap:.85rem;}
+.echo-avatar{width:66px;height:66px;flex:none;}
+.echo-avatar svg{width:100%;height:100%;overflow:visible;}
+.ea-ring{fill:none;stroke:var(--echo);stroke-width:1.2;opacity:.35;stroke-dasharray:3 5;animation:ea-spin 18s linear infinite;transform-origin:40px 40px;}
+.ea-glow{fill:var(--echo);opacity:.18;animation:ea-breathe 3.4s ease-in-out infinite;transform-origin:40px 40px;}
+.ea-eyes ellipse{fill:#3b1a0e;animation:ea-blink 5.5s infinite;transform-box:fill-box;transform-origin:center;}
+.ea-mouth{fill:none;stroke:#3b1a0e;stroke-width:2.2;stroke-linecap:round;transition:d .3s;}
+.ea-cheek{fill:#ff8a6a;opacity:.45;}
+.echo-panel.speaking .ea-mouth{animation:ea-talk .32s ease-in-out infinite alternate;}
+.echo-panel.speaking .ea-glow{animation-duration:1.2s;opacity:.32;}
+.echo-panel[data-mode="support"] .ea-glow{opacity:.3;}
+@keyframes ea-breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+@keyframes ea-spin{to{transform:rotate(360deg);}}
+@keyframes ea-blink{0%,92%,100%{transform:scaleY(1);}95%{transform:scaleY(.12);}}
+@keyframes ea-talk{from{transform:translateY(0) scaleY(1);}to{transform:translateY(.6px) scaleY(1.5);}}
+.ea-mouth{transform-box:fill-box;transform-origin:center;}
+.echo-id{min-width:0;flex:1;}
+.echo-title{font-family:var(--font-num);font-size:1.45rem;font-weight:700;letter-spacing:.28em;color:var(--echo);line-height:1.1;margin:.1rem 0;}
+.echo-with{font-size:.78rem;color:var(--muted);}
+.echo-modes{display:flex;flex-direction:column;gap:.25rem;align-items:stretch;}
+.echo-mode{font-size:.64rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.18rem .55rem;border-radius:999px;
+  border:1px solid var(--border);color:var(--muted);text-align:center;cursor:help;transition:all .3s;}
+.echo-mode.on{color:#1d0f08;background:var(--echo);border-color:var(--echo);box-shadow:0 0 14px -3px var(--echo);}
+.echo-chat{flex:1 1 auto;min-height:150px;max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:.5rem;padding:.6rem;
+  background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:12px;scroll-behavior:smooth;}
+[data-theme="light"] .echo-chat{background:#f6f8fb;}
+.eb{max-width:88%;padding:.5rem .75rem;border-radius:14px;font-size:.86rem;line-height:1.45;animation:eb-in .35s ease-out;}
+@keyframes eb-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.eb{color:var(--text);}
+.eb.echo{align-self:flex-start;background:rgba(255,176,133,.13);border:1px solid rgba(255,176,133,.28);border-bottom-left-radius:4px;}
+.eb.crew{align-self:flex-end;background:rgba(92,180,255,.15);border:1px solid rgba(92,180,255,.32);border-bottom-right-radius:4px;}
+.eb.note{align-self:center;max-width:100%;font-size:.72rem;color:var(--muted);background:none;border:1px dashed var(--border);border-radius:999px;padding:.2rem .7rem;}
+.eb.urgent{background:rgba(255,120,150,.14);border-color:rgba(255,138,168,.5);}
+.eb .eb-who{display:block;font-family:var(--font-num);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--echo);margin-bottom:.15rem;}
+.eb.crew .eb-who{color:var(--aegis);text-align:right;}
+.eb-typing{display:inline-flex;gap:3px;} .eb-typing i{width:5px;height:5px;border-radius:50%;background:var(--echo);animation:eb-dot 1s infinite;}
+.eb-typing i:nth-child(2){animation-delay:.15s;} .eb-typing i:nth-child(3){animation-delay:.3s;}
+@keyframes eb-dot{0%,100%{opacity:.25;transform:translateY(0);}50%{opacity:1;transform:translateY(-3px);}}
+.echo-feel{display:flex;flex-direction:column;gap:.45rem;}
+.echo-feel-btn{align-self:flex-start;font:inherit;font-weight:600;font-size:.88rem;cursor:pointer;color:#1d0f08;border:none;border-radius:999px;
+  padding:.5rem 1rem;background:linear-gradient(135deg,#ffd0b0,#ffb085);box-shadow:0 8px 20px -10px rgba(255,160,110,.9);}
+.echo-panel[data-mode="checkin"] .echo-feel-btn,.echo-panel[data-mode="support"] .echo-feel-btn{animation:btn-glow 2.2s ease-in-out infinite;}
+@keyframes btn-glow{0%,100%{box-shadow:0 0 0 0 rgba(255,176,133,.55);}50%{box-shadow:0 0 0 9px rgba(255,176,133,0);}}
+.echo-moods{display:none;grid-template-columns:repeat(5,1fr);gap:.35rem;}
+.echo-feel.open .echo-moods{display:grid;}
+.echo-moods button{font:inherit;font-size:.68rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:.15rem;cursor:pointer;
+  padding:.4rem .2rem;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.03);transition:all .2s;}
+.echo-moods button span{font-size:1.35rem;line-height:1;}
+.echo-moods button:hover{border-color:var(--echo);color:var(--text);transform:translateY(-2px);}
+.echo-support[hidden]{display:none!important;}
+.echo-support{border:1px solid rgba(255,176,133,.35);background:rgba(255,176,133,.07);border-radius:12px;padding:.65rem .8rem;display:grid;gap:.5rem;}
+.es-title{font-family:var(--font-num);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--echo);}
+.es-steps{margin:0;padding-left:1.1rem;font-size:.8rem;line-height:1.45;display:grid;gap:.2rem;}
+.es-actions{display:flex;flex-wrap:wrap;gap:.4rem;}
+.es-btn{font:inherit;font-size:.76rem;font-weight:600;cursor:pointer;border-radius:999px;padding:.38rem .75rem;border:1px solid var(--echo);color:var(--echo);background:transparent;}
+.es-btn.primary{background:var(--echo);color:#1d0f08;}
+.es-btn.ghost{border-color:var(--border);color:var(--muted);}
+.es-path{font-size:.7rem;color:var(--muted);line-height:1.4;}
+.echo-form{display:flex;gap:.45rem;}
+.echo-form input{flex:1;min-width:0;font:inherit;font-size:.86rem;color:var(--text);background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:999px;padding:.5rem .9rem;}
+[data-theme="light"] .echo-form input{background:#fff;}
+.echo-form input:focus{outline:none;border-color:var(--echo);box-shadow:0 0 0 3px rgba(255,176,133,.2);}
+.echo-send{font:inherit;font-weight:700;font-size:.8rem;cursor:pointer;border-radius:999px;padding:.45rem 1rem;border:1px solid var(--echo);background:rgba(255,176,133,.15);color:var(--echo);}
+.echo-send:disabled{opacity:.5;cursor:wait;}
+.echo-foot{font-size:.7rem;color:var(--muted);cursor:help;}
+
+/* ── Real NASA Data ── */
+.nasa-panel{grid-area:nasa;padding:1.1rem 1.25rem 1.25rem;}
+.nasa-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.85rem;}
+.nasa-title{font-family:var(--font-num);font-size:1.15rem;font-weight:600;letter-spacing:.06em;margin-top:.15rem;}
+.nasa-title span{font-family:var(--font-ui);font-size:.82rem;font-weight:400;letter-spacing:0;color:var(--muted);}
+.nasa-report{font-size:.8rem;color:var(--aegis);text-decoration:none;border:1px solid rgba(92,180,255,.4);border-radius:999px;padding:.35rem .8rem;}
+.nasa-report:hover{background:rgba(92,180,255,.1);}
+.nasa-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+.nd-card{position:relative;display:flex;flex-direction:column;gap:.35rem;padding:.9rem 1rem;border-radius:12px;border:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));overflow:hidden;}
+.nd-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c);box-shadow:0 0 14px var(--c);}
+.nd-src{font-family:var(--font-num);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--c);}
+.nd-name{font-size:.95rem;font-weight:600;}
+.nd-num{font-size:1.55rem;font-weight:600;line-height:1.1;}
+.nd-num small{font-size:.72rem;color:var(--muted);font-family:var(--font-ui);font-weight:400;}
+.nd-use{font-size:.78rem;color:var(--muted);line-height:1.45;}
+.nd-test{margin-top:auto;font-size:.74rem;line-height:1.4;padding:.4rem .55rem;border-radius:8px;color:var(--green);
+  background:rgba(54,214,149,.08);border:1px solid rgba(54,214,149,.25);}
+.nd-test b{font-weight:700;}
+.nd-link{font-size:.72rem;color:var(--aegis);text-decoration:none;}
+.nd-link:hover{text-decoration:underline;}
+
+/* ── Story bar (Run demo) ── */
+.story-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:2100;width:min(600px,calc(100vw - 32px));padding:.85rem 1rem .75rem;border-radius:16px;
+  background:linear-gradient(180deg,rgba(14,22,38,.96),rgba(7,12,22,.96));border:1px solid var(--border-strong);
+  box-shadow:0 20px 50px -18px rgba(0,0,0,.9);display:grid;gap:.55rem;color:var(--text);}
+.story-bar[hidden]{display:none;}
+[data-theme="light"] .story-bar{background:#fff;}
+.story-chapters{display:flex;gap:.35rem;}
+.story-chapters span{flex:1;text-align:center;font-family:var(--font-num);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;
+  padding:.3rem .2rem;border-radius:8px;border:1px solid var(--border);color:var(--muted);transition:all .4s;}
+.story-chapters span.done{color:var(--green);border-color:rgba(54,214,149,.4);}
+.story-chapters span.now{color:#08111f;background:linear-gradient(135deg,#9fd3ff,#5cb4ff);border-color:transparent;box-shadow:0 0 16px -4px #5cb4ff;}
+.story-chapters span[data-ch="4"].now{background:linear-gradient(135deg,#ffd0b0,#ffb085);box-shadow:0 0 16px -4px #ffb085;}
+.story-text{font-size:.95rem;line-height:1.45;min-height:2.9em;}
+.story-text b{color:#9fd3ff;}
+.story-foot{display:flex;align-items:center;gap:.7rem;}
+.story-prog{flex:1;height:4px;border-radius:4px;background:rgba(140,170,210,.18);overflow:hidden;}
+.story-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5cb4ff,#ffb085);transition:width .8s linear;}
+.story-note{font-size:.66rem;color:var(--muted);white-space:nowrap;}
+.story-stop{font:inherit;font-size:.75rem;font-weight:700;cursor:pointer;border-radius:999px;padding:.3rem .8rem;border:1px solid var(--border-strong);background:transparent;color:var(--text);}
+
+/* Recommendations: cards in the same system */
+.rec-card{border-radius:12px;border-color:var(--border);background:rgba(255,255,255,.025);}
+
+/* Responsive */
+@media (max-width:1200px){
+  .shell{grid-template-areas:"header header header header header header header header header header header header" "mission mission mission mission mission mission mission mission mission mission mission mission" "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals" "echo echo echo echo echo echo alert alert alert alert alert alert" "voice voice voice voice voice voice recs recs recs recs recs recs" "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}
+  .nasa-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);padding:10px;gap:12px;grid-template-areas:"header" "mission" "graph" "vitals" "alert" "echo" "voice" "recs" "nasa";}
+  .mb-normal.hero{grid-template-columns:1fr;gap:.4rem;}
+  .hero-right{align-items:flex-start;text-align:left;}
+  .hero-big{font-size:2rem;} .hero-delay{font-size:1.5rem;}
+  .mb-pill{white-space:normal;}
+  #mb-em-text{font-size:1.05rem;}
+  .nasa-grid{grid-template-columns:minmax(0,1fr);}
+  .echo-head{flex-wrap:wrap;} .echo-modes{flex-direction:row;}
+  .story-note{display:none;}
+}
+@media (prefers-reduced-motion:reduce){
+  .cm-aura,.hero-ship-halo,.ea-ring,.ea-glow,.ea-eyes ellipse,.echo-mini .em-halo,.echo-mini .em-eye,.echo-feel-btn,
+  body.emergency .mission-bar::before,body.emergency .confirm-btn{animation:none!important;}
+  .cm-comet.on{display:none;}
+}
+
+/* ── Layout v3 (Nova's density pass): the story on the first screen, one status voice, the rest one click down ── */
+.shell{grid-template-areas:
+  "header header header header header header header header header header header header"
+  "mission mission mission mission mission mission mission mission mission mission mission mission"
+  "story story story story story story story story story story story story"
+  "crew crew crew crew crew crew crew crew crew crew crew crew"
+  "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
+  "alert alert alert alert alert alert alert echo echo echo echo echo"
+  "voice voice voice voice voice voice voice voice voice voice voice voice"
+  "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}
+@media (max-width:1200px){.shell{grid-template-areas:
+  "header header header header header header header header header header header header"
+  "mission mission mission mission mission mission mission mission mission mission mission mission"
+  "story story story story story story story story story story story story"
+  "crew crew crew crew crew crew crew crew crew crew crew crew"
+  "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
+  "alert alert alert alert alert alert echo echo echo echo echo echo"
+  "voice voice voice voice voice voice voice voice voice voice voice voice"
+  "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}}
+@media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr);grid-template-areas:"header" "mission" "story" "crew" "graph" "alert" "echo" "vitals" "voice" "nasa";}}
+
+/* The two chats side by side on one row (AEGIS + agents left, ECHO right), same height, message boxes level at the
+   bottom. The status card (alert + recommended actions) takes the full row below them. */
+.shell{grid-template-areas:
+  "header header header header header header header header header header header header"
+  "mission mission mission mission mission mission mission mission mission mission mission mission"
+  "story story story story story story story story story story story story"
+  "crew crew crew crew crew crew crew crew crew crew crew crew"
+  "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
+  "voice voice voice voice voice voice voice echo echo echo echo echo"
+  "alert alert alert alert alert alert alert alert alert alert alert alert"
+  "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}
+@media (max-width:1200px){.shell{grid-template-areas:
+  "header header header header header header header header header header header header"
+  "mission mission mission mission mission mission mission mission mission mission mission mission"
+  "story story story story story story story story story story story story"
+  "crew crew crew crew crew crew crew crew crew crew crew crew"
+  "graph graph graph graph graph graph graph vitals vitals vitals vitals vitals"
+  "voice voice voice voice voice voice echo echo echo echo echo echo"
+  "alert alert alert alert alert alert alert alert alert alert alert alert"
+  "nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa nasa";}}
+@media (max-width:900px){.shell{grid-template-areas:"header" "mission" "story" "crew" "graph" "vitals" "voice" "echo" "alert" "nasa";}}
+.chat-panel,.echo-panel{min-height:480px;}
+#ask-panel.chat-panel{padding:1.1rem 1.2rem;gap:.7rem;}   /* same padding and spacing as ECHO, so the two Send rows line up */
+.chat-panel .ask-log,.chat-panel .ask-log:empty{display:flex;flex:1 1 0;min-height:0;max-height:none;overflow-y:auto;
+  padding:.6rem;background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:12px;}
+[data-theme="light"] .chat-panel .ask-log{background:#f6f8fb;}
+.echo-panel .echo-chat{flex:1 1 0;min-height:140px;max-height:none;}
+.chat-foot{font-size:.7rem;color:var(--muted);cursor:help;}
+.chat-panel .ask-form,.echo-panel .echo-form{margin-top:auto;}
+@media (max-width:900px){.chat-panel,.echo-panel{min-height:0;}
+  .chat-panel .ask-log,.echo-panel .echo-chat{flex:none;height:300px;}}
+.nav-tabs[hidden]{display:none!important;}
+
+/* Slim mission bar: day, a small Earth-Mars arc, the signal delay */
+.mission-bar{padding:.35rem 1rem;min-height:0;}
+.mb-normal.hero{display:flex;align-items:center;gap:1.1rem;flex-wrap:nowrap;}
+.hero-left{flex-direction:row;align-items:baseline;gap:.7rem;flex:0 1 auto;}
+.hero-left .hero-kicker{display:none;}
+.hero-big{font-size:1.45rem;} .hero-of{font-size:.8rem;}
+.hero-arc{height:46px;width:auto;flex:1 1 220px;max-width:340px;min-width:140px;}
+.hero-planet,.hero-ship-label{display:none;}
+.hero-right{flex-direction:row;align-items:baseline;gap:.55rem;margin-left:auto;flex:0 1 auto;text-align:left;}
+.hero-right .hero-kicker{white-space:nowrap;}
+.hero-delay{font-size:1.15rem;}
+.hero-right .hero-sub{display:none;}
+.hero-right .mb-pill{font-size:.66rem;padding:.1rem .5rem;}
+@media (max-width:1100px){.hero-right .mb-pill{display:none;}}
+@media (max-width:900px){.mb-normal.hero{flex-wrap:wrap;gap:.3rem .9rem;}.hero-arc{display:none;}.hero-right{margin-left:0;}.hero-big{font-size:1.25rem;}.hero-delay{font-size:1rem;}}
+
+/* Crew strip (replaces the Crew Roster page): names, roles, two headline readings, the four ring states */
+.crew-strip{grid-area:crew;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;min-width:0;}
+.cs-chip{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.65rem;padding:.5rem .8rem;border-radius:12px;
+  background:var(--glass);border:1px solid var(--border);box-shadow:var(--panel-shadow);cursor:pointer;text-align:left;color:var(--text);font:inherit;min-width:0;transition:border-color .2s,box-shadow .2s;}
+.cs-chip:hover{border-color:var(--aegis);}
+.cs-chip.selected{border-color:var(--aegis);box-shadow:inset 0 0 0 1px var(--aegis),var(--panel-shadow);}
+.cs-av{font-size:1.35rem;line-height:1;}
+.cs-id{display:flex;flex-direction:column;min-width:0;}
+.cs-id b{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cs-id small{font-size:.68rem;color:var(--muted);white-space:nowrap;}
+.cs-v{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;font-family:var(--font-num);font-size:.74rem;color:var(--muted);white-space:nowrap;}
+.cs-v .cg-dots{gap:.28rem;} .cs-v .cg-dot{width:.55rem;height:.55rem;}
+@media (max-width:900px){.crew-strip{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:420px){.cs-av{display:none;}.cs-chip{grid-template-columns:minmax(0,1fr) auto;padding:.45rem .6rem;}}
+
+/* Map: What-If sits next to the map; click a system for its detail (replaces the Agent Insights page) */
+.cm-head .whatif-btn{margin-left:auto;padding:.3rem .7rem;font-size:.78rem;}
+.cm-hint{font-size:.72rem;color:var(--muted);text-align:center;margin:0;}
+.cm-detail{border:1px solid var(--border);border-left:3px solid var(--node,var(--aegis));border-radius:10px;padding:.65rem .8rem;background:rgba(255,255,255,.025);font-size:.82rem;line-height:1.45;}
+.cm-detail .cd-head{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.3rem;}
+.cm-detail .cd-name{font-weight:700;letter-spacing:.06em;color:var(--node,var(--aegis));}
+.cm-detail .cd-state{font-size:.72rem;color:var(--muted);}
+.cm-detail .cd-close{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;line-height:1;}
+.cm-detail .cd-reading{color:var(--text);}
+.cm-detail ul{list-style:none;margin:.45rem 0 0;padding:0;display:grid;gap:.3rem;}
+.cm-detail li{font-size:.76rem;color:var(--muted);display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:.4rem;}
+.cm-detail li b{font-weight:500;color:var(--text);}
+.cm-detail .cd-empty{font-size:.76rem;color:var(--muted);margin-top:.35rem;}
+
+/* One status stack: what's happening (alert / early warning / steady) and what we're doing (recommended actions) */
+.status-kicker{margin-bottom:.45rem;}
+.alert-panel .alert-body{flex:0 0 auto;}
+.alert-panel{justify-content:flex-start;}
+.voice-panel .response-area{flex:none;min-height:0;}
+.alert-panel .recs-panel{grid-area:auto;background:none;border:none;box-shadow:none;border-radius:0;padding:.75rem 0 0;margin-top:.85rem;border-top:1px solid var(--border);}
+.alert-panel .recs-title{margin-bottom:.55rem;font-size:.68rem;}
+.alert-panel .recs-list{grid-template-columns:minmax(0,1fr);gap:.55rem;padding:0;}
+.alert-panel .recs-list:not(.all) .rec-card:nth-child(n+3){display:none;}
+.alert-panel .rec-card{padding:.7rem .8rem;}
+.recs-more{align-self:flex-start;margin-top:.5rem;font:inherit;font-size:.75rem;background:none;border:1px solid var(--border);border-radius:999px;color:var(--aegis);padding:.2rem .7rem;cursor:pointer;}
+.recs-resolved{display:grid;gap:.3rem;margin-top:.45rem;}
+.alert-other{margin-top:.45rem;font-size:.76rem;color:var(--yellow);}.alert-other button{margin-left:.35rem;font:inherit;font-size:.72rem;padding:.1rem .5rem;border-radius:8px;border:1px solid var(--yellow);background:transparent;color:var(--yellow);cursor:pointer;}
+.recs-note{font-size:.74rem;color:var(--yellow);}.recs-note:empty{display:none;}
+.rec-raised{font-size:.66rem;color:var(--muted);margin:.1rem 0 .25rem;}
+.rec-recovering{color:var(--green);font-weight:600;}
+.rec-resolved{font-size:.74rem;color:var(--muted);padding:.35rem .6rem;border:1px dashed var(--border);border-radius:8px;}
+.rec-resolved b{color:var(--green);font-weight:600;}
+
+/* Ask row (the Voice Terminal, demoted): one line, the reply opens under it */
+.voice-panel{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:.4rem .8rem;padding:.6rem 1rem;}
+.voice-panel .voice-title{margin:0;display:flex;align-items:center;gap:.5rem;white-space:nowrap;}
+.voice-panel .voice-input{margin:0;gap:.5rem;}
+.voice-panel .voice-status{display:none;}
+.voice-panel .mic-btn{width:38px;height:38px;font-size:1rem;}
+.voice-panel .ask-form{margin:0;min-width:0;}
+.voice-panel .response-area{grid-column:1/-1;padding:.55rem .8rem;font-size:.88rem;max-height:7.5em;}
+.voice-panel:not(.has-reply) .response-area{display:none;}
+@media (max-width:700px){.voice-panel{grid-template-columns:auto minmax(0,1fr);}.voice-panel .voice-title{grid-column:1/-1;}}
+
+/* Evidence & data: closed by default, one click away */
+details.nasa-panel>summary{list-style:none;cursor:pointer;margin:0;align-items:center;}
+details.nasa-panel>summary::-webkit-details-marker{display:none;}
+details.nasa-panel:not([open]){padding:.7rem 1.25rem;}
+details.nasa-panel[open]>summary{margin-bottom:.6rem;}
+.nasa-open{font-size:.75rem;color:var(--aegis);border:1px solid var(--border);border-radius:999px;padding:.2rem .7rem;white-space:nowrap;}
+details.nasa-panel[open] .nasa-open{font-size:0;} details.nasa-panel[open] .nasa-open::after{content:'Hide ▴';font-size:.75rem;}
+.nasa-report-row{display:flex;justify-content:flex-end;margin:-.2rem 0 .7rem;}
+.story-evidence{font-size:.72rem;color:var(--aegis);white-space:nowrap;}
+
+/* Roster page (kept for old links) no longer carries its own status words */
+.crew-card .status-badge{display:none;}
+
+/* Demo bar: in the page flow under the mission bar (sticky), so it never covers the status card */
+.shell>.story-bar{grid-area:story;position:sticky;top:8px;left:auto;bottom:auto;transform:none;width:auto;z-index:60;
+  display:grid;grid-template-columns:minmax(260px,auto) minmax(0,1fr) auto;align-items:center;gap:.35rem 1rem;padding:.55rem .9rem;}
+.shell>.story-bar[hidden]{display:none;}
+.echo-panel,.alert-panel{scroll-margin-top:96px;}
+.shell>.story-bar .story-text{min-height:0;font-size:.9rem;}
+.shell>.story-bar .story-foot{display:flex;align-items:center;gap:.6rem;}
+.shell>.story-bar .story-prog{flex:0 0 110px;}
+@media (max-width:1100px){.shell>.story-bar{grid-template-columns:minmax(0,1fr) auto;}.shell>.story-bar .story-chapters{grid-column:1/-1;}}
+@media (max-width:700px){.shell>.story-bar{grid-template-columns:minmax(0,1fr);}.shell>.story-bar .story-note{display:none;}}
+
+/* Chat with the agents: a typed conversation (no microphone) */
+.chat-panel{display:flex;flex-direction:column;align-items:stretch;gap:.55rem;padding:.75rem 1rem;}
+.chat-panel .ask-form{width:100%;}
+.chat-panel .voice-title{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin:0;}
+.chat-to{font-size:.72rem;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:auto;}
+.chat-to b{color:var(--aegis);font-weight:600;}
+.mute-btn{font:inherit;font-size:.85rem;line-height:1;background:none;border:1px solid var(--border);border-radius:8px;padding:.2rem .45rem;cursor:pointer;color:var(--text);}
+.mute-btn[aria-pressed="true"]{opacity:.6;}
+.ask-log{display:flex;flex-direction:column;gap:.45rem;max-height:15rem;overflow-y:auto;padding-right:.2rem;}
+.ask-log:empty{display:none;}
+.ab{max-width:min(78ch,92%);padding:.5rem .75rem;border-radius:12px;font-size:.88rem;line-height:1.5;border:1px solid var(--border);}
+.ab.user{align-self:flex-end;background:rgba(90,159,215,.14);border-color:rgba(90,159,215,.35);}
+.ab.agent{align-self:flex-start;background:rgba(255,255,255,.03);border-left:3px solid var(--who,var(--aegis));}
+.ab .ab-who{display:flex;align-items:center;gap:.4rem;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--who,var(--aegis));font-weight:700;margin-bottom:.15rem;}
+.ab .ab-who .response-source{margin-left:0;letter-spacing:.06em;font-weight:600;}
+.ab.thinking .ab-text{color:var(--muted);font-style:italic;}
+.chat-panel .ask-form{margin:0;}
+.eb .eb-src{display:inline-block;margin-left:.4rem;font-size:.6rem;letter-spacing:.06em;padding:0 .35rem;border-radius:6px;background:rgba(160,152,200,.15);color:var(--gene);vertical-align:middle;font-weight:600;}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   THEME v4 (Nova's colour scheme, approved by Kurian): depth and focus, colour as state, not decoration.
+   Semantic colours are strict and mean the same in both themes:
+     cyan  = nominal / live data      amber = caution      red = emergency
+   Mars rust orange is the one brand accent: AEGIS wordmark, hero Mars arc, ship→Mars signal pulse. Nothing else.
+   Dark is the hero theme; light is a "day shift" theme (not an inversion). The Cascade Map stays a dark
+   viewport into the ship in both. Layout and behaviour are unchanged.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#04060C;
+  --live:#22D3EE;                                  /* nominal / live data */
+  --green:#22D3EE;                                 /* "ok" states use the nominal colour */
+  --yellow:#F5B544;--cm-amber:#F5B544;--orange:#F59E0B;   /* caution (out-of-range-but-not-emergency = deeper amber) */
+  --red:#FF4D5E;                                   /* emergency */
+  --accent:#FF6B35;--accent-soft:#FFB08A;          /* Mars rust: brand moments only */
+  /* agent identities: outside the semantic families so they never read as a state */
+  --aegis:#9CC3FF;--solaris:#E5D3B3;--gene:#B6A7FF;--pulse:#E879F9;--mirror:#86EFAC;--echo:#FBCFE8;
+  --text:#E6EDF7;--muted:#8D9BB0;
+  --border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.18);
+  --glass:rgba(148,184,255,.04);
+  --panel-shadow:0 22px 44px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.04);
+  --space-bg-opacity:1;
+}
+[data-theme="light"]{
+  --bg:#EEF1F5;
+  --live:#0E7490;--green:#0E7490;
+  --yellow:#B45309;--cm-amber:#B45309;--orange:#B45309;
+  --red:#B91C1C;
+  --accent:#C2410C;--accent-soft:#EA580C;
+  --aegis:#1E40AF;--solaris:#7C5E2A;--gene:#4338CA;--pulse:#A21CAF;--mirror:#15803D;--echo:#9333EA;
+  --text:#0F1B2D;--muted:#53627A;
+  --card:#FFFFFF;--border:#CBD5E1;--border-strong:#94A3B8;
+  --glass:#FFFFFF;
+  --panel-shadow:0 1px 2px rgba(15,23,42,.06),0 4px 10px -4px rgba(15,23,42,.08),0 16px 32px -20px rgba(15,23,42,.22);
+  --space-bg-opacity:1;
+}
+
+/* ── Base ── */
+html{background:radial-gradient(ellipse 110% 95% at 50% 42%,#13213D 0%,#13213D 18%,#0E1A33 42%,#08101F 70%,#020309 100%) fixed,#020309;}
+body{background:transparent;}
+.space-bg{z-index:0;}   /* above the canvas background, below the panels (shell content follows it in the page) */
+.space-bg{background:none;}
+.space-bg::after{content:"";position:absolute;inset:0;opacity:.5;          /* faint starfield / dust */
+  background-image:
+    radial-gradient(circle at 22px 34px,#fff 0 0.9px,transparent 1.5px),
+    radial-gradient(circle at 140px 96px,#fff 0 0.8px,transparent 1.4px),
+    radial-gradient(circle at 260px 170px,#dbeafe 0 1.1px,transparent 1.7px),
+    radial-gradient(circle at 330px 40px,#fff 0 0.8px,transparent 1.4px),
+    radial-gradient(circle at 80px 210px,#fff 0 0.9px,transparent 1.5px),
+    radial-gradient(circle at 200px 260px,#fff 0 1.0px,transparent 1.6px),
+    radial-gradient(circle at 300px 280px,#fff 0 0.8px,transparent 1.4px),
+    radial-gradient(circle at 10px 150px,#fff 0 0.9px,transparent 1.5px),
+    radial-gradient(circle at 175px 20px,#fff 0 0.7px,transparent 1.3px),
+    radial-gradient(circle at 50px 120px,#fff 0 0.7px,transparent 1.3px);
+  background-size:360px 300px;}
+.space-bg::before{content:"";position:absolute;inset:0;opacity:.75;   /* sparser layer of brighter stars */
+  background-image:
+    radial-gradient(circle at 70px 60px,#fff 0 1.3px,transparent 1.9px),
+    radial-gradient(circle at 410px 190px,#e0f2fe 0 1.1px,transparent 1.7px),
+    radial-gradient(circle at 250px 330px,#fff 0 1.2px,transparent 1.8px),
+    radial-gradient(circle at 520px 40px,#fff 0 1.0px,transparent 1.6px),
+    radial-gradient(circle at 560px 300px,#fff 0 1.1px,transparent 1.7px);
+  background-size:600px 420px;}
+[data-theme="light"] .space-bg::before{display:none;}
+[data-theme="light"]{background:
+    linear-gradient(rgba(30,58,95,.035) 1px,transparent 1px) 0 0/28px 28px,          /* blueprint grid */
+    linear-gradient(90deg,rgba(30,58,95,.035) 1px,transparent 1px) 0 0/28px 28px,
+    linear-gradient(180deg,#F4F6F9 0%,#E8ECF1 100%) fixed;}
+[data-theme="light"] body{background:transparent;}
+[data-theme="light"] .space-bg::after{display:none;}
+
+/* ── Panels: glassy slate (dark), white with layered shadows (light) ── */
+.header,.mission-bar,.graph-panel,.vitals-panel,.voice-panel,.alert-panel,.recs-panel,.echo-panel,.nasa-panel{
+  background:var(--glass);border-color:var(--border);box-shadow:var(--panel-shadow);}
+:root:not([data-theme="light"]) :is(.header,.mission-bar,.graph-panel,.vitals-panel,.voice-panel,.alert-panel,.recs-panel,.echo-panel,.nasa-panel){
+  -webkit-backdrop-filter:blur(10px) saturate(120%);backdrop-filter:blur(10px) saturate(120%);}
+
+/* The Cascade Map: the room's main screen. Dark in both themes (a viewport into the ship), with an inner glow. */
+.graph-panel,[data-theme="light"] .graph-panel{
+  --text:#E6EDF7;--muted:#8D9BB0;--border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.18);
+  --live:#22D3EE;--green:#22D3EE;--yellow:#F5B544;--cm-amber:#F5B544;--orange:#F59E0B;--red:#FF4D5E;
+  --aegis:#9CC3FF;--solaris:#E5D3B3;--gene:#B6A7FF;--pulse:#E879F9;--mirror:#86EFAC;--echo:#FBCFE8;
+  color:var(--text);
+  background:radial-gradient(560px 320px at 50% 52%,rgba(34,211,238,.07),transparent 70%),
+             radial-gradient(ellipse at 50% 45%,#0C1526 0%,#070C18 100%);
+  border-color:rgba(34,211,238,.16);
+  box-shadow:inset 0 0 70px rgba(34,211,238,.07),inset 0 1px 0 rgba(255,255,255,.05),0 24px 50px -28px rgba(0,0,0,.9);}
+[data-theme="light"] .graph-panel{border-color:#1E293B;
+  box-shadow:inset 0 0 70px rgba(34,211,238,.07),0 2px 4px rgba(15,23,42,.10),0 18px 36px -18px rgba(15,23,42,.45);}
+/* the dark-theme map details, applied inside the dark island in light mode too */
+[data-theme="light"] .graph-panel .cm-core{stroke:rgba(140,180,230,.25);}
+/* [data-theme="light"] .graph-panel .cm-gauge,[data-theme="light"] .graph-panel .cm-seg: url(#…) paint/filter kept inline in the HTML */
+[data-theme="light"] .graph-panel .cm-track{stroke:rgba(140,170,210,.18);opacity:1;}
+[data-theme="light"] .graph-panel .cm-link.warm,[data-theme="light"] .graph-panel .cm-link.hot,
+/* [data-theme="light"] .graph-panel .conn-line.s-watch,[data-theme="light"] .graph-panel .conn-line.s-out: url(#…) paint/filter kept inline in the HTML */
+#cm-aura-grad stop{stop-color:#22D3EE;}
+.graph-panel:has(.node-aegis[data-mode="averted"]) #cm-aura-grad stop,.graph-panel:has(.node-aegis[data-mode="prevent"]) #cm-aura-grad stop{stop-color:#22D3EE;}
+.graph-panel:has(.node-aegis[data-mode="cascade"]) #cm-aura-grad stop{stop-color:#F5B544;}
+.graph-panel:has(.node-aegis[data-mode="alert"]) #cm-aura-grad stop{stop-color:#FF4D5E;}
+
+/* ── Brand accent: Mars rust, only here ── */
+.logo{background:linear-gradient(90deg,var(--accent-soft),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;}
+[data-theme="light"] .logo{background:none;color:var(--accent);}
+.hg-a{stop-color:#FFB08A;} .hg-b{stop-color:#FF6B35;}
+[data-theme="light"] .hg-a{stop-color:#EA580C;} [data-theme="light"] .hg-b{stop-color:#C2410C;}
+.hero-done{stroke-width:3.5;}
+.hero-orbit{stroke:rgba(255,107,53,.32);}
+[data-theme="light"] .hero-orbit{stroke:rgba(194,65,12,.32);}
+.hero-mars-glow{fill:rgba(255,107,53,.22);}
+[data-theme="light"] .hero-mars-glow{fill:rgba(194,65,12,.16);}
+.hero-signal{fill:#FFD0B8;stroke:rgba(255,107,53,.6);stroke-width:5;paint-order:stroke;}   /* hot rust core, rust halo: stands out on the arc */
+[data-theme="light"] .hero-signal{fill:#9A3412;stroke:rgba(194,65,12,.38);stroke-width:7;filter:none;}
+.hero-earth-glow{fill:rgba(201,214,234,.14);}
+/* the one-way delay is live data */
+.hero-delay,[data-theme="light"] .hero-delay{color:var(--live);}
+[data-theme="light"] .hero-ship-body{fill:#1E293B;}
+
+/* ── No decorative glow: chrome is neutral, emphasis is for live data and the current alert ── */
+.nav-tab.active{background:rgba(255,255,255,.12);color:var(--text);box-shadow:none;}
+[data-theme="light"] .nav-tab.active{background:#1E293B;color:#fff;}
+.run-demo-btn{background:#E6EDF7;color:#0A1120;box-shadow:0 1px 0 rgba(255,255,255,.2) inset;}
+.run-demo-btn:hover{background:#fff;box-shadow:0 6px 18px -10px rgba(255,255,255,.45);}
+[data-theme="light"] .run-demo-btn{background:#0F172A;color:#fff;box-shadow:0 1px 2px rgba(15,23,42,.2);}
+[data-theme="light"] .run-demo-btn:hover{background:#1E293B;}
+.run-demo-btn.on{background:rgba(255,255,255,.14);color:var(--text);}
+[data-theme="light"] .run-demo-btn.on{background:#CBD5E1;color:#0F172A;}
+/* the current alert is the one panel that may glow */
+body.emergency .alert-panel{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 46px -10px rgba(255,77,94,.55);}
+[data-theme="light"] body.emergency .alert-panel{box-shadow:0 0 0 1px var(--red),0 10px 30px -12px rgba(185,28,28,.45);}
+body.emergency .confirm-btn{background:var(--red);border-color:var(--red);}
+body.emergency .emergency-edge{box-shadow:inset 0 0 0 3px var(--red),inset 0 0 140px rgba(255,40,60,.32);}
+
+/* ── Emergency theatre: the room itself changes temperature (a slow red vignette breathes in at the edges) ── */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 1.4s ease;
+  background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 45%,rgba(255,40,60,.16) 78%,rgba(255,40,60,.34) 100%);}
+body.emergency::before{opacity:1;animation:room-temp 5.5s ease-in-out infinite;}
+body.cascade-alert:not(.emergency)::before{opacity:.75;animation:room-temp 7s ease-in-out infinite;
+  background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 50%,rgba(245,181,68,.10) 80%,rgba(245,181,68,.22) 100%);}
+body.acked::before{animation:none;opacity:.35;}
+[data-theme="light"] body::before{background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 45%,rgba(185,28,28,.10) 78%,rgba(185,28,28,.24) 100%);}
+[data-theme="light"] body.cascade-alert:not(.emergency)::before{background:radial-gradient(ellipse 85% 75% at 50% 45%,transparent 50%,rgba(180,83,9,.08) 80%,rgba(180,83,9,.18) 100%);}
+@keyframes room-temp{0%,100%{opacity:.3;}50%{opacity:1;}}
+@media (prefers-reduced-motion:reduce){body.emergency::before,body.cascade-alert::before{animation:none;opacity:.8;}}
+
+/* light mode: source tags and ECHO's active mode keep their contrast on white */
+[data-theme="light"] .src-tag{border-color:#CBD5E1;background:#F1F5F9;color:var(--muted);}
+[data-theme="light"] .src-tag.model{color:#6D28D9;border-color:rgba(109,40,217,.35);background:rgba(109,40,217,.06);}
+[data-theme="light"] .echo-mode.on{color:#fff;box-shadow:none;}
+.link-btn{background:none;border:none;padding:.2rem 0;margin-left:.4rem;color:var(--aegis);font:inherit;font-size:.8rem;text-decoration:underline;cursor:pointer;}
+.link-btn:hover{color:var(--text);}
+.cm3d{position:relative;width:100%;min-height:260px;border-radius:12px;overflow:hidden;
+  background:radial-gradient(ellipse 70% 80% at 50% 55%,rgba(34,211,238,.10),transparent 70%),radial-gradient(ellipse at 50% 120%,#0b1730,#040812 70%);}
+.cm3d canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none;}
+.cm3d canvas:active{cursor:grabbing;}
+.cm3d-labels{position:absolute;inset:0;pointer-events:none;}
+.cm3d-label{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:.25rem .5rem;border-radius:8px;background:rgba(6,12,26,.72);border:1px solid rgba(120,160,220,.28);backdrop-filter:blur(4px);
+  font:600 .68rem/1.15 var(--font,system-ui);color:#E6EEFA;white-space:nowrap;text-align:center;}
+.cm3d-label b{letter-spacing:1px;font-size:.66rem;color:#9FB4D8;}
+.cm3d-label .v{font-size:.82rem;font-variant-numeric:tabular-nums;}
+.cm3d-label .w{font-weight:500;font-size:.62rem;color:#22D3EE;}
+.cm3d-label[data-state="watch"]{border-color:rgba(245,181,68,.6);}.cm3d-label[data-state="watch"] .w{color:#F5B544;}
+.cm3d-label[data-state="out"]{border-color:rgba(255,77,94,.75);box-shadow:0 0 14px rgba(255,77,94,.35);}.cm3d-label[data-state="out"] .w{color:#FF4D5E;}
+.cm3d-centre{position:absolute;left:0;top:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;
+  padding:.3rem .7rem;border-radius:10px;background:rgba(4,9,20,.6);border:1px solid rgba(34,211,238,.35);}
+.cm3d-centre b{font:700 1.35rem/1 var(--font,system-ui);color:#E6EEFA;font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+.cm3d-centre small{font:600 .58rem/1.3 var(--font,system-ui);letter-spacing:1.5px;color:#22D3EE;}
+.cm3d-centre[data-mode="alert"]{border-color:rgba(255,77,94,.8);box-shadow:0 0 22px rgba(255,77,94,.45);}.cm3d-centre[data-mode="alert"] small{color:#FF4D5E;}
+.cm3d-centre[data-mode="cascade"],.cm3d-centre[data-mode="watch"],.cm3d-centre[data-mode="prevent"]{border-color:rgba(245,181,68,.7);}
+.cm3d-centre[data-mode="cascade"] small,.cm3d-centre[data-mode="watch"] small,.cm3d-centre[data-mode="prevent"] small{color:#F5B544;}
+.cm3d-hint{position:absolute;right:.6rem;top:.45rem;font-size:.62rem;color:rgba(200,215,240,.55);pointer-events:none;}
+.cm3d-btn[aria-pressed="true"]{border-color:var(--aegis);color:var(--text);}
+@media (max-width:640px){.cm3d-hint{display:none;}.cm3d-label{font-size:.58rem;padding:.15rem .35rem;}.cm3d-label .v{display:none;}
+  .cm3d-centre b{font-size:1.05rem;}}
