@@ -33,3 +33,7 @@ infra/terraform/.terraform.lock.hcl
 
 # Cached neural-voice audio
 tts_cache/
+
+# Other IDE and others
+.vscode/
+chroma_db/
