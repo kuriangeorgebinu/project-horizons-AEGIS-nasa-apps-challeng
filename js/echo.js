@@ -76,18 +76,27 @@ function echoSpeak(text, onDone) {
 }
 function echoSpeakBrowser(text, panel, onDone) {
   const fin = () => { panel && panel.classList.remove('speaking'); onDone && onDone(); };
+  if (VOICE.muted) { fin(); return; }
   if (!('speechSynthesis' in window)) { fin(); return; }
   try {
     VOICE.run++;
+    const run = VOICE.run;
     const u = new SpeechSynthesisUtterance(speechify(text));
     const v = (VOICE.byAgent && VOICE.byAgent.echo) || VOICE.voice;
     if (v) { u.voice = v; u.lang = v.lang; }
     u.rate = VOICE.rate * AGENT_VOICE.echo.rate; u.pitch = VOICE.pitch * AGENT_VOICE.echo.pitch;
     let started = false;
     u.onstart = () => { started = true; panel && panel.classList.add('speaking'); };
-    u.onend = u.onerror = fin;
-    setTimeout(() => speechSynthesis.speak(u), 80);
-    setTimeout(() => { if (!started) { speechSynthesis.cancel(); fin(); } }, 4000);   // blocked audio: don't hold the floor
+    u.onend = u.onerror = () => { if (run === VOICE.run) fin(); };
+    setTimeout(() => {
+      if (run !== VOICE.run) return;
+      if (VOICE.muted) { fin(); return; }
+      speechSynthesis.speak(u);
+    }, 80);
+    setTimeout(() => {
+      if (run !== VOICE.run) return;
+      if (!started) { speechSynthesis.cancel(); fin(); }
+    }, 4000);   // blocked audio: don't hold the floor
   } catch (e) { fin(); }
 }
 // "Talk to the medical officer": names come from the backend's escalation path (medic first, the Commander for the medic)
