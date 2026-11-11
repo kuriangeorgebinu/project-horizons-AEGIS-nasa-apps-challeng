@@ -3,7 +3,7 @@ const CM_FMT = {
   sleep_quality: v => [Math.round(v), '/100 sleep'], radiation_dose_24h: v => [v.toFixed(2), 'mSv / 24 h']
 };
 const CM_CIRC = 276.46;
-const CM_PAIRS = [['solaris', 'gene'], ['gene', 'pulse'], ['pulse', 'mirror'], ['mirror', 'solaris']];
+const CM_PAIRS = [['solaris', 'gene'], ['gene', 'pulse'], ['mirror', 'solaris']];
 
 function _cmStrain(t) {
   const h = t.baseline != null ? t.baseline : CM_HEALTHY[t.metric], thr = t.threshold;   // personal / mission baseline
@@ -190,7 +190,7 @@ function renderCascadeMap(fc) {
 }
 
 // Propagation effects on the Cascade Map
-const CM_POS = { solaris: [130, 80], gene: [510, 80], pulse: [510, 250], mirror: [130, 250] };
+const CM_POS = { solaris: [130, 80], gene: [510, 80], pulse: [510, 250], mirror: [130, 250], osseo: [320, 320] };
 function _cmEnsureComets() {
   const g = document.getElementById('cm-comets');
   if (!g || g.dataset.built) return;

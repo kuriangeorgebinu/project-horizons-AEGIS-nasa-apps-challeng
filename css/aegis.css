@@ -126,7 +126,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 .graph-panel{grid-area:graph;background:var(--card);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;gap:.5rem;padding:1rem 1.25rem 1.1rem;position:relative;overflow:hidden;transition:background .3s;min-width:0;}
 .graph-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
 
-/* CASCADE MAP: the four specialists around AEGIS, live. Gauge = how close each reading is to its agent's
+/* CASCADE MAP: four monitored domains plus OSSEO's contextual node around AEGIS. Gauge = how close each reading is to its agent's
    threshold; links light up when strain spreads between systems; the centre counts down to a cascade. */
 .cm-head{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem;flex-wrap:wrap;}
 .cm-legend{display:flex;gap:.8rem;font-size:.68rem;color:var(--muted);}
@@ -1172,3 +1172,42 @@ body.acked::before{animation:none;opacity:.35;}
 .cm3d-btn[aria-pressed="true"]{border-color:var(--aegis);color:var(--text);}
 @media (max-width:640px){.cm3d-hint{display:none;}.cm3d-label{font-size:.58rem;padding:.15rem .35rem;}.cm3d-label .v{display:none;}
   .cm3d-centre b{font-size:1.05rem;}}
+
+/* OSSEO identity and non-interactive DXA comparison example */
+:root{--osseo:#e4e7ed;}
+[data-theme="light"]{--osseo:#75808f;}
+.graph-panel,[data-theme="light"] .graph-panel{--osseo:#e4e7ed;}
+.node-osseo{--node-color:var(--osseo);}
+:root:not([data-theme="light"]) .graph-panel .node-osseo .cm-core,
+[data-theme="light"] .graph-panel .node-osseo .cm-core{fill:#e4e7ed;stroke:#aab2bf;stroke-width:2;}
+.node-osseo .cm-val{fill:#26313d;}
+.node-osseo .cm-unit{fill:#4b5563;font-size:8px;}
+.node-osseo .cm-icon{fill:#687484;}
+.node-osseo .cm-state{fill:var(--muted);}
+.cm-svg{max-height:420px;}
+.bmd-demo-panel{border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.018);overflow:hidden;margin-top:.2rem;}
+.bmd-demo-heading{display:flex;align-items:center;justify-content:space-between;width:100%;padding:.65rem .8rem;border:0;border-bottom:1px solid var(--border);background:transparent;text-align:left;font:inherit;font-size:.69rem;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--osseo);cursor:pointer;}
+.bmd-demo-heading:focus-visible{outline:2px solid var(--osseo);outline-offset:-3px;border-radius:8px;}
+.bmd-chevron{font-size:1.1rem;color:var(--muted);line-height:1;transition:transform .16s ease;}
+.bmd-demo-heading[aria-expanded="true"] .bmd-chevron{transform:rotate(180deg);}
+.bmd-demo-summary{display:flex;align-items:center;justify-content:space-between;gap:.7rem;padding:.65rem .8rem;border-bottom:1px solid var(--border);}
+.bmd-demo-summary>div{display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap;}
+.bmd-kicker{font-size:.7rem;color:var(--muted);}
+.bmd-demo-summary strong{font-size:1.12rem;color:var(--text);font-variant-numeric:tabular-nums;}
+.bmd-unit{font-size:.68rem;color:var(--muted);}
+.bmd-demo-list{display:grid;padding:.15rem .8rem .35rem;}
+.bmd-site-row{display:grid;grid-template-columns:minmax(6.2rem,1.4fr) repeat(3,minmax(3.5rem,1fr));gap:.45rem;align-items:center;padding:.34rem 0;border-bottom:1px solid rgba(120,160,215,.08);font-size:.7rem;font-variant-numeric:tabular-nums;}
+.bmd-site-row span:not(:first-child){text-align:right;}
+.bmd-site-head{font-size:.6rem;letter-spacing:.4px;color:var(--muted);}
+.bmd-site-head span:first-child{text-transform:uppercase;letter-spacing:1px;}
+.bmd-delta{color:var(--muted);}
+.bmd-site-empty{padding:.65rem 0;color:var(--muted);font-size:.72rem;}
+.bmd-source-note{margin:0;padding:.6rem .8rem .75rem;color:var(--muted);font-size:.64rem;line-height:1.45;}
+.bmd-reference-meta{padding:.55rem .8rem .35rem;color:var(--muted);font-size:.64rem;line-height:1.45;}
+.bmd-reference-meta a{color:var(--osseo);text-decoration:underline;text-underline-offset:2px;}
+.bmd-reference-list{display:grid;padding:0 .8rem .35rem;}
+.bmd-reference-row{display:grid;grid-template-columns:minmax(5rem,.8fr) repeat(2,minmax(7rem,1.2fr));gap:.45rem;align-items:center;padding:.34rem 0;border-bottom:1px solid rgba(120,160,215,.08);font-size:.68rem;font-variant-numeric:tabular-nums;}
+.bmd-reference-row span:not(:first-child){text-align:right;}
+.bmd-reference-head{font-size:.58rem;color:var(--muted);}
+.bmd-site-section-title{padding:.6rem .8rem .1rem;color:var(--muted);font-size:.6rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+@media(max-width:640px){.bmd-site-row{grid-template-columns:minmax(5.4rem,1.35fr) repeat(3,minmax(2.8rem,1fr));gap:.25rem;font-size:.62rem;}.bmd-reference-row{grid-template-columns:minmax(4rem,.75fr) repeat(2,minmax(5.8rem,1fr));gap:.25rem;font-size:.59rem;}}

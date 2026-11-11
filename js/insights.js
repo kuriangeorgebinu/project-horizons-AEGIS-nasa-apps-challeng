@@ -1,10 +1,10 @@
 // ============================================
 // AGENT INSIGHTS: live feed from the backend (alerts + agent events), newest first. No sample data.
 // ============================================
-const INS_AGENTS = ['aegis', 'pulse', 'gene', 'solaris', 'mirror'];
+const INS_AGENTS = ['aegis', 'pulse', 'gene', 'solaris', 'mirror', 'osseo'];
 function _insAgent(text, fallback) {
   // Agent names are written in capitals; whole words only ("generated" is not GENE)
-  const m = String(text || '').match(/\b(SOLARIS|PULSE|GENE|MIRROR|ECHO)\b/);
+  const m = String(text || '').match(/\b(SOLARIS|PULSE|GENE|MIRROR|OSSEO|ECHO)\b/);
   return m ? m[1].toLowerCase() : (fallback || 'aegis');
 }
 function _insTime(ts) {
@@ -21,8 +21,8 @@ async function refreshInsights() {
       fetch(`${B}/api/alerts?unacknowledged_only=false&limit=100`).then(r => r.json()),
       fetch(`${B}/api/events?limit=200`).then(r => r.json()),
     ]);
-    const items = { aegis: [], pulse: [], gene: [], solaris: [], mirror: [], echo: [] };
-    const open = { aegis: 0, pulse: 0, gene: 0, solaris: 0, mirror: 0 };
+    const items = { aegis: [], pulse: [], gene: [], solaris: [], mirror: [], osseo: [], echo: [] };
+    const open = { aegis: 0, pulse: 0, gene: 0, solaris: 0, mirror: 0, osseo: 0 };
     (alerts || []).forEach(a => {
       const ag = _insAgent(String(a.source || '').toUpperCase(), 'aegis');
       if (!items[ag]) return;
@@ -203,7 +203,8 @@ const AGENTS = {
   solaris: { name: 'SOLARIS', color: '#c8b070', greeting: 'SOLARIS here. Current solar activity is moderate. No immediate radiation threats detected.' },
   gene: { name: 'GENE', color: '#a098c8', greeting: 'GENE here. I track a modelled inflammation marker, IL-6, against each crew member\'s own pre-flight baseline.' },
   pulse: { name: 'PULSE', color: '#c88888', greeting: 'PULSE active. Heart rate variability is below optimal. Recommend stress reduction protocol.' },
-  mirror: { name: 'MIRROR', color: '#7aad9a', greeting: 'MIRROR online. Cognitive performance trending 14% below baseline. Sleep quality may be a factor.' }
+  mirror: { name: 'MIRROR', color: '#7aad9a', greeting: 'MIRROR online. Cognitive performance trending 14% below baseline. Sleep quality may be a factor.' },
+  osseo: { name: 'OSSEO', color: '#d7dce5', greeting: 'OSSEO here. I show historical NASA-study cohort means and synthetic regional examples; neither is your measurement.' }
 };
 
 let currentAgent = 'aegis';
@@ -410,7 +411,7 @@ function selectAgent(name, opts = {}) {
 
 // Click a system on the map: its reading and limit, plus what that agent has done lately (was the Agent Insights page)
 const CM_DETAIL = { agent: null, items: [], fetchedAt: 0 };
-const CD_DOMAIN = { solaris: 'radiation', gene: 'inflammation (IL-6, modelled)', pulse: 'heart and oxygen', mirror: 'sleep' };
+const CD_DOMAIN = { solaris: 'radiation', gene: 'inflammation (IL-6, modelled)', pulse: 'heart and oxygen', mirror: 'sleep', osseo: 'cohort reference + synthetic DXA examples · no live monitor' };
 async function _cdFetch() {
   const B = DASH_API.baseUrl;
   const [alerts, events] = await Promise.all([
@@ -428,6 +429,16 @@ async function renderNodeDetail() {
   const box = document.getElementById('cm-detail'), ag = CM_DETAIL.agent;
   if (!box) return;
   if (!ag || ag === 'aegis') { box.hidden = true; document.getElementById('cm-hint')?.removeAttribute('hidden'); return; }
+  if (ag === 'osseo') {
+    const name = _crewDisplayName(DASH_API.selectedCrewId);
+    box.style.setProperty('--node', 'var(--osseo)');
+    box.innerHTML = `<div class="cd-head"><span class="cd-name">OSSEO</span><span class="cd-state">${name} · context only</span>
+      <button type="button" class="cd-close" onclick="closeNodeDetail()" aria-label="Close">×</button></div>
+      <div class="cd-reading">The OSSEO panel shows historical total-body DXA cohort means and synthetic regional examples in g/cm². Neither is a measurement for this crew member or a NASA-wide norm. No validated real-time in-flight bone monitor or clinical alert is represented.</div>`;
+    box.hidden = false;
+    document.getElementById('cm-hint')?.setAttribute('hidden', '');
+    return;
+  }
   if (Date.now() - CM_DETAIL.fetchedAt > 5000) { try { await _cdFetch(); } catch (e) {} }
   const mine = CM.last && (CM.last.crew || []).find(c => c.crew_member_id === DASH_API.selectedCrewId);
   const ts = mine ? CM_AGENTS[ag].map(m => mine.metrics[m]).filter(Boolean) : [];
@@ -469,7 +480,7 @@ function createParticleBurst(node) {
 
 // WOW: Boot sequence - staggered fade-in
 function bootSequence() {
-  const order = ['node-aegis', 'node-solaris', 'node-gene', 'node-pulse', 'node-mirror'];
+  const order = ['node-aegis', 'node-solaris', 'node-gene', 'node-pulse', 'node-mirror', 'node-osseo'];
   
   order.forEach((cls, i) => {
     const node = document.querySelector('.' + cls);

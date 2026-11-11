@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 import uuid
 
+from aegis_osseo import demo_bmd_payload
 from models import (
     CrewMember, CrewRole, HealthStatus, Vitals,
     Recommendation, RecommendationStatus, RecommendationPillar,
@@ -164,6 +165,10 @@ def init_database():
 
 def _crew_from_row(row) -> CrewMember:
     vitals = json.loads(row["vitals_json"]) if row["vitals_json"] else None
+    if vitals is not None and not vitals.get("bone_density_demo"):
+        # Older persisted rows predate OSSEO. Hydrate the published cohort reference
+        # and clearly labeled synthetic site examples on every crew-state read.
+        vitals["bone_density_demo"] = demo_bmd_payload()
     return CrewMember(
         id=row["id"],
         name=row["name"],

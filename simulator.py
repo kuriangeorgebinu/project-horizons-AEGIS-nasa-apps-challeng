@@ -17,6 +17,7 @@ from models import (
 )
 import database as db
 import aegis_mission
+import aegis_osseo
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -217,7 +218,9 @@ class VitalsSimulator:
             sleep_quality=round(smooth("sleep_quality", sleep_raw,
                                        bypass=self.config.scenario == "cascade_demo"), 1),  # MIRROR joins at once
             hydration_level=round(smooth("hydration_level", hydration_raw), 1),
-            radiation_dose_24h=round(smooth("radiation_dose_24h", radiation_raw, bypass=radiation_bypass), 2)
+            radiation_dose_24h=round(smooth("radiation_dose_24h", radiation_raw, bypass=radiation_bypass), 2),
+            # Static illustrative DXA-style example only; this is not an in-flight measurement.
+            bone_density_demo=aegis_osseo.demo_bmd_payload()
         )
         
         # Store for next iteration

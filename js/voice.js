@@ -37,6 +37,7 @@ const AGENT_VOICE = {
   gene:    { pref: /sonia|libby|maisie|natasha|clara|google uk english female|linda|hazel|susan|karen/i,  rate: 0.98, pitch: 1.08 }, // gentle
   pulse:   { pref: /ryan|tony|jason|brandon|roger|steffan|richard|thomas|george|\bmark\b|david/i,        rate: 1.08, pitch: 1.05 }, // upbeat coach
   mirror:  { pref: /emma|michelle|ana\b|jane|nancy|sara|moira|tessa|linda|zira/i,                     rate: 0.94, pitch: 1.0  }, // warm
+  osseo:   { pref: /george|thomas|matthew|sara|emma|google/i,                                         rate: 0.96, pitch: 0.98 }, // calm, measured
   echo:    { pref: /libby|sonia|serena|emma|ava\b|michelle|hazel|susan|samantha|zira/i,              rate: 0.92, pitch: 1.18 }, // companion: soft, friendly, unlike AEGIS
 };
 const _shortVoiceName = v => v ? v.name.replace(/^Microsoft\s+/, '').replace(/\s*Online.*$/, '').replace(/\s*-\s*English.*$/, '') : 'Default';
@@ -45,7 +46,7 @@ function assignAgentVoices() {
   const vs = englishVoices();
   const used = new Set(Object.values(VOICE.userChoice || {}));
   VOICE.byAgent = {};
-  ['aegis', 'solaris', 'gene', 'pulse', 'mirror', 'echo'].forEach(a => {
+  ['aegis', 'solaris', 'gene', 'pulse', 'mirror', 'osseo', 'echo'].forEach(a => {
     const chosen = VOICE.userChoice && VOICE.userChoice[a] && vs.find(v => v.name === VOICE.userChoice[a]);
     if (chosen) { VOICE.byAgent[a] = chosen; return; }
     const ranked = vs.map(v => ({ v, s: _voiceScore(v) + (AGENT_VOICE[a].pref.test(v.name) ? 60 : 0) }))
@@ -448,7 +449,7 @@ function processCommand(raw) {
   const cmd = raw.toLowerCase();                   // routing on lower case, the question itself as typed
   // Wake word: "hey solaris, what's the dose?" → SOLARIS answers the rest.
   // A wake word on its own → that agent gives a live status report.
-  const wake = cmd.match(/^(?:hey\s+|ok\s+)?(aegis|solaris|gene|pulse|mirror)\b[\s,.:!?-]*(.*)$/);
+  const wake = cmd.match(/^(?:hey\s+|ok\s+)?(aegis|solaris|gene|pulse|mirror|osseo)\b[\s,.:!?-]*(.*)$/);
   if (wake) {
     const rest = wake[2].trim();
     if (rest.split(/\s+/).filter(Boolean).length >= 2) {
@@ -464,7 +465,8 @@ function processCommand(raw) {
   if (currentAgent === 'aegis') {
     if (/radiation|solar|dose|shelter|sievert|msv/.test(cmd)) agent = 'solaris';
     else if (/il-?6|crp|inflamm|immune|biomarker/.test(cmd)) agent = 'gene';
-    else if (/heart|pulse|blood pressure|spo2|oxygen|bone|muscle/.test(cmd)) agent = 'pulse';
+    else if (/dxa|\bbmd\b|bone|skeleton|osteoporosis/.test(cmd)) agent = 'osseo';
+    else if (/heart|pulse|blood pressure|spo2|oxygen|muscle/.test(cmd)) agent = 'pulse';
     else if (/stress|sleep|mood|mental|behavio|isolation|fatigue/.test(cmd)) agent = 'mirror';
   }
   if (agent !== currentAgent) {
@@ -639,6 +641,73 @@ function dismissRec(id) {
 
 // H4: Fetch live vitals from API for selected crew member
 let hrHistory = [68, 67, 69, 66, 68, 70];
+const OSSEO_SITE_LABELS = [
+  ['lumbar_spine', 'Lumbar spine'], ['total_hip', 'Total hip'], ['femoral_neck', 'Femoral neck'],
+  ['pelvis', 'Pelvis'], ['both_legs', 'Both legs'], ['calcaneus', 'Heel / calcaneus'], ['midshaft_radius', 'Mid-shaft radius'],
+  ['ultradistal_radius', 'Ultradistal radius']
+];
+function toggleOsseoDetails() {
+  const button = document.getElementById('bmd-title');
+  const details = document.getElementById('bmd-details');
+  if (!button || !details) return;
+  const expanded = button.getAttribute('aria-expanded') === 'true';
+  button.setAttribute('aria-expanded', String(!expanded));
+  details.hidden = expanded;
+}
+
+function renderOsseoDemo(demo) {
+  const total = document.getElementById('bmd-total-value');
+  const list = document.getElementById('bmd-site-list');
+  const referenceList = document.getElementById('bmd-reference-list');
+  const referenceMeta = document.getElementById('bmd-reference-meta');
+  const source = document.getElementById('bmd-source-note');
+  if (!total || !list) return;
+  const sites = demo && demo.comparisons;
+  const reference = demo && demo.nasa_total_body_reference;
+  const ired = reference && Array.isArray(reference.groups) && reference.groups.find(group => group.name === 'iRED');
+  const preflightMean = ired && Number(ired.preflight_mean);
+  total.textContent = Number.isFinite(preflightMean) ? preflightMean.toFixed(3) : '—';
+  const mapValue = document.getElementById('cm-val-osseo');
+  const mapUnit = document.getElementById('cm-unit-osseo');
+  const mapTip = document.getElementById('cm-tip-osseo');
+  if (mapValue) mapValue.textContent = Number.isFinite(preflightMean) ? preflightMean.toFixed(3) : '—';
+  if (mapUnit) mapUnit.textContent = 'g/cm² · iRED';
+  const referenceDescription = Number.isFinite(preflightMean)
+    ? `iRED preflight total-body DXA aBMD cohort mean ${preflightMean.toFixed(3)} ${reference.unit || 'g/cm²'} (n=${ired.n}), Smith et al. 2012; historical group average, not selected crew member's measurement.`
+    : 'Historical NASA cohort reference unavailable; no crew-specific BMD measurement is shown.';
+  if (mapTip) mapTip.textContent = `OSSEO · ${referenceDescription}`;
+  const mapNode = document.getElementById('node-osseo');
+  if (mapNode) mapNode.setAttribute('aria-label', `OSSEO, ${referenceDescription}`);
+  if (referenceList) {
+    const groups = reference && Array.isArray(reference.groups) ? reference.groups : [];
+    const rows = groups.map(group => `<div class="bmd-reference-row" role="row"><span role="cell">${group.name} (n=${group.n})</span><span role="cell">${Number(group.preflight_mean).toFixed(3)} ± ${Number(group.preflight_sd).toFixed(3)}</span><span role="cell">${Number(group.postflight_mean).toFixed(3)} ± ${Number(group.postflight_sd).toFixed(3)}</span></div>`).join('');
+    referenceList.innerHTML = '<div class="bmd-reference-row bmd-reference-head" role="row"><span role="columnheader">Study group</span><span role="columnheader">Preflight mean ± SD</span><span role="columnheader">Postflight mean ± SD</span></div>' +
+      (rows || '<div class="bmd-site-empty">Published cohort reference unavailable.</div>');
+  }
+  if (referenceMeta) {
+    referenceMeta.innerHTML = reference
+      ? `${reference.measurement || 'Total-body DXA aBMD'} · ${reference.study_population || ''}. ${reference.study_context || ''} ${reference.scan_timing || ''} <a href="${reference.source_url}" target="_blank" rel="noopener noreferrer">${reference.source_label || 'Study source'}</a>. Cohort means ± SD; not selected-crew values.`
+      : 'Historical cohort reference unavailable; no individual BMD is displayed.';
+  }
+  if (!sites) {
+    list.innerHTML = '<div class="bmd-site-row bmd-site-head" role="row"><span role="columnheader">DXA site</span><span role="columnheader">Preflight</span><span role="columnheader">Postflight</span><span role="columnheader">Δ</span></div><div class="bmd-site-empty">Demo comparison values unavailable.</div>';
+    if (source) source.textContent = 'No DXA values are available. This panel does not represent a real-time in-flight bone monitor.';
+    return;
+  }
+  const rows = OSSEO_SITE_LABELS.map(([key, label]) => {
+    const point = sites[key] || {};
+    const pre = Number(point.preflight), current = Number(point.postflight);
+    if (!Number.isFinite(pre) || !Number.isFinite(current)) return '';
+    const delta = pre ? ((current - pre) / pre * 100) : 0;
+    const sign = delta > 0 ? '+' : '';
+    return `<div class="bmd-site-row" role="row"><span role="cell">${label}</span><span role="cell">${pre.toFixed(3)}</span><span role="cell">${current.toFixed(3)}</span><span role="cell" class="bmd-delta">${sign}${delta.toFixed(1)}%</span></div>`;
+  }).join('');
+  list.innerHTML = '<div class="bmd-site-row bmd-site-head" role="row"><span role="columnheader">DXA site</span><span role="columnheader">Preflight</span><span role="columnheader">Postflight</span><span role="columnheader">Δ</span></div>' +
+    (rows || '<div class="bmd-site-empty">Demo comparison values unavailable.</div>');
+  if (source) source.textContent = (demo.source_note || 'Regional site examples are synthetic and not measurements for this crew member.') +
+    ' Regional examples use areal BMD in g/cm² and are not sourced from the NASA study. No validated real-time in-flight bone monitor or clinical alert is represented.';
+}
+
 async function fetchAndUpdateVitals() {
   const forCrew = DASH_API.selectedCrewId;     // a reply for the previously selected person must not overwrite the tiles
   try {
@@ -648,6 +717,7 @@ async function fetchAndUpdateVitals() {
     if (forCrew !== DASH_API.selectedCrewId) return;
     const vitals = crew.vitals;
     if (!vitals) return;
+    renderOsseoDemo(vitals.bone_density_demo);
     
     // Update HR
     const hrEl = document.getElementById('hr-value');
