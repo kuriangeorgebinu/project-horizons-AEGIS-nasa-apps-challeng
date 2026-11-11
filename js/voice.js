@@ -6,7 +6,7 @@
 // voices first, robotic SAPI voices like David/Zira last) and can be changed in the Voice Terminal.
 // ============================================
 let typingTimer = null;
-const VOICE = { voice: null, rate: 1.0, pitch: 1.0, run: 0, byAgent: {}, userChoice: {}, nextSpeaker: null };
+const VOICE = { muted: false, voice: null, rate: 1.0, pitch: 1.0, run: 0, byAgent: {}, userChoice: {}, nextSpeaker: null };
 // Neural voices (Amazon Polly via /api/tts); declared early because the voice picker reads it at load
 const TTS = { on: false, voices: {}, current: null, cache: new Map(), fails: 0, MAX: 600 };
 const _VOICE_PREF = [/natural/i, /neural/i, /online/i, /google us english/i, /google uk english/i, /google/i,
@@ -98,7 +98,14 @@ if ('speechSynthesis' in window) {
 // Browsers only allow speech after the user has interacted with the page. Until then answers are typed,
 // and the Voice Terminal says how to turn the voice on; the first click / key press unlocks it.
 VOICE.unlocked = false;
-try { if (localStorage.getItem('aegis-muted') === '1') setTimeout(() => toggleMute(), 0); } catch (e) {}
+try {
+  VOICE.muted = localStorage.getItem('aegis-muted') === '1';
+  const muteButton = document.getElementById('muteBtn');
+  if (muteButton) {
+    muteButton.textContent = VOICE.muted ? '🔇' : '🔊';
+    muteButton.setAttribute('aria-pressed', String(VOICE.muted));
+  }
+} catch (e) {}
 function _voiceHint(show) {
   const st = document.getElementById('voiceStatus');
   if (!st) return;
@@ -167,6 +174,7 @@ function ttsStop() {
 }
 // Say several sentences in one agent's neural voice (no on-screen text). Calls fallback() if it can't.
 function ttsSayAll(text, agent, { onstart, onend, fallback } = {}) {
+  if (VOICE.muted) { onend && onend(); return; }
   const parts = splitSentences(text).map(speechify).filter(Boolean);
   if (!ttsFor(agent) || !parts.length || parts.some(p => p.length > TTS.MAX)) { fallback && fallback(); return; }
   VOICE.run++;
@@ -175,14 +183,24 @@ function ttsSayAll(text, agent, { onstart, onend, fallback } = {}) {
   let i = 0, first = true;
   const step = () => {
     if (run !== VOICE.run) return;
+    if (VOICE.muted) { onend && onend(); return; }
     if (i >= parts.length) { onend && onend(); return; }
     const p = parts[i], a = ttsAudio(p, agent);
     a.onplaying = () => { if (first) { first = false; onstart && onstart(); } };
     a.onended = () => { if (TTS.current === a) TTS.current = null; i++; step(); };
-    a.onerror = () => { ttsFailed(p, agent); onend && onend(); if (i === 0 && fallback) fallback(); };
+    a.onerror = () => {
+      ttsFailed(p, agent);
+      if (run !== VOICE.run) return;
+      onend && onend();
+      if (i === 0 && !VOICE.muted && fallback) fallback();
+    };
     TTS.current = a;
     try { a.currentTime = 0; } catch (e) {}
-    a.play().catch(() => { onend && onend(); if (i === 0 && fallback) fallback(); });
+    a.play().catch(() => {
+      if (run !== VOICE.run) return;
+      onend && onend();
+      if (i === 0 && !VOICE.muted && fallback) fallback();
+    });
   };
   step();
 }
@@ -313,6 +331,7 @@ function _typeResponseNow(text, speaker, tag, onDone, slot, stale) {
   let idx = 0;
   const next = () => {
     if (run !== VOICE.run) return;
+    if (VOICE.muted) { typeRest(); return; }
     if (idx >= sentences.length) { finish(); return; }
     const disp = sentences[idx];
     const words = disp.split(/\s+/).filter(Boolean);
@@ -341,9 +360,10 @@ function _typeResponseNow(text, speaker, tag, onDone, slot, stale) {
       a.onerror = () => { cleanup(); ttsFailed(spoken, speaker); if (run === VOICE.run) browserSay(); };
       TTS.current = a;
       try { a.currentTime = 0; } catch (e) {}
+      if (VOICE.muted || run !== VOICE.run) { if (TTS.current === a) TTS.current = null; return; }
       a.play().catch(err => {
         cleanup();
-        if (run !== VOICE.run) return;
+        if (run !== VOICE.run || VOICE.muted) return;
         if (err && err.name === 'NotAllowedError') typeRest(); else browserSay();   // no click yet: just type
       });
       setTimeout(() => {                             // voice service too slow: use the browser voice
@@ -354,6 +374,8 @@ function _typeResponseNow(text, speaker, tag, onDone, slot, stale) {
     browserSay();
 
     function browserSay() {
+    if (run !== VOICE.run) return;
+    if (VOICE.muted) { typeRest(); return; }
     if (!('speechSynthesis' in window)) { typeRest(); return; }
     const u = new SpeechSynthesisUtterance(spoken);
     if (sVoice) { u.voice = sVoice; u.lang = sVoice.lang; }
@@ -377,9 +399,10 @@ function _typeResponseNow(text, speaker, tag, onDone, slot, stale) {
     u.onend = () => { clearInterval(pacer); if (run === VOICE.run) advance(); };
     u.onerror = () => {
       clearInterval(pacer);
-      if (run !== VOICE.run) return;
+      if (run !== VOICE.run || VOICE.muted) return;
       if (started) advance(); else typeRest();      // e.g. browser blocks audio before the first click
     };
+    if (VOICE.muted || run !== VOICE.run) return;
     speechSynthesis.speak(u);
     const myIdx = idx;
     setTimeout(() => {                               // speech never started: fall back to typing
@@ -405,12 +428,13 @@ function _typeResponseNow(text, speaker, tag, onDone, slot, stale) {
 // Speak without changing the response text (kept for callers that only want audio)
 function speak(text) {
   const browser = () => {
-    if (!('speechSynthesis' in window)) return;
+    if (VOICE.muted || !('speechSynthesis' in window)) return;
     const u = new SpeechSynthesisUtterance(speechify(text));
     if (VOICE.voice) { u.voice = VOICE.voice; u.lang = VOICE.voice.lang; }
     u.rate = VOICE.rate; u.pitch = VOICE.pitch;
-    speechSynthesis.speak(u);
+    if (!VOICE.muted) speechSynthesis.speak(u);
   };
+  if (VOICE.muted) return;
   ttsSayAll(text, 'aegis', { fallback: browser });
 }
 

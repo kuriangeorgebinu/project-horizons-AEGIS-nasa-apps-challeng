@@ -216,9 +216,11 @@ let userHasInteracted = false;
 document.addEventListener('click', () => { userHasInteracted = true; }, { once: true });
 document.addEventListener('keydown', () => { userHasInteracted = true; }, { once: true });
 
+const activeToneOscillators = new Set();
+
 function playTone(freq, duration) {
   // M3: Skip audio until user has interacted
-  if (!userHasInteracted) return;
+  if (VOICE.muted || !userHasInteracted) return;
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
@@ -227,6 +229,8 @@ function playTone(freq, duration) {
   }
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
+  activeToneOscillators.add(osc);
+  osc.onended = () => activeToneOscillators.delete(osc);
   osc.frequency.value = freq;
   gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
@@ -234,6 +238,13 @@ function playTone(freq, duration) {
   gain.connect(audioCtx.destination);
   osc.start();
   osc.stop(audioCtx.currentTime + duration);
+}
+
+function stopTones() {
+  for (const osc of activeToneOscillators) {
+    try { osc.stop(); } catch (e) {}
+  }
+  activeToneOscillators.clear();
 }
 
 // ── Live agent answers (Voice Terminal) ─────────────────────────────────────────────
@@ -277,7 +288,10 @@ function toggleMute() {
   VOICE.muted = !VOICE.muted;
   const b = document.getElementById('muteBtn');
   if (b) { b.textContent = VOICE.muted ? '🔇' : '🔊'; b.setAttribute('aria-pressed', String(VOICE.muted)); }
-  if (VOICE.muted) { if ('speechSynthesis' in window) speechSynthesis.cancel(); ttsStop(); }
+  if (VOICE.muted) {
+    stopVoice();
+    stopTones();
+  }
   try { localStorage.setItem('aegis-muted', VOICE.muted ? '1' : '0'); } catch (e) {}
 }
 
