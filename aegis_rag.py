@@ -34,19 +34,19 @@ class AEGISKnowledgeBase:
                 model_name=EMBEDDING_MODEL
             )
             self._collections = {
-                "countermeasures": self._client.get_collection(
+                "countermeasures": self._client.get_or_create_collection(
                     name="countermeasures",
                     embedding_function=self._embedding_fn
                 ),
-                "risks": self._client.get_collection(
+                "risks": self._client.get_or_create_collection(
                     name="risks", 
                     embedding_function=self._embedding_fn
                 ),
-                "citations": self._client.get_collection(
+                "citations": self._client.get_or_create_collection(
                     name="citations",
                     embedding_function=self._embedding_fn
                 ),
-                "protocols": self._client.get_collection(
+                "protocols": self._client.get_or_create_collection(
                     name="protocols",
                     embedding_function=self._embedding_fn
                 )
@@ -254,7 +254,17 @@ class AEGISKnowledgeBase:
         try:
             import json as _json
             import setup_chromadb as sc
-            kb = _json.loads((Path(__file__).parent / "data" / "aegis_knowledge_base.json").read_text(encoding="utf-8"))
+            data = Path(__file__).parent / "data"
+            kb = _json.loads((data / "aegis_knowledge_base.json").read_text(encoding="utf-8"))
+            # chroma_db/ is not in the repository (it is rebuilt, not shipped): on a fresh checkout or a new
+            # server release, build the whole knowledge base from data/ once, exactly as setup_chromadb.py does.
+            if all(c.count() == 0 for c in self._collections.values()):
+                print("   📚 knowledge base not built yet: indexing from data/ (one-off, takes a few seconds)...")
+                added["countermeasures"] = sc.index_countermeasures(self._collections["countermeasures"], kb)
+                added["risks"] = sc.index_hrr_risks(self._collections["risks"], sc.load_hrr_risks(data / "nasa_hrr_risks.json"))
+                added["citations"] = sc.index_citations(self._collections["citations"], sc.parse_citations(data / "AEGIS_SOURCES.md"))
+                added["countermeasures"] += sc.index_kb_countermeasures(self._collections["countermeasures"], kb)
+                added["protocols"] = sc.index_protocols(self._collections["protocols"], kb)
             if self._collections["protocols"].count() == 0:
                 added["protocols"] = sc.index_protocols(self._collections["protocols"], kb)
             existing = set(self._collections["countermeasures"].get(include=[])["ids"])
