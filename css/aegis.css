@@ -207,19 +207,19 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 
 /* Vitals Panel */
 .vitals-panel{grid-area:vitals;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;transition:background .3s;}
-.vitals-title{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;}
-.vital-row{display:flex;align-items:center;gap:1rem;}
-.vital-label{width:74px;flex-shrink:0;font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:2px;line-height:1.1;}
+.vitals-title{font-size:.85rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;}
+.vital-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;row-gap:.2rem;padding:.25rem .35rem;}
+.vital-label{width:84px;flex-shrink:0;font-size:.95rem;color:var(--muted);display:flex;flex-direction:column;gap:2px;line-height:1.1;}
 /* Which agent monitors each metric */
 .agent-tag{display:inline-flex;align-items:center;gap:4px;font-size:.58rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
 .agent-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
 .agent-tag.pulse{color:var(--pulse);} .agent-tag.gene{color:var(--gene);} .agent-tag.mirror{color:var(--mirror);} .agent-tag.solaris{color:var(--solaris);}
-.vitals-legend{font-size:.65rem;color:var(--muted);margin-top:-.5rem;}
+.vitals-legend{font-size:.74rem;line-height:1.45;color:var(--muted);margin-top:-.5rem;}
 .rad-sub{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--muted);margin-top:.5rem;}
-.vital-value{width:50px;font-size:1.4rem;font-weight:700;}
-.vital-bar{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
+.vital-value{width:86px;font-size:2.05rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+.vital-bar{flex:1;min-width:110px;height:14px;background:rgba(255,255,255,.06);border-radius:7px;position:relative;overflow:visible;}
 .vital-fill{height:100%;border-radius:4px;transition:width .5s;}
-.vital-status{width:60px;font-size:.7rem;text-align:right;}
+.vital-status{width:104px;font-size:.84rem;font-weight:600;text-align:right;}
 /* PREDICT: trend chips appear only when a metric is trending; click a row for history + forecast */
 .vital-row[data-metric]{position:relative;cursor:pointer;border-radius:6px;}
 .vital-row[data-metric]:hover{background:rgba(255,255,255,.03);}
@@ -1172,3 +1172,19 @@ body.acked::before{animation:none;opacity:.35;}
 .cm3d-btn[aria-pressed="true"]{border-color:var(--aegis);color:var(--text);}
 @media (max-width:640px){.cm3d-hint{display:none;}.cm3d-label{font-size:.58rem;padding:.15rem .35rem;}.cm3d-label .v{display:none;}
   .cm3d-centre b{font-size:1.05rem;}}
+
+/* Live vitals: the shaded band is "within normal limits" (WNL); the marker is the current reading. The marker
+   takes the state colour only when the reading leaves the band (or an agent flags it). */
+.vital-bar .vital-fill{display:none;}
+.vb-band{position:absolute;top:0;bottom:0;border-radius:7px;background:rgba(34,211,238,.20);box-shadow:inset 0 0 0 1px rgba(34,211,238,.45);}
+[data-theme="light"] .vb-band{background:rgba(14,116,144,.14);box-shadow:inset 0 0 0 1px rgba(14,116,144,.45);}
+.vb-marker{position:absolute;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--green);border:2px solid var(--card);box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 10px currentColor;transition:left .5s,background .3s;left:0;}
+.vital-bar.empty .vb-marker{display:none;}
+.vl-name{font-size:1rem;font-weight:600;color:var(--text);}
+.vital-row[data-metric]::after{content:'';flex-basis:100%;height:0;order:8;}
+.vital-more{flex:0 0 auto;order:9;align-self:flex-start;margin:-.1rem 0 0 calc(84px + 1rem);padding:.1rem .5rem;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);font:600 .72rem/1.4 inherit;cursor:pointer;}
+.vital-more:hover,.vital-more:focus-visible{color:var(--text);border-color:var(--aegis);}
+.vital-row .trend-chip{bottom:auto;top:-2px;}
+.rad-header{font-size:1rem;}
+#rad-value,#rad24-value{font-size:1.15rem;font-weight:700;}
+@media (max-width:640px){.vital-value{width:72px;font-size:1.7rem;}.vital-status{width:auto;flex:1 0 100%;text-align:left;margin-left:calc(84px + 1rem);}.vital-more{margin-left:0;}}

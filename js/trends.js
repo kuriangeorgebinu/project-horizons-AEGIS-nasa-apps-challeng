@@ -1,3 +1,26 @@
+// Live vitals: each bar shows the "within normal limits" (WNL) band and a marker for the reading.
+// Bands: adult resting heart rate 60-100 bpm and SpO2 95-100% (standard clinical ranges); sleep score >= 70
+// (MIRROR's "good" line); IL-6 up to the person's own pre-flight limit (1.5x baseline + 1.5, set by GENE).
+const VITAL_WNL = {
+  hr:    { min: 30, max: 180, lo: 60, hi: 100, unit: 'bpm', note: 'adult resting heart rate' },
+  spo2:  { min: 80, max: 100, lo: 95, hi: 100, unit: '%',   note: 'blood oxygen saturation' },
+  il6:   { min: 0,  max: null, lo: 0, hi: null, unit: 'pg/mL', note: "this person's pre-flight limit (modelled value)" },
+  sleep: { min: 0,  max: 100, lo: 70, hi: 100, unit: '/100', note: 'sleep-quality score' },
+};
+let IL6_LIMIT = null;
+function setVitalBand(k, value, agentState) {
+  const c = Object.assign({}, VITAL_WNL[k]);
+  if (k === 'il6') { c.hi = IL6_LIMIT || 5.8; c.max = Math.max(c.hi * 2, (value || 0) * 1.1); }
+  const pct = x => Math.max(0, Math.min(100, (x - c.min) / (c.max - c.min) * 100));
+  const bar = document.getElementById(`${k}-bar`), band = document.getElementById(`${k}-band`), mk = document.getElementById(`${k}-marker`);
+  const inBand = value >= c.lo && value <= c.hi;
+  const color = agentState === 'out' ? 'var(--red)' : (!inBand || agentState === 'watch') ? 'var(--yellow)' : 'var(--green)';
+  if (band) { band.style.left = pct(c.lo) + '%'; band.style.width = (pct(c.hi) - pct(c.lo)) + '%'; }
+  if (mk) { mk.style.left = pct(value) + '%'; mk.style.background = color; mk.style.color = color; }
+  if (bar) { bar.classList.remove('empty'); bar.title = `WNL ${c.lo}–${+c.hi.toFixed ? +c.hi.toFixed(1) : c.hi} ${c.unit} (${c.note}) · now ${+Number(value).toFixed(1)} ${c.unit}`; }
+  const word = inBand ? 'WNL' : value < c.lo ? 'Below WNL ↓' : 'Above WNL ↑';
+  return { inBand, color, word, lo: c.lo, hi: c.hi };
+}
 const VITAL_ROWS = { heart_rate: 'hr', spo2: 'spo2', il6: 'il6', sleep_quality: 'sleep' };
 function syncVitalsToMap(entry) {
   if (!entry || !entry.metrics) return;
@@ -9,17 +32,19 @@ function syncVitalsToMap(entry) {
     const val = metric === 'heart_rate' ? Math.round(t.value) : metric === 'spo2' ? `${Math.round(t.value)}%`
               : metric === 'il6' ? Number(t.value).toFixed(1)
               : `${Math.round(t.value) === t.threshold && t.value < t.threshold ? Number(t.value).toFixed(1) : Math.round(t.value)}%`;
+    if (metric === 'il6' && t.threshold) IL6_LIMIT = t.threshold;
+    const band = setVitalBand(k, Number(t.value), state);
     const word = state === 'out' ? 'Out of range' : t.eta_min !== null && t.eta_min !== undefined ? `Limit in ${fmtEta(t.eta_min)}`
-               : state === 'watch' ? (_cmToward(t) ? (t.risk_direction === 'up' ? 'Rising ↗' : 'Falling ↘') : `${Math.round(Math.min(1, _cmStrain(t)) * 100)}% to limit`) : 'Steady';
-    if (v) { v.textContent = val; v.style.color = col[state]; }
-    if (fill) { fill.style.width = `${Math.round(Math.min(1, _cmStrain(t)) * 100)}%`; fill.style.background = col[state]; }
-    if (stEl) { stEl.textContent = word; stEl.style.color = col[state]; stEl.title = `${t.label}: ${t.value} ${t.unit || ''} · limit ${t.threshold} · ${Math.round(Math.min(1, _cmStrain(t)) * 100)}% of the way to the limit`; }
+               : state === 'watch' ? (_cmToward(t) ? (t.risk_direction === 'up' ? 'Rising ↗' : 'Falling ↘') : `${Math.round(Math.min(1, _cmStrain(t)) * 100)}% to limit`) : band.word;
+    if (v) { v.textContent = val; v.style.color = band.color; }
+    if (fill) { fill.style.width = `${Math.round(Math.min(1, _cmStrain(t)) * 100)}%`; fill.style.background = band.color; }
+    if (stEl) { stEl.textContent = word; stEl.style.color = band.color; stEl.title = `${t.label}: ${t.value} ${t.unit || ''} · limit ${t.threshold} · ${Math.round(Math.min(1, _cmStrain(t)) * 100)}% of the way to the limit`; }
   });
   const r = entry.metrics.radiation_dose_24h, r24 = document.getElementById('rad24-value'), r24s = document.getElementById('rad24-status');
   if (r && r24) {
     const state = sysState([r]);
     r24.textContent = `${Number(r.value).toFixed(2)} mSv`; r24.style.color = col[state];
-    if (r24s) { r24s.textContent = `· ${state === 'out' ? (r.value >= MISSION.shelter ? 'SHELTER' : 'Out of range') : state === 'watch' ? 'Heading for limit' : 'Steady'} (${(r.value / MISSION.background).toFixed(1)}× background)`; r24s.style.color = col[state]; }
+    if (r24s) { r24s.textContent = `· ${state === 'out' ? (r.value >= MISSION.shelter ? 'SHELTER' : 'Out of range') : state === 'watch' ? 'Heading for limit' : 'WNL'} (${(r.value / MISSION.background).toFixed(1)}× background)`; r24s.style.color = col[state]; }
   }
   VITALS_SYNCED_AT = Date.now();
 }

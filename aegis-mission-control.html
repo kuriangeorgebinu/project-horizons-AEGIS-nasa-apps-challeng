@@ -240,39 +240,43 @@
   <div class="vitals-panel">
     <div class="vitals-title">Live Vitals · Commander Chen</div>
     
-    <div class="vitals-legend">Each metric is monitored by one specialist agent · AEGIS combines them per crew member · click a metric for its trend + forecast<br><span class="src-tag sim">SIM</span> simulated feed in this demo (a real sensor would supply it) · <span class="src-tag model">MODELLED</span> estimated from other readings, no sensor</div>
+    <div class="vitals-legend">Each metric is monitored by one specialist agent · AEGIS combines them per crew member · <b>WNL</b> = within normal limits (the shaded band on each bar) · open <b>History &amp; forecast</b> on any row for its past readings and where it is heading<br><span class="src-tag sim">SIM</span> simulated feed in this demo (a real sensor would supply it) · <span class="src-tag model">MODELLED</span> estimated from other readings, no sensor</div>
 
     <div class="vital-row" data-metric="heart_rate" onclick="openTrend('heart_rate')">
-      <div class="vital-label">Heart<span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span><span class="src-tag sim" title="Simulated heart-rate feed (wearable ECG / chest strap on a real mission)">SIM</span></div>
+      <div class="vital-label"><span class="vl-name">Heart</span><span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span><span class="src-tag sim" title="Simulated heart-rate feed (wearable ECG / chest strap on a real mission)">SIM</span></div>
       <div class="vital-value" style="color:var(--muted)" id="hr-value">…</div>
       <svg id="hr-sparkline" width="50" height="24" style="margin:0 8px;cursor:pointer;" onclick="event.stopPropagation();openHRGraph()" role="button" aria-label="Click to expand heart rate graph" tabindex="0" onkeydown="if(event.key==='Enter')openHRGraph()"><polyline id="spark-line" fill="none" stroke="var(--yellow)" stroke-width="1.5" points="0,12 10,14 20,10 30,16 40,12 50,8"/></svg>
-      <div class="vital-bar"><div class="vital-fill" id="hr-fill" style="width:0%;background:var(--green)"></div></div>
+      <div class="vital-bar" id="hr-bar"><div class="vital-fill" id="hr-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="hr-band"></div><div class="vb-marker" id="hr-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="hr-status">Connecting…</div>
       <span class="trend-chip" id="trend-heart_rate" hidden></span>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('heart_rate')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
     </div>
     
     <div class="vital-row" data-metric="spo2" onclick="openTrend('spo2')">
-      <div class="vital-label">SpO₂<span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span><span class="src-tag sim" title="Simulated pulse-oximeter feed">SIM</span></div>
+      <div class="vital-label"><span class="vl-name">SpO₂</span><span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span><span class="src-tag sim" title="Simulated pulse-oximeter feed">SIM</span></div>
       <div class="vital-value" style="color:var(--muted)" id="spo2-value">…</div>
-      <div class="vital-bar"><div class="vital-fill" id="spo2-fill" style="width:0%;background:var(--green)"></div></div>
+      <div class="vital-bar" id="spo2-bar"><div class="vital-fill" id="spo2-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="spo2-band"></div><div class="vb-marker" id="spo2-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="spo2-status">Connecting…</div>
       <span class="trend-chip" id="trend-spo2" hidden></span>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('spo2')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
     </div>
     
     <div class="vital-row" id="il6-row" data-metric="il6" onclick="openTrend('il6')" title="GENE · IL-6 inflammatory marker (pg/mL). Modelled, smoothed (moves at most 0.12 pg/mL per second), and demo time is compressed: a storm that would take hours plays in about 2.5 minutes.">
-      <div class="vital-label">IL-6<span class="agent-tag gene" title="Monitored by GENE">GENE</span><span class="src-tag model" title="Modelled from stress and radiation; no in-flight blood sensor. Smoothed so it cannot jump in one sample; demo time is compressed (hours play in minutes), so real IL-6 would change more slowly.">MODELLED</span></div>
+      <div class="vital-label"><span class="vl-name">IL-6</span><span class="agent-tag gene" title="Monitored by GENE">GENE</span><span class="src-tag model" title="Modelled from stress and radiation; no in-flight blood sensor. Smoothed so it cannot jump in one sample; demo time is compressed (hours play in minutes), so real IL-6 would change more slowly.">MODELLED</span></div>
       <div class="vital-value" style="color:var(--muted)" id="il6-value">…</div>
-      <div class="vital-bar"><div class="vital-fill" id="il6-fill" style="width:0%;background:var(--green)"></div></div>
+      <div class="vital-bar" id="il6-bar"><div class="vital-fill" id="il6-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="il6-band"></div><div class="vb-marker" id="il6-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="il6-status">Connecting…</div>
       <span class="trend-chip" id="trend-il6" hidden></span>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('il6')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
     </div>
     
     <div class="vital-row" data-metric="sleep_quality" onclick="openTrend('sleep_quality')">
-      <div class="vital-label">Sleep<span class="agent-tag mirror" title="Monitored by MIRROR">MIRROR</span><span class="src-tag sim" title="Simulated sleep-quality index (0-100), e.g. from an actigraphy watch">SIM</span></div>
+      <div class="vital-label"><span class="vl-name">Sleep</span><span class="agent-tag mirror" title="Monitored by MIRROR">MIRROR</span><span class="src-tag sim" title="Simulated sleep-quality index (0-100), e.g. from an actigraphy watch">SIM</span></div>
       <div class="vital-value" style="color:var(--muted)" id="sleep-value">…</div>
-      <div class="vital-bar"><div class="vital-fill" id="sleep-fill" style="width:0%;background:var(--green)"></div></div>
+      <div class="vital-bar" id="sleep-bar"><div class="vital-fill" id="sleep-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="sleep-band"></div><div class="vb-marker" id="sleep-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="sleep-status">Connecting…</div>
       <span class="trend-chip" id="trend-sleep_quality" hidden></span>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('sleep_quality')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
     </div>
     
     <div class="radiation-section">

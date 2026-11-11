@@ -643,8 +643,9 @@ async function fetchAndUpdateVitals() {
         sparkLine.setAttribute('points', points);
       }
       // Same thresholds as the PULSE agent: >150 or <40 critical, >100 warning
-      const hrColor = (hr > 120 || hr < 40) ? 'var(--red)' : hr > 100 ? 'var(--yellow)' : 'var(--green)';
-      const hrLabel = hr > 150 ? '↑ Critical' : hr < 40 ? '↓ Critical' : hr > 120 ? '↑ Very high' : hr > 100 ? '↑ High' : 'Normal';
+      const hrBand = setVitalBand('hr', hr, (hr > 120 || hr < 40) ? 'out' : hr > 100 ? 'watch' : 'ok');
+      const hrColor = hrBand.color;
+      const hrLabel = hr > 150 ? '↑ Critical' : hr < 40 ? '↓ Critical' : hr > 120 ? '↑ Very high' : hrBand.word;
       hrEl.style.color = hrColor;
       if (hrFill) hrFill.style.background = hrColor;
       if (hrStatus) { hrStatus.textContent = hrLabel; hrStatus.style.color = hrColor; }
@@ -659,8 +660,10 @@ async function fetchAndUpdateVitals() {
         const il6Fill = document.getElementById('il6-fill');
         const il6Status = document.getElementById('il6-status');
         const il6Row = document.getElementById('il6-row');
-        const color = bm.status === 'elevated' ? 'var(--red)' : bm.status === 'mild' ? 'var(--yellow)' : 'var(--green)';
-        const label = bm.status === 'elevated' ? '↑ Above baseline' : bm.status === 'mild' ? '↑ Rising' : 'Normal';
+        if (bm.personal_limit) IL6_LIMIT = bm.personal_limit;
+        const il6Band = setVitalBand('il6', bm.il6, bm.status === 'elevated' ? 'out' : bm.status === 'mild' ? 'watch' : 'ok');
+        const color = il6Band.color;
+        const label = bm.status === 'elevated' ? '↑ Above baseline' : bm.status === 'mild' ? '↑ Rising' : il6Band.word;
         if (il6El) { il6El.textContent = bm.il6.toFixed(1); il6El.style.color = color; }
         if (il6Fill) { il6Fill.style.width = Math.min(100, bm.il6 / (bm.personal_limit * 1.5) * 100) + '%'; il6Fill.style.background = color; }
         if (il6Status) { il6Status.textContent = label; il6Status.style.color = color; }
@@ -696,7 +699,7 @@ async function fetchAndUpdateVitals() {
       rad24El.style.color = c;
       if (rad24Status) {
         rad24Status.textContent = d >= MISSION.shelter ? `· SHELTER (${ratio.toFixed(1)}× background)`
-          : d >= MISSION.warning ? `· Elevated (${ratio.toFixed(1)}× background)` : `· Normal background`;
+          : d >= MISSION.warning ? `· Elevated (${ratio.toFixed(1)}× background)` : `· WNL (normal background)`;
         rad24Status.style.color = c;
         rad24Status.title = `${MISSION.label}: normal background ${MISSION.background} mSv/day (${MISSION.source}). ` +
           `SOLARIS warns at ${MISSION.warning} and orders the shelter at ${MISSION.shelter} mSv/24 h. ` +
@@ -714,8 +717,9 @@ async function fetchAndUpdateVitals() {
       spo2El.textContent = spo2 + '%';
       if (spo2Fill) spo2Fill.style.width = spo2 + '%';
       // Same thresholds as the PULSE agent: <90 critical, <95 low
-      const spo2Color = spo2 < 90 ? 'var(--red)' : spo2 < 95 ? 'var(--yellow)' : 'var(--green)';
-      const spo2Label = spo2 < 90 ? '↓ Critical' : spo2 < 95 ? '↓ Low' : 'Normal';
+      const spo2Band = setVitalBand('spo2', spo2, spo2 < 90 ? 'out' : spo2 < 95 ? 'watch' : 'ok');
+      const spo2Color = spo2Band.color;
+      const spo2Label = spo2 < 90 ? '↓ Critical' : spo2Band.word;
       spo2El.style.color = spo2Color;
       if (spo2Fill) spo2Fill.style.background = spo2Color;
       if (spo2Status) { spo2Status.textContent = spo2Label; spo2Status.style.color = spo2Color; }
@@ -730,8 +734,9 @@ async function fetchAndUpdateVitals() {
       const sleep = Math.round(raw) === 70 && raw < 70 ? raw.toFixed(1) : Math.round(raw);
       sleepEl.textContent = sleep + '%';
       if (sleepFill) sleepFill.style.width = raw + '%';
-      const sleepColor = raw < 50 ? 'var(--red)' : raw < 70 ? 'var(--orange)' : 'var(--green)';
-      const sleepLabel = raw < 50 ? '↓ Poor' : raw < 70 ? '↓ Fair' : 'Good';
+      const sleepBand = setVitalBand('sleep', raw, raw < 50 ? 'out' : raw < 70 ? 'watch' : 'ok');
+      const sleepColor = sleepBand.color;
+      const sleepLabel = raw < 50 ? '↓ Poor' : sleepBand.word;
       sleepEl.style.color = sleepColor;
       if (sleepFill) sleepFill.style.background = sleepColor;
       if (sleepStatus) { sleepStatus.textContent = sleepLabel; sleepStatus.style.color = sleepColor; }
@@ -750,6 +755,7 @@ function showVitalsOffline() {
     const v = document.getElementById(`${k}-value`), st = document.getElementById(`${k}-status`);
     if (v) { v.textContent = '—'; v.style.color = 'var(--muted)'; }
     if (st) { st.textContent = 'Offline'; st.style.color = 'var(--muted)'; }
+    const bar = document.getElementById(`${k}-bar`); if (bar) bar.classList.add('empty');
   });
 }
 
