@@ -7,6 +7,9 @@ const TREND_META = {
   spo2:               { icon: '🫁', label: 'SpO₂',            unit: '%',     agent: 'PULSE',   dp: 1 },
   il6:                { icon: '🧬', label: 'IL-6',            unit: 'pg/mL', agent: 'GENE',    dp: 1 },
   sleep_quality:      { icon: '🌙', label: 'Sleep',           unit: '/100',  agent: 'MIRROR',  dp: 0 },
+  blood_pressure_systolic: { icon: '🩺', label: 'Blood pressure (systolic)', unit: 'mmHg', agent: 'PULSE', dp: 0, limitLabel: 'upper normal limit' },
+  temperature:        { icon: '🌡', label: 'Body temperature', unit: '°C',    agent: 'PULSE',   dp: 1, limitLabel: 'upper normal limit' },
+  respiratory_rate:   { icon: '💨', label: 'Respiration rate', unit: '/min',  agent: 'PULSE',   dp: 0, limitLabel: 'upper normal limit' },
   radiation_dose_24h: { icon: '☢',  label: 'Radiation (24 h)', unit: 'mSv',  agent: 'SOLARIS', dp: 2 }
 };
 let TREND_OPEN = null;

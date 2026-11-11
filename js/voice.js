@@ -749,6 +749,35 @@ async function fetchAndUpdateVitals() {
       if (spo2Status) { spo2Status.textContent = spo2Label; spo2Status.style.color = spo2Color; }
     }
     
+    // Blood pressure, temperature, respiration rate: shown against their normal limits (same limits as
+    // agents.VITAL_THRESHOLDS); amber outside WNL, red beyond the critical limits. Not part of PULSE's alert rules.
+    const showExtra = (k, value, text, state, word) => {
+      const el = document.getElementById(`${k}-value`), st = document.getElementById(`${k}-status`);
+      if (!el || value === undefined || value === null) return;
+      const band = setVitalBand(k, value, state);
+      const color = state === 'out' ? 'var(--red)' : band.color;
+      el.innerHTML = text; el.style.color = color;
+      if (st) { st.textContent = word || band.word; st.style.color = color; }
+    };
+    if (vitals.blood_pressure_systolic !== undefined) {
+      const sys = vitals.blood_pressure_systolic, dia = vitals.blood_pressure_diastolic;
+      const crit = sys > 180 || sys < 80 || dia > 120 || dia < 50;
+      const diaOut = dia > 90 || dia < 60;
+      const sysIn = sys >= 90 && sys <= 140;
+      showExtra('bp', sys, `${sys}/${dia}<span class="vv-unit">mmHg</span>`, crit ? 'out' : diaOut ? 'watch' : 'ok',
+        crit ? 'Out of range' : (sysIn && diaOut) ? (dia > 90 ? 'Above WNL ↑' : 'Below WNL ↓') : null);
+    }
+    if (vitals.temperature !== undefined) {
+      const tc = vitals.temperature;
+      showExtra('temp', tc, `${tc.toFixed(1)}<span class="vv-unit">°C</span>`, (tc >= 39 || tc < 35) ? 'out' : 'ok',
+        tc >= 39 ? '↑ Fever' : tc < 35 ? '↓ Hypothermia' : null);
+    }
+    if (vitals.respiratory_rate !== undefined) {
+      const rr = vitals.respiratory_rate;
+      showExtra('rr', rr, `${rr}<span class="vv-unit">/min</span>`, (rr > 30 || rr < 8) ? 'out' : 'ok',
+        rr > 30 ? '↑ Critical' : rr < 8 ? '↓ Critical' : null);
+    }
+
     // Update Sleep
     const sleepEl = document.getElementById('sleep-value');
     const sleepFill = document.getElementById('sleep-fill');
@@ -775,7 +804,7 @@ async function fetchAndUpdateVitals() {
 }
 
 function showVitalsOffline() {
-  ['hr', 'spo2', 'il6', 'sleep'].forEach(k => {
+  ['hr', 'spo2', 'bp', 'temp', 'rr', 'il6', 'sleep'].forEach(k => {
     const v = document.getElementById(`${k}-value`), st = document.getElementById(`${k}-status`);
     if (v) { v.textContent = '—'; v.style.color = 'var(--muted)'; }
     if (st) { st.textContent = 'Offline'; st.style.color = 'var(--muted)'; }

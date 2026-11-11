@@ -6,6 +6,11 @@ const VITAL_WNL = {
   spo2:  { min: 80, max: 100, lo: 95, hi: 100, unit: '%',   note: 'blood oxygen saturation' },
   il6:   { min: 0,  max: null, lo: 0, hi: null, unit: 'pg/mL', note: "this person's pre-flight limit (modelled value)" },
   sleep: { min: 0,  max: 100, lo: 70, hi: 100, unit: '/100', note: 'sleep-quality score' },
+  // Same normal limits as agents.VITAL_THRESHOLDS (adult resting): systolic 90-140, temperature 36.1-37.8 °C,
+  // respiration 12-20 breaths/min. Diastolic (60-90) is checked alongside systolic in the BP status.
+  bp:    { min: 70, max: 180, lo: 90, hi: 140, unit: 'mmHg', note: 'systolic blood pressure' },
+  temp:  { min: 35, max: 40,  lo: 36.1, hi: 37.8, unit: '°C', note: 'body temperature' },
+  rr:    { min: 6,  max: 36,  lo: 12, hi: 20, unit: '/min', note: 'breaths per minute' },
 };
 let IL6_LIMIT = null;
 function setVitalBand(k, value, agentState) {
@@ -131,7 +136,7 @@ async function drawTrend() {
   try {
     const r = await fetch(`${DASH_API.baseUrl}/api/crew/${DASH_API.selectedCrewId}/trends?series=true`);
     if (!r.ok) return;
-    t = (await r.json()).metrics[m];
+    const j = await r.json(); t = j.metrics[m] || (j.display_metrics || {})[m];
   } catch (e) { return; }
   if (!t || !t.series || t.series.length < 2 || TREND_OPEN !== m) return;
   const crewName = (typeof CREW_DATA !== 'undefined' && CREW_DATA[selectedCrew]) ? CREW_DATA[selectedCrew].firstName : '';
@@ -157,7 +162,7 @@ async function drawTrend() {
   }
   // Agent threshold, "now" marker, history, forecast
   html += `<line class="chart-threshold" x1="${P}" y1="${Y(t.threshold)}" x2="${W - P}" y2="${Y(t.threshold)}"/>`;
-  html += `<text class="chart-label" x="${P + 4}" y="${Y(t.threshold) - 4}" text-anchor="start" style="fill:var(--orange)">${meta.agent} threshold ${t.threshold}</text>`;
+  html += `<text class="chart-label" x="${P + 4}" y="${Y(t.threshold) - 4}" text-anchor="start" style="fill:var(--orange)">${meta.limitLabel || meta.agent + ' threshold'} ${t.threshold}</text>`;
   html += `<line class="chart-now" x1="${X(0)}" y1="${P / 2}" x2="${X(0)}" y2="${H - P}"/>`;
   html += `<polyline class="chart-line" points="${ser.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ')}"/>`;
   if (hasFc) {
@@ -189,7 +194,7 @@ async function drawTrend() {
     `Last ${mins} min of telemetry. Trend fitted on the last 2 min` +
     (t.slope_per_min !== null ? ` (${t.slope_per_min > 0 ? '+' : ''}${Number(t.slope_per_min).toFixed(meta.dp + 1)} ${meta.unit}/min, R² ${t.r2})` : '') +
     (t.eta_min !== null ? `. ${meta.agent} forecasts it crosses ${t.threshold} ${meta.unit} in ${fmtEta(t.eta_min)} if the trend continues.`
-                        : t.out_of_range ? `. Already beyond the ${meta.agent} threshold (${t.threshold} ${meta.unit}).`
+                        : t.out_of_range ? `. Already beyond the ${meta.limitLabel || meta.agent + ' threshold'} (${t.threshold} ${meta.unit}).`
                         : `. No threshold crossing forecast within ${20} min.`);
 }
 

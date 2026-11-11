@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AEGIS Mission Control</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%235a9fd7'/><text x='16' y='21' font-size='14' text-anchor='middle' fill='white'>◈</text></svg>">
-<link rel="stylesheet" href="css/aegis.css?v=13">
+<link rel="stylesheet" href="css/aegis.css?v=15">
 <style>/* Paints that reference SVG defs inside this page: must stay in the page (see css/aegis.css) */
 .hero-done{stroke:url(#hg-done);filter:url(#hg-glow);}
 .hero-ship-body{filter:url(#hg-glow);}
@@ -261,6 +261,30 @@
       <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('spo2')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
     </div>
     
+    <div class="vital-row" data-metric="blood_pressure_systolic" onclick="openTrend('blood_pressure_systolic')" title="Shown alongside PULSE's readings; PULSE's alert rules use heart rate and SpO₂, so this one is displayed against its normal limits but doesn't raise alerts yet.">
+      <div class="vital-label"><span class="vl-name">Blood pressure</span><span class="agent-tag pulse" title="Shown with PULSE (not yet in its alert rules)">PULSE</span><span class="src-tag sim" title="Simulated blood-pressure feed (cuff or wearable on a real mission)">SIM</span></div>
+      <div class="vital-value bp" style="color:var(--muted)" id="bp-value">…</div>
+      <div class="vital-bar" id="bp-bar"><div class="vital-fill" id="bp-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="bp-band"></div><div class="vb-marker" id="bp-marker"></div></div>
+      <div class="vital-status" style="color:var(--muted)" id="bp-status">Connecting…</div>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('blood_pressure_systolic')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+    </div>
+
+    <div class="vital-row" data-metric="temperature" onclick="openTrend('temperature')" title="Shown alongside PULSE's readings; PULSE's alert rules use heart rate and SpO₂, so this one is displayed against its normal limits but doesn't raise alerts yet.">
+      <div class="vital-label"><span class="vl-name">Temp</span><span class="agent-tag pulse" title="Shown with PULSE (not yet in its alert rules)">PULSE</span><span class="src-tag sim" title="Simulated body-temperature feed">SIM</span></div>
+      <div class="vital-value" style="color:var(--muted)" id="temp-value">…</div>
+      <div class="vital-bar" id="temp-bar"><div class="vital-fill" id="temp-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="temp-band"></div><div class="vb-marker" id="temp-marker"></div></div>
+      <div class="vital-status" style="color:var(--muted)" id="temp-status">Connecting…</div>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('temperature')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+    </div>
+
+    <div class="vital-row" data-metric="respiratory_rate" onclick="openTrend('respiratory_rate')" title="Shown alongside PULSE's readings; PULSE's alert rules use heart rate and SpO₂, so this one is displayed against its normal limits but doesn't raise alerts yet.">
+      <div class="vital-label"><span class="vl-name">Resp. rate</span><span class="agent-tag pulse" title="Shown with PULSE (not yet in its alert rules)">PULSE</span><span class="src-tag sim" title="Simulated respiration-rate feed (chest strap or wearable)">SIM</span></div>
+      <div class="vital-value" style="color:var(--muted)" id="rr-value">…</div>
+      <div class="vital-bar" id="rr-bar"><div class="vital-fill" id="rr-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="rr-band"></div><div class="vb-marker" id="rr-marker"></div></div>
+      <div class="vital-status" style="color:var(--muted)" id="rr-status">Connecting…</div>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('respiratory_rate')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+    </div>
+
     <div class="vital-row" id="il6-row" data-metric="il6" onclick="openTrend('il6')" title="GENE · IL-6 inflammatory marker (pg/mL). Modelled, smoothed (moves at most 0.12 pg/mL per second), and demo time is compressed: a storm that would take hours plays in about 2.5 minutes.">
       <div class="vital-label"><span class="vl-name">IL-6</span><span class="agent-tag gene" title="Monitored by GENE">GENE</span><span class="src-tag model" title="Modelled from stress and radiation; no in-flight blood sensor. Smoothed so it cannot jump in one sample; demo time is compressed (hours play in minutes), so real IL-6 would change more slowly.">MODELLED</span></div>
       <div class="vital-value" style="color:var(--muted)" id="il6-value">…</div>
@@ -626,19 +650,19 @@
   </div><!-- End Agent Insights Page -->
 </main>
 
-<script src="js/theme.js?v=13"></script>
-<script src="js/insights.js?v=14"></script>
-<script src="js/voice.js?v=14"></script>
-<script src="js/live-alerts.js?v=13"></script>
-<script src="js/predict.js?v=13"></script>
-<script src="js/cascade-config.js?v=13"></script>
-<script src="js/mission-bar.js?v=13"></script>
-<script src="js/emergency.js?v=13"></script>
-<script src="js/call-panel.js?v=13"></script>
-<script src="js/cascade-map.js?v=13"></script>
-<script src="js/trends.js?v=13"></script>
-<script src="js/hr-chart.js?v=13"></script>
-<script src="js/whatif.js?v=13"></script>
+<script src="js/theme.js?v=15"></script>
+<script src="js/insights.js?v=15"></script>
+<script src="js/voice.js?v=15"></script>
+<script src="js/live-alerts.js?v=15"></script>
+<script src="js/predict.js?v=15"></script>
+<script src="js/cascade-config.js?v=15"></script>
+<script src="js/mission-bar.js?v=15"></script>
+<script src="js/emergency.js?v=15"></script>
+<script src="js/call-panel.js?v=15"></script>
+<script src="js/cascade-map.js?v=15"></script>
+<script src="js/trends.js?v=15"></script>
+<script src="js/hr-chart.js?v=15"></script>
+<script src="js/whatif.js?v=15"></script>
 
 <!-- HR Graph Modal -->
 <div id="hrModal" class="graph-modal" role="dialog" aria-labelledby="modal-title" onclick="if(event.target===this)closeHRGraph()">
@@ -719,10 +743,10 @@
   </div>
 </div>
 
-<script src="js/spacecraft-link.js?v=13"></script>
+<script src="js/spacecraft-link.js?v=15"></script>
 
-<script src="js/echo.js?v=14"></script>
-<script src="js/story.js?v=13"></script>
+<script src="js/echo.js?v=15"></script>
+<script src="js/story.js?v=15"></script>
 
 <!-- Emergency edge glow + live call panel (AEGIS phoning the flight surgeon) -->
 <div class="emergency-edge" aria-hidden="true"></div>
@@ -739,7 +763,7 @@
 
 <!-- AEGIS API Client - connects frontend to backend -->
 <script src="aegis-api-client.js?v=12"></script>
-<script src="js/cascade-map-3d.js?v=13"></script>
+<script src="js/cascade-map-3d.js?v=15"></script>
 
 </body>
 </html>

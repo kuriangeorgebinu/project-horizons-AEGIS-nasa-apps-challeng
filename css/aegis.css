@@ -1188,3 +1188,5 @@ body.acked::before{animation:none;opacity:.35;}
 .rad-header{font-size:1rem;}
 #rad-value,#rad24-value{font-size:1.15rem;font-weight:700;}
 @media (max-width:640px){.vital-value{width:72px;font-size:1.7rem;}.vital-status{width:auto;flex:1 0 100%;text-align:left;margin-left:calc(84px + 1rem);}.vital-more{margin-left:0;}}
+.vital-value.bp{font-size:1.55rem;letter-spacing:-.8px;}
+.vital-value .vv-unit{font-size:.7rem;font-weight:600;color:var(--muted);margin-left:2px;letter-spacing:0;}

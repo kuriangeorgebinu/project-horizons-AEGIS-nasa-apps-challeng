@@ -37,6 +37,14 @@ METRICS = {
     "radiation_dose_24h": {"agent": "SOLARIS", "label": "Radiation",  "unit": "mSv",   "dir": "up",   "threshold": 3.68,  "tol": 0.3},
 }
 
+# Shown on the vitals panel with history + trend, but NOT part of the cascade forecast (PULSE's alert rules use
+# heart rate and SpO2). Limits are the upper "within normal limits" edges in agents.VITAL_THRESHOLDS.
+DISPLAY_METRICS = {
+    "blood_pressure_systolic": {"agent": "PULSE", "label": "Blood pressure (systolic)", "unit": "mmHg", "dir": "up", "threshold": 140.0, "tol": 4.0},
+    "temperature":             {"agent": "PULSE", "label": "Body temperature",          "unit": "°C",   "dir": "up", "threshold": 37.8,  "tol": 0.15},
+    "respiratory_rate":        {"agent": "PULSE", "label": "Respiration rate",          "unit": "/min", "dir": "up", "threshold": 20.0,  "tol": 1.5},
+}
+
 # DeepSeek PREDICT notes per crew member (written by the coordinator in the background)
 NOTES: dict = {}
 
@@ -98,8 +106,9 @@ def _fit(ts: list[float], ys: list[float]):
     return slope, my - slope * mx, r2
 
 
-def _trend(metric: str, pts: list[tuple[datetime, dict]], threshold: Optional[float] = None) -> Optional[dict]:
-    meta = dict(METRICS[metric])
+def _trend(metric: str, pts: list[tuple[datetime, dict]], threshold: Optional[float] = None,
+           meta: Optional[dict] = None) -> Optional[dict]:
+    meta = dict(meta or METRICS[metric])
     if threshold is not None:
         meta["threshold"] = threshold
     pts = [(t, v[metric]) for t, v in pts if v.get(metric) is not None]
@@ -187,10 +196,22 @@ def crew_forecast(crew_id: str, series: bool = False) -> dict:
         cascade_eta = upcoming_list[need - 1]["eta_min"]
     else:
         risk = "watch" if upcoming_list else "none"
-    return {"crew_member_id": crew_id, "risk": risk, "cascade_eta_min": cascade_eta,
-            "out_now": sorted(out_now), "upcoming": upcoming_list, "metrics": metrics,
-            "window_points": len(window), "horizon_min": HORIZON_MIN,
-            "note": NOTES.get(crew_id)}
+    res = {"crew_member_id": crew_id, "risk": risk, "cascade_eta_min": cascade_eta,
+           "out_now": sorted(out_now), "upcoming": upcoming_list, "metrics": metrics,
+           "window_points": len(window), "horizon_min": HORIZON_MIN,
+           "note": NOTES.get(crew_id)}
+    if series:      # history charts for the display-only vitals (kept out of the cascade logic above)
+        disp = {}
+        for m, meta in DISPLAY_METRICS.items():
+            t = _trend(m, window, meta=meta)
+            if t is None:
+                continue
+            t_end = pts[-1][0]
+            t["series"] = [[round((ts - t_end).total_seconds() / 60, 2), round(float(v[m]), 2)]
+                           for ts, v in pts if v.get(m) is not None]
+            disp[m] = t
+        res["display_metrics"] = disp
+    return res
 
 
 def as_findings(fc: dict) -> list[dict]:
