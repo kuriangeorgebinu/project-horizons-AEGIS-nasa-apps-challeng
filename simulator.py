@@ -217,7 +217,9 @@ class VitalsSimulator:
             sleep_quality=round(smooth("sleep_quality", sleep_raw,
                                        bypass=self.config.scenario == "cascade_demo"), 1),  # MIRROR joins at once
             hydration_level=round(smooth("hydration_level", hydration_raw), 1),
-            radiation_dose_24h=round(smooth("radiation_dose_24h", radiation_raw, bypass=radiation_bypass), 2)
+            radiation_dose_24h=round(smooth("radiation_dose_24h", radiation_raw, bypass=radiation_bypass), 2),
+            # OSSEO's static bone-density context is attached when vitals are read (database._vitals_in),
+            # not generated or stored with every reading.
         )
         
         # Store for next iteration

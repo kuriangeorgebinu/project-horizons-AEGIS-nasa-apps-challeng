@@ -395,7 +395,7 @@ from pydantic import BaseModel as _BaseModel, Field as _Field
 
 class AskRequest(_BaseModel):
     question: str = _Field(..., min_length=2, max_length=500)
-    agent: str = _Field("AEGIS", description="AEGIS, SOLARIS, GENE, PULSE or MIRROR")
+    agent: str = _Field("AEGIS", description="AEGIS, SOLARIS, GENE, PULSE, MIRROR or OSSEO")
     crew_id: Optional[str] = _Field(None, description="Focus crew member, e.g. crew-001 (a surname in the question overrides it)")
 
 
@@ -407,8 +407,8 @@ async def ask_agent(req: AskRequest):
     voice (rule-based answer if the model is unavailable).
     """
     agent = req.agent.strip().upper()
-    if agent not in {"AEGIS", "SOLARIS", "GENE", "PULSE", "MIRROR"}:
-        raise HTTPException(status_code=400, detail="agent must be AEGIS, SOLARIS, GENE, PULSE or MIRROR")
+    if agent not in {"AEGIS", "SOLARIS", "GENE", "PULSE", "MIRROR", "OSSEO"}:
+        raise HTTPException(status_code=400, detail="agent must be AEGIS, SOLARIS, GENE, PULSE, MIRROR or OSSEO")
     result = await asyncio.to_thread(get_coordinator().answer_question, req.question.strip(), agent, req.crew_id)
     aegis_metrics.answer("ask", (result or {}).get("source") if isinstance(result, dict) else None)
     return result

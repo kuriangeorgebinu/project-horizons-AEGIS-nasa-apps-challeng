@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AEGIS Mission Control</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%235a9fd7'/><text x='16' y='21' font-size='14' text-anchor='middle' fill='white'>◈</text></svg>">
-<link rel="stylesheet" href="css/aegis.css?v=15">
+<link rel="stylesheet" href="css/aegis.css?v=16">
 <style>/* Paints that reference SVG defs inside this page: must stay in the page (see css/aegis.css) */
 .hero-done{stroke:url(#hg-done);filter:url(#hg-glow);}
 .hero-ship-body{filter:url(#hg-glow);}
@@ -116,7 +116,7 @@
 
   <!-- Mission Control Page -->
   <div class="page active" id="page-mission">
-  <!-- Cascade Map (hero): live state of the four specialists around AEGIS -->
+  <!-- Cascade Map (hero): four forecast domains and OSSEO context around AEGIS -->
   <div class="graph-panel" aria-label="Cascade map">
     <div class="cm-head">
       <div class="graph-title">Cascade Map · <span id="cm-crew">Commander Chen</span></div>
@@ -124,7 +124,7 @@
       <button class="whatif-btn cm3d-btn" id="cm3d-btn" type="button" onclick="toggleCm3d()" aria-pressed="false" title="Switch the Cascade Map between the 2D diagram and a 3D view (same live data; drag to orbit, click a system to open it)">◈ 3D</button>
       <button class="whatif-btn" onclick="openWhatIf()" aria-label="Open the What-If simulator" title="What-If simulator: try hypothetical readings for the selected crew member and see how the agents would judge them. Nothing is saved."><span class="icon">🔮</span> What-If</button>
     </div>
-    <svg class="cm-svg" id="cascade-map" viewBox="0 0 640 336" role="img" aria-labelledby="cm-caption">
+    <svg class="cm-svg" id="cascade-map" viewBox="0 0 640 440" role="img" aria-labelledby="cm-caption">
       <defs>
         <filter id="cm-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <radialGradient id="cm-aura-grad"><stop offset="0" stop-opacity=".22"/><stop offset=".55" stop-opacity=".08"/><stop offset="1" stop-opacity="0"/></radialGradient>
@@ -134,8 +134,8 @@
       <circle class="cm-aura" cx="320" cy="165" r="92"/>
       <path class="cm-link" id="link-solaris-gene" d="M130,80 Q320,10 510,80"/>
       <path class="cm-link" id="link-gene-pulse" d="M510,80 Q612,165 510,250"/>
-      <path class="cm-link" id="link-pulse-mirror" d="M510,250 Q320,322 130,250"/>
       <path class="cm-link" id="link-mirror-solaris" d="M130,250 Q28,165 130,80"/>
+      <path class="cm-link" id="link-pulse-mirror" d="M510,250 Q320,296 130,250"/>
       <path class="conn-line" id="line-solaris" d="M130,80 L320,165"/>
       <circle class="cm-particle" data-agent="solaris" r="3.5"><animateMotion dur="1.6s" begin="0s" repeatCount="indefinite" path="M130,80 L320,165"/></circle>
       <circle class="cm-particle" data-agent="solaris" r="3.5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M130,80 L320,165"/></circle>
@@ -148,11 +148,12 @@
       <path class="conn-line" id="line-mirror" d="M130,250 L320,165"/>
       <circle class="cm-particle" data-agent="mirror" r="3.5"><animateMotion dur="1.6s" begin="0s" repeatCount="indefinite" path="M130,250 L320,165"/></circle>
       <circle class="cm-particle" data-agent="mirror" r="3.5"><animateMotion dur="1.6s" begin="0.8s" repeatCount="indefinite" path="M130,250 L320,165"/></circle>
+      <path class="conn-line osseo-spoke" id="line-osseo" d="M320,302 L320,232"/>
       <g id="cm-comets"></g>
       <g id="cm-fx"></g>
       <!-- ECHO rides with MIRROR: the companion that answers what MIRROR detects (not a fifth cascade system) -->
-      <path class="cm-tether" d="M168,276 Q190,300 211,302"/>
-      <g class="echo-mini" id="node-echo" data-mode="checkin" transform="translate(228,302)" tabindex="0" role="button"
+      <path class="cm-tether" d="M103,284 Q72,300 80,322"/>
+      <g class="echo-mini" id="node-echo" data-mode="checkin" transform="translate(80,342)" tabindex="0" role="button"
          aria-label="ECHO, the crew companion. Opens the ECHO panel" onclick="focusEcho()" onkeydown="if(event.key==='Enter')focusEcho()">
         <title>ECHO, the crew companion. MIRROR detects, ECHO responds. Not counted as a cascade system.</title>
         <circle class="em-halo" r="19"/>
@@ -163,7 +164,7 @@
         <text class="em-name" x="24" y="4">ECHO</text>
       </g>
       <g class="agent-node node-aegis active" id="node-aegis" data-mode="none" transform="translate(320,165)" tabindex="0" role="button" aria-label="AEGIS, the coordinator" aria-pressed="true" onclick="selectAgent('aegis')" onkeydown="if(event.key==='Enter')selectAgent('aegis')">
-        <title>AEGIS combines the four specialists. Three strained systems at once is a cascade.</title>
+        <title>AEGIS coordinates five specialists; four live domains count toward a cascade. OSSEO is context only.</title>
         <path class="cm-seg ok" id="cm-seg-0" d="M8.35,-59.42 A60,60 0 0 1 55.63,22.48"/>
         <path class="cm-seg ok" id="cm-seg-1" d="M47.28,36.94 A60,60 0 0 1 -47.28,36.94"/>
         <path class="cm-seg ok" id="cm-seg-2" d="M-55.63,22.48 A60,60 0 0 1 -8.35,-59.42"/>
@@ -224,6 +225,19 @@
         <text class="cm-name" y="63" text-anchor="middle">MIRROR</text>
         <text class="cm-state" id="cm-state-mirror" y="77" text-anchor="middle">steady</text>
       </g>
+      <g class="agent-node node-osseo" id="node-osseo" data-state="ok" transform="translate(320,352)" tabindex="0" role="button" aria-label="OSSEO, historical NASA cohort reference; not a crew measurement" aria-pressed="false" onclick="selectAgent('osseo')" onkeydown="if(event.key==='Enter')selectAgent('osseo')">
+        <title id="cm-tip-osseo">OSSEO · historical cohort reference, not a crew-specific measurement</title>
+        <circle class="cm-halo" r="52"/>
+        <circle class="cm-track" r="44"/>
+        <circle class="cm-gauge" id="cm-gauge-osseo" r="44" transform="rotate(-90)" stroke-dasharray="0 276.5"/>
+        <line class="cm-tick" x1="0" y1="-50" x2="0" y2="-38"/>
+        <circle class="cm-core" r="37"/>
+        <text class="cm-icon" y="-13" text-anchor="middle">◉</text>
+        <text class="cm-val" id="cm-val-osseo" y="9" text-anchor="middle">—</text>
+        <text class="cm-unit" id="cm-unit-osseo" y="22" text-anchor="middle">g/cm² · iRED</text>
+        <text class="cm-name" y="63" text-anchor="middle">OSSEO</text>
+        <text class="cm-state" id="cm-state-osseo" y="77" text-anchor="middle">not monitored</text>
+      </g>
     </svg>
     <div class="cm3d" id="cm3d" hidden aria-label="Cascade map, 3D view (same data as the 2D map)">
       <canvas></canvas>
@@ -233,14 +247,14 @@
     </div>
     <p class="cm-caption" id="cm-caption" aria-live="polite">Reading the crew's live data…</p>
     <div class="cm-detail" id="cm-detail" hidden aria-live="polite"></div>
-    <p class="cm-hint" id="cm-hint">Click a system for its reading, its limit and what that agent has done.</p>
+    <p class="cm-hint" id="cm-hint">Click a system for its reading and what that agent covers. OSSEO shows historical cohort reference and synthetic site context without a live limit.</p>
   </div>
 
   <!-- Vitals Panel -->
   <div class="vitals-panel">
     <div class="vitals-title">Live Vitals · Commander Chen</div>
     
-    <div class="vitals-legend">Each metric is monitored by one specialist agent · AEGIS combines them per crew member · <b>WNL</b> = within normal limits (the shaded band on each bar) · open <b>History &amp; forecast</b> on any row for its past readings and where it is heading<br><span class="src-tag sim">SIM</span> simulated feed in this demo (a real sensor would supply it) · <span class="src-tag model">MODELLED</span> estimated from other readings, no sensor</div>
+    <div class="vitals-legend">Each metric is monitored by one specialist agent · AEGIS combines them per crew member · <b>WNL</b> = within normal limits (the shaded band on each bar) · <b>History ▾</b> on any row shows its past readings and where it is heading<br><span class="src-tag sim">SIM</span> simulated feed in this demo (a real sensor would supply it) · <span class="src-tag model">MODELLED</span> estimated from other readings, no sensor</div>
 
     <div class="vital-row" data-metric="heart_rate" onclick="openTrend('heart_rate')">
       <div class="vital-label"><span class="vl-name">Heart</span><span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span><span class="src-tag sim" title="Simulated heart-rate feed (wearable ECG / chest strap on a real mission)">SIM</span></div>
@@ -249,7 +263,7 @@
       <div class="vital-bar" id="hr-bar"><div class="vital-fill" id="hr-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="hr-band"></div><div class="vb-marker" id="hr-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="hr-status">Connecting…</div>
       <span class="trend-chip" id="trend-heart_rate" hidden></span>
-      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('heart_rate')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('heart_rate')" aria-label="Show history and forecast" title="History &amp; forecast">History ▾</button>
     </div>
     
     <div class="vital-row" data-metric="spo2" onclick="openTrend('spo2')">
@@ -258,7 +272,7 @@
       <div class="vital-bar" id="spo2-bar"><div class="vital-fill" id="spo2-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="spo2-band"></div><div class="vb-marker" id="spo2-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="spo2-status">Connecting…</div>
       <span class="trend-chip" id="trend-spo2" hidden></span>
-      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('spo2')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('spo2')" aria-label="Show history and forecast" title="History &amp; forecast">History ▾</button>
     </div>
     
     <div class="vital-row" data-metric="blood_pressure_systolic" onclick="openTrend('blood_pressure_systolic')" title="Shown alongside PULSE's readings; PULSE's alert rules use heart rate and SpO₂, so this one is displayed against its normal limits but doesn't raise alerts yet.">
@@ -266,7 +280,7 @@
       <div class="vital-value bp" style="color:var(--muted)" id="bp-value">…</div>
       <div class="vital-bar" id="bp-bar"><div class="vital-fill" id="bp-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="bp-band"></div><div class="vb-marker" id="bp-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="bp-status">Connecting…</div>
-      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('blood_pressure_systolic')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('blood_pressure_systolic')" aria-label="Show history and forecast" title="History &amp; forecast">History ▾</button>
     </div>
 
     <div class="vital-row" data-metric="temperature" onclick="openTrend('temperature')" title="Shown alongside PULSE's readings; PULSE's alert rules use heart rate and SpO₂, so this one is displayed against its normal limits but doesn't raise alerts yet.">
@@ -274,7 +288,7 @@
       <div class="vital-value" style="color:var(--muted)" id="temp-value">…</div>
       <div class="vital-bar" id="temp-bar"><div class="vital-fill" id="temp-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="temp-band"></div><div class="vb-marker" id="temp-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="temp-status">Connecting…</div>
-      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('temperature')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('temperature')" aria-label="Show history and forecast" title="History &amp; forecast">History ▾</button>
     </div>
 
     <div class="vital-row" data-metric="respiratory_rate" onclick="openTrend('respiratory_rate')" title="Shown alongside PULSE's readings; PULSE's alert rules use heart rate and SpO₂, so this one is displayed against its normal limits but doesn't raise alerts yet.">
@@ -282,7 +296,7 @@
       <div class="vital-value" style="color:var(--muted)" id="rr-value">…</div>
       <div class="vital-bar" id="rr-bar"><div class="vital-fill" id="rr-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="rr-band"></div><div class="vb-marker" id="rr-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="rr-status">Connecting…</div>
-      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('respiratory_rate')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('respiratory_rate')" aria-label="Show history and forecast" title="History &amp; forecast">History ▾</button>
     </div>
 
     <div class="vital-row" id="il6-row" data-metric="il6" onclick="openTrend('il6')" title="GENE · IL-6 inflammatory marker (pg/mL). Modelled, smoothed (moves at most 0.12 pg/mL per second), and demo time is compressed: a storm that would take hours plays in about 2.5 minutes.">
@@ -291,7 +305,7 @@
       <div class="vital-bar" id="il6-bar"><div class="vital-fill" id="il6-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="il6-band"></div><div class="vb-marker" id="il6-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="il6-status">Connecting…</div>
       <span class="trend-chip" id="trend-il6" hidden></span>
-      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('il6')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('il6')" aria-label="Show history and forecast" title="History &amp; forecast">History ▾</button>
     </div>
     
     <div class="vital-row" data-metric="sleep_quality" onclick="openTrend('sleep_quality')">
@@ -300,7 +314,7 @@
       <div class="vital-bar" id="sleep-bar"><div class="vital-fill" id="sleep-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="sleep-band"></div><div class="vb-marker" id="sleep-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="sleep-status">Connecting…</div>
       <span class="trend-chip" id="trend-sleep_quality" hidden></span>
-      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('sleep_quality')" aria-label="Show history and forecast">History &amp; forecast ▾</button>
+      <button type="button" class="vital-more" onclick="event.stopPropagation();openTrend('sleep_quality')" aria-label="Show history and forecast" title="History &amp; forecast">History ▾</button>
     </div>
     
     <div class="radiation-section">
@@ -314,6 +328,27 @@
         <span style="cursor:pointer" onclick="openTrend('radiation_dose_24h')" title="Click for the 24 h dose trend + forecast">Dose rate (24 h): <strong id="rad24-value" style="color:var(--muted)">…</strong> <span id="rad24-status"></span><span class="trend-chip inline" id="trend-radiation_dose_24h" hidden></span></span>
       </div>
     </div>
+
+    <section class="bmd-demo-panel" aria-labelledby="bmd-title">
+      <button class="bmd-demo-heading" id="bmd-title" type="button" aria-expanded="false" aria-controls="bmd-details" onclick="toggleOsseoDetails()">
+        <span>OSSEO · Bone density</span>
+        <span class="bmd-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="bmd-demo-summary">
+        <div><span class="bmd-kicker">NASA study · iRED preflight cohort mean</span><strong id="bmd-total-value">—</strong><span class="bmd-unit">g/cm²</span></div>
+        <span class="src-tag sim" title="Historical cohort mean; not measured for the selected crew member">COHORT REF</span>
+      </div>
+      <div id="bmd-details" hidden>
+        <div class="bmd-reference-meta" id="bmd-reference-meta">Historical cohort reference, not an individual crew measurement.</div>
+        <div class="bmd-reference-list" id="bmd-reference-list" role="table" aria-readonly="true" aria-label="Published historical cohort total-body DXA aBMD means and standard deviations" aria-live="polite"></div>
+        <div class="bmd-site-section-title">Synthetic regional site examples · not NASA study data</div>
+        <div class="bmd-demo-list" id="bmd-site-list" role="table" aria-readonly="true" aria-label="Synthetic example areal bone mineral density site comparisons in grams per square centimetre" aria-live="polite">
+          <div class="bmd-site-row bmd-site-head" role="row"><span role="columnheader">DXA site</span><span role="columnheader">Preflight</span><span role="columnheader">Postflight</span><span role="columnheader">Δ</span></div>
+          <div class="bmd-site-empty">Waiting for demo values…</div>
+        </div>
+        <p class="bmd-source-note" id="bmd-source-note">The total-body values are historical study cohort means, not measurements for the selected crew member. Regional site examples are synthetic and not NASA sourced. No validated real-time in-flight bone monitor is represented here.</p>
+      </div>
+    </section>
   </div>
 
   <!-- Chat with the agents (typed; the agents still answer aloud unless muted) -->
@@ -583,7 +618,7 @@
           <div class="insight-avatar" style="border-color:var(--aegis)">◈</div>
           <div>
             <div class="insight-agent-name" style="color:var(--aegis)">AEGIS</div>
-            <div class="insight-agent-role">Coordinator · combines the four specialists</div>
+            <div class="insight-agent-role">Coordinator · combines five specialists</div>
           </div>
           <span class="insight-status" id="ins-status-aegis">…</span>
         </div>
@@ -633,6 +668,17 @@
         </div>
         <div class="insight-log" id="ins-log-mirror"><div class="insight-empty">Loading live activity…</div></div>
       </div>
+      <div class="insight-card" style="--node-color:var(--osseo)">
+        <div class="insight-header">
+          <div class="insight-avatar" style="border-color:var(--osseo)">◉</div>
+          <div>
+            <div class="insight-agent-name" style="color:var(--osseo)">OSSEO</div>
+            <div class="insight-agent-role">Bone-health context · historical cohort and synthetic site examples</div>
+          </div>
+          <span class="insight-status" id="ins-status-osseo">…</span>
+        </div>
+        <div class="insight-log" id="ins-log-osseo"><div class="insight-empty">Loading live activity…</div></div>
+      </div>
       <div class="insight-card" style="--node-color:var(--echo)">
         <div class="insight-header">
           <div class="insight-avatar" style="border-color:var(--echo)">🙂</div>
@@ -650,19 +696,19 @@
   </div><!-- End Agent Insights Page -->
 </main>
 
-<script src="js/theme.js?v=15"></script>
-<script src="js/insights.js?v=15"></script>
-<script src="js/voice.js?v=15"></script>
-<script src="js/live-alerts.js?v=15"></script>
-<script src="js/predict.js?v=15"></script>
-<script src="js/cascade-config.js?v=15"></script>
-<script src="js/mission-bar.js?v=15"></script>
-<script src="js/emergency.js?v=15"></script>
-<script src="js/call-panel.js?v=15"></script>
-<script src="js/cascade-map.js?v=15"></script>
-<script src="js/trends.js?v=15"></script>
-<script src="js/hr-chart.js?v=15"></script>
-<script src="js/whatif.js?v=15"></script>
+<script src="js/theme.js?v=16"></script>
+<script src="js/insights.js?v=16"></script>
+<script src="js/voice.js?v=16"></script>
+<script src="js/live-alerts.js?v=16"></script>
+<script src="js/predict.js?v=16"></script>
+<script src="js/cascade-config.js?v=16"></script>
+<script src="js/mission-bar.js?v=16"></script>
+<script src="js/emergency.js?v=16"></script>
+<script src="js/call-panel.js?v=16"></script>
+<script src="js/cascade-map.js?v=16"></script>
+<script src="js/trends.js?v=16"></script>
+<script src="js/hr-chart.js?v=16"></script>
+<script src="js/whatif.js?v=16"></script>
 
 <!-- HR Graph Modal -->
 <div id="hrModal" class="graph-modal" role="dialog" aria-labelledby="modal-title" onclick="if(event.target===this)closeHRGraph()">
@@ -743,10 +789,10 @@
   </div>
 </div>
 
-<script src="js/spacecraft-link.js?v=15"></script>
+<script src="js/spacecraft-link.js?v=16"></script>
 
-<script src="js/echo.js?v=15"></script>
-<script src="js/story.js?v=15"></script>
+<script src="js/echo.js?v=16"></script>
+<script src="js/story.js?v=16"></script>
 
 <!-- Emergency edge glow + live call panel (AEGIS phoning the flight surgeon) -->
 <div class="emergency-edge" aria-hidden="true"></div>
@@ -763,7 +809,7 @@
 
 <!-- AEGIS API Client - connects frontend to backend -->
 <script src="aegis-api-client.js?v=12"></script>
-<script src="js/cascade-map-3d.js?v=15"></script>
+<script src="js/cascade-map-3d.js?v=16"></script>
 
 </body>
 </html>

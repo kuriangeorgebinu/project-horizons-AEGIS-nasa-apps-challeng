@@ -626,127 +626,33 @@ class SOLARISAgent(BaseAgent):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# OsteoWatch Agent (part of PULSE conceptually, kept separate for now)
+# OSSEO Agent (bone-health comparison context)
 # ─────────────────────────────────────────────────────────────────────────────
 
-class OsteoWatchAgent(BaseAgent):
-    """Musculoskeletal health monitoring agent (bone/muscle - part of PULSE domain)."""
+class OsseoAgent(BaseAgent):
+    """OSSEO presents historical cohort and synthetic DXA context without clinical alerts."""
     
-    agent_type = AgentType.OSTEO
-    specialty = "musculoskeletal"
+    agent_type = AgentType.OSSEO
+    specialty = "bone_health_context"
     
     def analyze(self, crew_member: CrewMember) -> list[dict]:
-        """Analyze musculoskeletal health."""
-        findings = []
-        
-        # Bone loss prediction based on mission duration
-        days = crew_member.mission_day
-        
-        # ~1-2% bone loss per month in microgravity
-        estimated_bone_loss = (days / 30) * 1.5  # 1.5% per month average
-        
-        if estimated_bone_loss > 5:
-            findings.append({
-                "type": "prediction",
-                "metric": "bone_density",
-                "value": estimated_bone_loss,
-                "message": f"Estimated bone loss: {estimated_bone_loss:.1f}% after {days} days",
-                "pillar": "PREDICT"
-            })
-        
-        # Muscle atrophy prediction
-        estimated_muscle_loss = (days / 30) * 3  # ~3% per month without exercise
-        
-        if estimated_muscle_loss > 8:
-            findings.append({
-                "type": "prediction",
-                "metric": "muscle_mass",
-                "value": estimated_muscle_loss,
-                "message": f"Estimated muscle loss risk: {estimated_muscle_loss:.1f}%",
-                "pillar": "PREDICT"
-            })
-        
-        # Check for back pain (common in space)
-        if "back_pain" in crew_member.active_conditions:
-            findings.append({
-                "type": "warning",
-                "metric": "spinal_health",
-                "value": "back_pain",
-                "message": "Active back pain reported - spinal elongation effects",
-                "pillar": "PREVENT"
-            })
-        
-        return findings
+        """Report fixture provenance; no validated real-time bone monitor or diagnosis is available."""
+        v = crew_member.vitals
+        demo = getattr(v, "bone_density_demo", None) if v else None
+        if not demo:
+            return []
+        return [{
+            "type": "context",
+            "metric": "bone_density",
+            "value": demo.data_status,
+            "message": ("OSSEO shows historical NASA-study total-body cohort means and synthetic regional DXA examples; "
+                        "neither is a measurement for this crew member or a NASA-wide norm. "
+                        "No validated real-time in-flight bone monitor or clinical alert is available."),
+        }]
     
     def get_recommendations(self, crew_member: CrewMember, findings: list[dict]) -> list[Recommendation]:
-        """Generate musculoskeletal recommendations."""
-        recommendations = []
-        
-        for finding in findings:
-            kb_results = self._query_knowledge_base(
-                f"bone loss muscle atrophy {finding['metric']} countermeasures ARED",
-                n_results=2
-            )
-            evidence = [r["text"][:200] for r in kb_results] if kb_results else []
-            
-            if finding["metric"] == "bone_density":
-                rec = self._create_recommendation(
-                    crew_member,
-                    RecommendationPillar.PREDICT,
-                    AlertSeverity.MEDIUM,
-                    "Bone Health Management",
-                    f"Predictive analysis indicates elevated bone loss trajectory.",
-                    finding["message"],
-                    actions=[
-                        "Ensure daily ARED resistance exercise (2+ hours)",
-                        "Verify vitamin D supplementation (800-1000 IU/day)",
-                        "Maintain calcium intake (1000-1200 mg/day)",
-                        "Schedule DXA scan if not done in 30 days"
-                    ],
-                    evidence=evidence,
-                    confidence=0.82
-                )
-                recommendations.append(rec)
-                
-            elif finding["metric"] == "muscle_mass":
-                rec = self._create_recommendation(
-                    crew_member,
-                    RecommendationPillar.PREDICT,
-                    AlertSeverity.MEDIUM,
-                    "Muscle Preservation Protocol",
-                    "Mission duration indicates need for enhanced exercise protocol.",
-                    finding["message"],
-                    actions=[
-                        "Increase protein intake to 1.5g/kg body weight",
-                        "Add ARED squat sets to daily routine",
-                        "Complete full T2 treadmill session daily",
-                        "Log exercise completion in crew health system"
-                    ],
-                    evidence=evidence,
-                    confidence=0.80
-                )
-                recommendations.append(rec)
-                
-            elif finding["metric"] == "spinal_health":
-                rec = self._create_recommendation(
-                    crew_member,
-                    RecommendationPillar.PREVENT,
-                    AlertSeverity.MEDIUM,
-                    "Back Pain Management",
-                    "Active back pain requires intervention to prevent chronic issues.",
-                    finding["message"],
-                    actions=[
-                        "Apply core stabilization exercises",
-                        "Use lumbar support during work activities",
-                        "Consider NSAIDs if approved by CMO",
-                        "Schedule physical therapy session"
-                    ],
-                    evidence=evidence,
-                    confidence=0.85
-                )
-                recommendations.append(rec)
-        
-        return recommendations
+        """Synthetic example data does not support recommendations or alerts."""
+        return []
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1017,12 +923,12 @@ class AEGISAgent(BaseAgent):
     def __init__(self):
         super().__init__()
         self.specialists = [
-            # Dashboard-metrics scope: each agent owns the metrics shown on the Live Vitals panel
+            # Dashboard health domains plus OSSEO's cohort-reference and synthetic DXA context
             PULSEAgent(),      # Heart rate, SpO2
             SOLARISAgent(),    # Radiation exposure (24h dose + mission total)
             GENEAgent(),       # IL-6
             MIRRORAgent(),     # Sleep
-            # OsteoWatchAgent() (bone/muscle) disabled: not a dashboard metric
+            OsseoAgent(),      # Bone density comparisons; demo-only, not a live cascade domain
         ]
         # Track agent statuses for cascade detection (T1)
         self._agent_status_history = {}
@@ -1259,7 +1165,9 @@ class AEGISAgent(BaseAgent):
             if finding.get("type") in ["warning", "critical", "caution"]:
                 # Determine which agent this finding came from based on metric
                 agent_name = self._metric_to_agent(finding.get("metric", ""))
-                if agent_name:
+                # OSSEO's aBMD comparison is illustrative context, not a validated real-time domain;
+                # keep its attribution for reporting but never let it contribute to a cascade.
+                if agent_name and agent_name != "OSSEO":
                     if agent_name not in self._agent_status_history[crew_id]:
                         self._agent_status_history[crew_id][agent_name] = []
                     self._agent_status_history[crew_id][agent_name].append({
@@ -1281,7 +1189,7 @@ class AEGISAgent(BaseAgent):
             "stress": "MIRROR",
             "sleep": "MIRROR",
             "isolation": "MIRROR",
-            "bone_density": "PULSE",  # OsteoWatch folded into PULSE
+            "bone_density": "OSSEO",
             "muscle_mass": "PULSE",
             "spinal_health": "PULSE",
             "inflammatory": "GENE",
@@ -1321,6 +1229,7 @@ class AEGISAgent(BaseAgent):
                 "GENE": "Hi, GENE here. I watch for signs of inflammation in the blood. Ask me how anyone's doing.",
                 "PULSE": "Hey, PULSE here! Heart rate and oxygen are my thing. Who should I check on?",
                 "MIRROR": "Hi, MIRROR here. I look after sleep and how everyone's holding up. What would you like to know?",
+                "OSSEO": "OSSEO here. I show historical study cohort means and synthetic regional DXA examples; neither is a measurement for you, and I do not provide a live bone monitor or clinical alert.",
             }
             is_thanks = set(q_norm) <= thanks and not set(q_norm) <= greet
             answer = "Anytime. I'll keep an eye on everyone." if is_thanks else intros.get(agent_name, intros["AEGIS"])
@@ -1355,9 +1264,16 @@ class AEGISAgent(BaseAgent):
 
         # 1. Live findings from the relevant specialist(s)
         consulted, findings = [], []
+        # OSSEO's "context" finding (historical cohort reference + synthetic DXA examples) is not a health reading:
+        # it is used only when the question is about bones or is put to OSSEO, so it never replaces AEGIS's
+        # summary of the person's actual readings.
+        bone_q = agent_name == "OSSEO" or bool(_re_mod.search(r"\b(bones?|dxa|bmd|osseo|skelet\w*|osteopor\w*|bone density)\b",
+                                                         question or "", _re_mod.I))
         for a in self.specialists:
             a_name = a.agent_type.value.upper()
-            if agent_name == "AEGIS" or a_name == agent_name or (agent_name == "PULSE" and a_name == "OSTEOWATCH"):
+            if agent_name == "AEGIS" or a_name == agent_name:
+                if a_name == "OSSEO" and not bone_q:
+                    continue
                 consulted.append(a.agent_type.value)
                 try:
                     for f in a.analyze(member):
@@ -1457,7 +1373,7 @@ class AEGISAgent(BaseAgent):
             source = "rules"
             if findings:
                 answer = f"Here's what I'm seeing for the {role(member)}: " + "; ".join(
-                    f.get("message", "") for f in findings[:3]) + "."
+                    f.get("message", "").rstrip(".") for f in findings[:3]) + "."
             else:
                 answer = (f"Good news: everything I track for the {role(member)} looks normal right now. "
                           + self._rules_readout(agent_name, member))
@@ -1494,6 +1410,8 @@ class AEGISAgent(BaseAgent):
             parts.append(f"Sleep score {v.sleep_quality:.0f} out of 100.")
         if agent_name in ("GENE",):
             parts.append("The modelled IL-6 inflammation marker is inside this person's own normal range.")
+        if agent_name == "OSSEO":
+            parts.append("OSSEO shows historical total-body DXA cohort means and synthetic regional site examples; these are not measurements for this crew member or NASA-wide norms, and no validated real-time in-flight bone monitor or clinical alert is available.")
         return " ".join(parts)
 
     # ── What-If simulator: real agent rules on hypothetical dashboard values (no DB writes) ──
@@ -1528,7 +1446,7 @@ class AEGISAgent(BaseAgent):
                 f = GENEAgent.il6_findings(il6, aegis_mission.il6_baseline(base.id))
             else:
                 # Long-range predictions (e.g. day-365 dose projection) aren't part of a what-if on readings
-                f = [x for x in a.analyze(hypo) if x.get("type") != "prediction"]
+                f = [x for x in a.analyze(hypo) if x.get("type") not in ("prediction", "context")]
             if any(x.get("pillar") == "PROTECT" or x.get("type") == "critical" for x in f):
                 level = "critical"
             elif name in red_tier and any(x.get("type") == red_tier[name] for x in f):

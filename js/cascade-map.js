@@ -3,6 +3,7 @@ const CM_FMT = {
   sleep_quality: v => [Math.round(v), '/100 sleep'], radiation_dose_24h: v => [v.toFixed(2), 'mSv / 24 h']
 };
 const CM_CIRC = 276.46;
+// Neighbouring health domains (strain spreads between them). OSSEO is context only, so it has no strain links.
 const CM_PAIRS = [['solaris', 'gene'], ['gene', 'pulse'], ['pulse', 'mirror'], ['mirror', 'solaris']];
 
 function _cmStrain(t) {
@@ -190,7 +191,7 @@ function renderCascadeMap(fc) {
 }
 
 // Propagation effects on the Cascade Map
-const CM_POS = { solaris: [130, 80], gene: [510, 80], pulse: [510, 250], mirror: [130, 250] };
+const CM_POS = { solaris: [130, 80], gene: [510, 80], pulse: [510, 250], mirror: [130, 250], osseo: [320, 352] };
 function _cmEnsureComets() {
   const g = document.getElementById('cm-comets');
   if (!g || g.dataset.built) return;

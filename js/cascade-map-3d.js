@@ -4,8 +4,9 @@
 // three.js. three.js is loaded only when someone turns 3D on; if it can't load, the 2D map simply stays.
 // ============================================
 const CM3D = { on: false, ready: false, loading: null, raf: 0, nodes: {}, lastMode: null, ripples: [], t0: 0 };
-const CM3D_POS = { solaris: [-3.5, -1.9], gene: [3.5, -1.9], pulse: [3.5, 1.9], mirror: [-3.5, 1.9] };
-const CM3D_NAMES = { solaris: 'SOLARIS', gene: 'GENE', pulse: 'PULSE', mirror: 'MIRROR' };
+const CM3D_POS = { solaris: [-3.5, -1.9], gene: [3.5, -1.9], pulse: [3.5, 1.9], mirror: [-3.5, 1.9], osseo: [0, 4.4] };
+const CM3D_NAMES = { solaris: 'SOLARIS', gene: 'GENE', pulse: 'PULSE', mirror: 'MIRROR', osseo: 'OSSEO' };
+// Strain links between neighbouring health domains; OSSEO is context only and sits outside the ring.
 const CM3D_LINKS = [['solaris', 'gene'], ['gene', 'pulse'], ['pulse', 'mirror'], ['mirror', 'solaris']];
 function _cm3dLoad() {
   if (window.THREE && THREE.OrbitControls) return Promise.resolve();
@@ -82,9 +83,12 @@ function _cm3dBuild() {
   const nodeMeshes = [];
   Object.entries(CM3D_POS).forEach(([agent, [x, z]]) => {
     const col = new T.Color(_cm3dVar('--' + agent, '#7aa7ff'));
+    const isOsseo = agent === 'osseo';
     const g = new T.Group(); g.position.set(x, 0.3, z); scene.add(g);
-    const orb = new T.Mesh(new T.SphereGeometry(0.42, 32, 24),
-      new T.MeshStandardMaterial({ color: col.clone().multiplyScalar(0.35), emissive: col, emissiveIntensity: 0.55, metalness: 0.3, roughness: 0.35 }));
+    const orb = new T.Mesh(new T.SphereGeometry(isOsseo ? 0.3 : 0.42, 32, 24),
+      new T.MeshStandardMaterial({ color: col.clone().multiplyScalar(isOsseo ? 0.9 : 0.35),
+        emissive: isOsseo ? 0x9aa3af : col, emissiveIntensity: isOsseo ? 0.12 : 0.55,
+        metalness: isOsseo ? 0.03 : 0.3, roughness: isOsseo ? 0.62 : 0.35 }));
     orb.userData.agent = agent; g.add(orb); nodeMeshes.push(orb);
     const halo = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: col, transparent: true, opacity: 0.45, depthWrite: false, blending: T.AdditiveBlending }));
     halo.scale.set(1.9, 1.9, 1); g.add(halo);
@@ -130,7 +134,7 @@ function _cm3dBuild() {
     if (hit) { try { selectAgent(hit.object.userData.agent); } catch (err) {} }
   });
   const resize = () => { const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-    // Narrow screens: pull the camera back so all four systems stay in frame
+    // Narrow screens: pull the camera back so the four monitored domains and OSSEO remain in frame
     CM3D.baseR = 9.2 * Math.max(1, Math.pow(1.9 / camera.aspect, 0.9)); controls.maxDistance = Math.max(16, CM3D.baseR + 4); };
   new ResizeObserver(resize).observe(host); resize();
   camera.position.sub(controls.target).setLength(CM3D.baseR || 9.2).add(controls.target);   // start already framed
@@ -171,7 +175,7 @@ function _cm3dFrame(now) {
     n.gauge.material.color.setHex(col);
     n.gauge.rotation.z = -Math.PI / 2;
     const pulse = st === 'out' ? 0.5 + 0.5 * Math.sin(t * 7) : st === 'watch' ? 0.5 + 0.5 * Math.sin(t * 3) : 0.5;
-    n.orb.material.emissiveIntensity = st === 'ok' ? 0.5 : 0.6 + pulse * 0.6;
+    n.orb.material.emissiveIntensity = agent === 'osseo' ? 0.12 : st === 'ok' ? 0.5 : 0.6 + pulse * 0.6;
     n.halo.material.color.setHex(st === 'ok' ? n.col.getHex() : col);
     const hs = st === 'out' ? 2.2 + pulse * 0.8 : st === 'watch' ? 2.0 + pulse * 0.3 : 1.8;
     n.halo.scale.set(hs, hs, 1);
@@ -239,7 +243,10 @@ async function toggleCm3d(force) {
   try {
     await _cm3dLoad();
     host.hidden = false;
-    host.style.height = (innerWidth < 640 ? 320 : Math.max(260, Math.round(svg.getBoundingClientRect().height || 340))) + 'px';
+    // Minimum = the 2D map's height; on wide screens the view also grows to fill its panel (flex), so a tall
+    // vitals column next to it doesn't leave an empty band under the map.
+    host.style.minHeight = (innerWidth < 640 ? 320 : Math.max(260, Math.round(svg.getBoundingClientRect().height || 340))) + 'px';
+    host.style.height = '';
     svg.style.display = 'none';
     if (!CM3D.ready) _cm3dBuild();
     CM3D.on = true; CM3D.raf = requestAnimationFrame(_cm3dFrame);

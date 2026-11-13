@@ -60,6 +60,7 @@ class AgentType(str, Enum):
     PULSE = "PULSE"        # Heart rate + SpO2
     SOLARIS = "SOLARIS"    # Radiation monitoring (24 h dose + mission total)
     MIRROR = "MIRROR"      # Sleep quality
+    OSSEO = "OSSEO"        # Bone-health context and DXA comparisons
     AEGIS = "AEGIS"        # Coordinator/orchestrator
     # Keep OsteoWatch for backward compatibility until fully migrated
     OSTEO = "OsteoWatch"
@@ -68,6 +69,43 @@ class AgentType(str, Enum):
 # ─────────────────────────────────────────────────────────────────────────────
 # Vitals & Biometrics
 # ─────────────────────────────────────────────────────────────────────────────
+
+class BMDComparison(BaseModel):
+    """Illustrative preflight/postflight areal BMD values; never a real-time sensor reading."""
+    preflight: float = Field(..., ge=0, description="Illustrative preflight DXA aBMD (g/cm²)")
+    postflight: float = Field(..., ge=0, description="Illustrative postflight DXA aBMD (g/cm²)")
+
+
+class BMDReferenceGroup(BaseModel):
+    """Historical group-level cohort statistics, not an individual's measurement."""
+    name: str
+    n: int = Field(..., ge=1)
+    preflight_mean: float = Field(..., ge=0)
+    preflight_sd: float = Field(..., ge=0)
+    postflight_mean: float = Field(..., ge=0)
+    postflight_sd: float = Field(..., ge=0)
+
+
+class BMDReference(BaseModel):
+    """Published total-body DXA reference from a small historical ISS cohort."""
+    source_title: str
+    source_url: str
+    source_label: str
+    study_population: str
+    study_context: str
+    measurement: str
+    unit: str
+    scan_timing: str
+    groups: list[BMDReferenceGroup]
+
+
+class BoneDensityDemo(BaseModel):
+    """Historical cohort reference and synthetic site examples, never crew-specific readings."""
+    data_status: str = "COHORT REFERENCE + SYNTHETIC SITE EXAMPLES"
+    source_note: str = "Historical group means are not measurements for this crew member; regional site examples are synthetic."
+    nasa_total_body_reference: Optional[BMDReference] = None
+    comparisons: dict[str, BMDComparison]
+
 
 class Vitals(BaseModel):
     """Real-time vital signs for a crew member."""
@@ -83,6 +121,9 @@ class Vitals(BaseModel):
     sleep_quality: Optional[float] = Field(None, ge=0, le=100)
     hydration_level: Optional[float] = Field(None, ge=0, le=100)
     radiation_dose_24h: Optional[float] = Field(None, ge=0, description="mSv in last 24h")
+    bone_density_demo: Optional[BoneDensityDemo] = Field(
+        None, description="Historical group reference plus synthetic regional examples; neither is a crew-specific measurement"
+    )
 
 
 class CrewMember(BaseModel):

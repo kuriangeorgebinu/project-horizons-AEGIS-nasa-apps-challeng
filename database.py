@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 import uuid
 
+from aegis_osseo import demo_bmd_payload
 from models import (
     CrewMember, CrewRole, HealthStatus, Vitals,
     Recommendation, RecommendationStatus, RecommendationPillar,
@@ -162,8 +163,25 @@ def init_database():
 # Crew State Operations
 # ─────────────────────────────────────────────────────────────────────────────
 
+# OSSEO's bone-density context is the same static reference for everyone, so it is NOT stored with every
+# vitals reading (that made each row ~8x larger); it is attached when crew vitals are read.
+_NOT_STORED = {"bone_density_demo"}
+
+
+def _vitals_json(vitals) -> str:
+    return json.dumps(vitals.model_dump(exclude=_NOT_STORED))
+
+
+def _vitals_in(raw):
+    vitals = json.loads(raw) if raw else None
+    if vitals is not None:
+        vitals.pop("bone_density_demo", None)
+        vitals["bone_density_demo"] = demo_bmd_payload()
+    return vitals
+
+
 def _crew_from_row(row) -> CrewMember:
-    vitals = json.loads(row["vitals_json"]) if row["vitals_json"] else None
+    vitals = _vitals_in(row["vitals_json"])
     return CrewMember(
         id=row["id"],
         name=row["name"],
@@ -196,7 +214,7 @@ def _unused_get_all_crew_legacy() -> list[CrewMember]:
         
         crew = []
         for row in rows:
-            vitals = json.loads(row["vitals_json"]) if row["vitals_json"] else None
+            vitals = _vitals_in(row["vitals_json"])
             crew.append(CrewMember(
                 id=row["id"],
                 name=row["name"],
@@ -229,7 +247,7 @@ def get_crew_member(crew_id: str) -> Optional[CrewMember]:
         except Exception as e:  # pragma: no cover
             print(f"database: corrupt crew row {crew_id}: {e}")
             return None
-        vitals = json.loads(row["vitals_json"]) if row["vitals_json"] else None
+        vitals = _vitals_in(row["vitals_json"])
         return CrewMember(
             id=row["id"],
             name=row["name"],
@@ -278,7 +296,7 @@ def upsert_crew_member(member: CrewMember):
             member.role.value,
             member.age,
             member.status.value,
-            json.dumps(member.vitals.model_dump() if member.vitals else None),
+            (_vitals_json(member.vitals) if member.vitals else json.dumps(None)),
             member.current_activity,
             member.mission_day,
             member.bone_density_baseline,
@@ -300,19 +318,19 @@ def update_crew_vitals(crew_id: str, vitals: Vitals, status: Optional[HealthStat
                 UPDATE crew_state 
                 SET vitals_json = ?, status = ?, updated_at = ?
                 WHERE id = ?
-            """, (json.dumps(vitals.model_dump()), status.value, datetime.utcnow().isoformat(), crew_id))
+            """, (_vitals_json(vitals), status.value, datetime.utcnow().isoformat(), crew_id))
         else:
             cursor.execute("""
                 UPDATE crew_state 
                 SET vitals_json = ?, updated_at = ?
                 WHERE id = ?
-            """, (json.dumps(vitals.model_dump()), datetime.utcnow().isoformat(), crew_id))
+            """, (_vitals_json(vitals), datetime.utcnow().isoformat(), crew_id))
         
         # Also store in history for trend analysis
         cursor.execute("""
             INSERT INTO vitals_history (crew_member_id, vitals_json)
             VALUES (?, ?)
-        """, (crew_id, json.dumps(vitals.model_dump())))
+        """, (crew_id, _vitals_json(vitals)))
 
 
 def update_cumulative_radiation(crew_id: str, increment: float):
@@ -329,7 +347,7 @@ def update_crew_tick(crew_id: str, vitals: Vitals, status: Optional[HealthStatus
     """One simulator tick in ONE transaction: vitals, status and the mission dose change together, so a reader
     never sees new vitals with an old dose (or the reverse). History is pruned now and then (6 h kept)."""
     now = datetime.utcnow().isoformat()
-    vj = json.dumps(vitals.model_dump())
+    vj = _vitals_json(vitals)
     with get_db() as conn:
         if status:
             conn.execute("UPDATE crew_state SET vitals_json = ?, status = ?, cumulative_radiation = cumulative_radiation + ?, "
