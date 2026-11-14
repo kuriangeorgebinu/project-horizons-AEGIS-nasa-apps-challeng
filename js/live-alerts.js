@@ -54,7 +54,7 @@ function _renderAiNote(aiText) {
   el.innerHTML = '';
   const tag = document.createElement('span');
   tag.className = 'alert-ai-tag';
-  tag.textContent = m ? `🧠 DeepSeek · ${m[1]}` : '🧠 DeepSeek';
+  tag.textContent = m ? `🧠 Cloud AI · ${m[1]}` : '🧠 Cloud AI';
   const body = document.createElement('span');
   body.textContent = m ? m[2] : aiText.replace(AI_MARKER, '').trim();
   el.append(tag, body);

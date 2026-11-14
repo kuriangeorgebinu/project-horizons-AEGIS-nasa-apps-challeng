@@ -82,7 +82,7 @@ function _renderCallPanel(rec, others, to) {
       : `Not called again: ${rec.detail || 'already called about this alert'}.${wait}`;
   }
   const ago = Math.max(0, Math.round((Date.now() - _parseUtc(rec.at)) / 1000));
-  const who = rec.source === 'AEGIS tool call' ? 'worded by AEGIS (DeepSeek tool call, fact-checked)' : 'rule-based wording';
+  const who = rec.source === 'AEGIS tool call' ? 'worded by AEGIS (cloud AI tool call, fact-checked)' : 'rule-based wording';
   const twilio = rec.status === 'called' ? `Twilio status: ${rec.call_status || 'queued'}${rec.duration_s ? `, ${rec.duration_s} s` : ''} (checked every 2 s). ` : '';
   document.getElementById('cp-foot').textContent =
     (rec.status === 'logged' ? 'SIMULATED: phone not set up, call logged only. ' : rec.status === 'failed' ? `${rec.detail || ''} ` : '') +

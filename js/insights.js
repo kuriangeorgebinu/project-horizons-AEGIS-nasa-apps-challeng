@@ -70,11 +70,11 @@ async function refreshAiMode() {
     const d = await (await fetch(`${DASH_API.baseUrl}/api/llm/status`)).json();
     el.hidden = false;
     if (d.enabled) {
-      el.textContent = '🧠 AI: DeepSeek'; el.className = 'ai-mode on';
-      el.title = 'DeepSeek words the agents\' explanations, Voice Terminal answers and ordinary ECHO chat. The rules still decide every alert and protocol, and every AI reply is fact-checked before it is shown.';
+      el.textContent = '🧠 AI: cloud'; el.className = 'ai-mode on';
+      el.title = 'A cloud AI service words the agents\' explanations, Voice Terminal answers and ordinary ECHO chat. The rules still decide every alert and protocol, and every AI reply is fact-checked before it is shown.';
     } else {
       el.textContent = '⚙ AI: rules only'; el.className = 'ai-mode';
-      el.title = 'The AI layer (DeepSeek) is off on this server. Every alert, protocol and recommendation still comes from the agents\' rules; explanations, Voice Terminal answers and ECHO replies are written by the rules (scripted), not by an AI model.';
+      el.title = 'The cloud AI layer is off on this server. Every alert, protocol and recommendation still comes from the agents\' rules; explanations, Voice Terminal answers and ECHO replies are written by the rules (scripted), not by an AI model.';
     }
   } catch (e) { el.hidden = true; }
 }
@@ -316,7 +316,7 @@ async function askAgent(agentKey, question, fallbackText, opts = {}) {
     const data = await r.json();
     if (seq !== _askSeq) return;
     VOICE.nextTag = { ai: data.source === 'deepseek',
-      title: (data.source === 'deepseek' ? 'Worded by DeepSeek from the live readings' : 'Written by the rules (DeepSeek off or unavailable)') +
+      title: (data.source === 'deepseek' ? 'Worded by a cloud AI service from the live readings' : 'Written by the rules (cloud AI off or unavailable)') +
              ` · agents consulted: ${(data.agents_consulted || []).join(', ')} · ${data.latency_s}s` };
     VOICE.nextSpeaker = agent;                 // each agent answers in its own voice
     typeResponse(withIntro(agent, data.answer || fallbackText || 'No answer available.'), true, onDone);

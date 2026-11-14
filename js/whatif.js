@@ -182,7 +182,7 @@ async function evaluateWhatIf() {
   document.getElementById('rec-title').textContent =
     (data.protocol ? `AEGIS suggests: ${PLAIN_PROTOCOL[data.protocol] || data.protocol} (${data.protocol})`
                    : data.verdict === 'ALERT' ? 'Agent Alert' : 'AEGIS Assessment') +
-    (data.source === 'deepseek' ? ' · 🧠 DeepSeek' : '');
+    (data.source === 'deepseek' ? ' · 🧠 Cloud AI' : '');
   document.getElementById('rec-message').textContent = data.explanation || data.summary;
   recBox.style.display = 'flex';
 }
