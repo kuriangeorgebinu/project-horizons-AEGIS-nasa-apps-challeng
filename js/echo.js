@@ -170,14 +170,12 @@ async function echoRefresh(event, opts = {}) {
       }
       else {
         if (chat) chat.innerHTML = '';
-        echoBubble('note', `Daily check-in · Day ${d.facts.mission_day} · readings as of ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (Live Vitals has the current values)`);
         if (ECHO.ready && opts.speak) echoSay(d.text, d.level === 'urgent' ? 'urgent' : '');
         else echoBubble('echo', echoIntro(d.text), d.level === 'urgent' ? 'urgent' : '');
       }
       ECHO.ready = true;
     } else if (d.reason && d.reason !== ECHO.lastProactive && ['after_emergency', 'poor_sleep'].includes(d.reason)) {
       ECHO.lastProactive = d.reason;
-      echoBubble('note', d.reason === 'after_emergency' ? 'ECHO is checking in after the emergency' : 'MIRROR flagged poor sleep · ECHO checks in');
       setTimeout(() => echoSay(d.text), 1100);
     } else if (!d.reason) ECHO.lastProactive = null;
     echoSetMode(d.mode, d.level);
@@ -200,7 +198,6 @@ async function echoReply(promise) {
     echoSetMode(d.mode, d.level);
     echoRenderSupport(d);
     echoSay(d.text, d.level === 'urgent' ? 'urgent' : '', { after: eb => {
-      if (eb && d.source === 'deepseek') { const t = document.createElement('span'); t.className = 'eb-src'; t.textContent = '🧠 DeepSeek'; t.title = 'Worded by DeepSeek, checked before it was shown'; eb.querySelector('.eb-who')?.appendChild(t); }
       if (d.alerted) echoBubble('note', `ECHO alerted ${d.alerted.name} · nothing from the chat was shared`);
       if (d.shared_with) echoBubble('note', `Shared with ${d.shared_with.name} · only that you'd like to talk`);
     } });

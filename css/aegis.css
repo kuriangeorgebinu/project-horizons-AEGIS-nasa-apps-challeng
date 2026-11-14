@@ -1265,3 +1265,20 @@ body.acked::before{animation:none;opacity:.35;}
   .vital-status{flex:1 0 auto;text-align:left;margin-left:calc(96px + .6rem);}
   #hr-sparkline{display:none;}
   .rad-header{gap:.4rem;}.rad-header>*:last-child{white-space:nowrap;}#rad-value{font-size:.95rem;}}
+
+/* ── Compact chat row (Nov 13): AEGIS chat and ECHO side by side at a fixed, short height; the message
+      lists scroll inside, newest at the bottom, so Status and Recommendations come up much sooner. ── */
+.chat-panel,.echo-panel{min-height:0;}
+.chat-panel .ask-log,.chat-panel .ask-log:empty,.echo-panel .echo-chat{flex:none;height:210px;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;}
+.echo-panel{gap:.6rem;}
+.echo-head .echo-avatar{width:46px;height:46px;flex:none;}
+.echo-head .echo-avatar svg{width:100%;height:100%;}
+@media (max-width:900px){.chat-panel .ask-log,.chat-panel .ask-log:empty,.echo-panel .echo-chat{height:230px;}}
+
+/* ── Vitals rebalance (Nov 13): the vitals panel shares the Cascade Map's row height. Instead of leaving the
+      spare height as one empty band above Radiation, give each vital row a little more air and let the rows
+      share what is left evenly. Natural height stays well under the map, so the map is never stretched. ── */
+.vitals-panel{gap:.5rem;}
+.vital-row{flex:1 0 auto;padding:.16rem .3rem;}
+.radiation-section{margin-top:.15rem;}
+@media (max-width:900px){.vital-row{flex:none;}}

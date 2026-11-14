@@ -268,7 +268,7 @@ function chatAgentBubble(agentKey, tag) {
   b.className = 'ab agent'; b.style.setProperty('--who', `var(--${AGENTS[agentKey] ? agentKey : 'aegis'})`);
   const who = document.createElement('div'); who.className = 'ab-who';
   who.textContent = (AGENTS[agentKey] || AGENTS.aegis).name;
-  if (tag) { const t = document.createElement('span'); t.className = 'response-source' + (tag.ai ? '' : ' rules'); t.textContent = tag.label || (tag.ai ? '🧠 DeepSeek' : 'rules'); t.title = tag.title || ''; who.appendChild(t); }
+  if (tag && tag.title) who.title = tag.title;   // no visible AI/model label in the chat (Nov 13); the source stays in the hover text
   const txt = document.createElement('div'); txt.className = 'ab-text';
   b.append(who, txt);
   if (log) { log.appendChild(b); _chatTrim(); }

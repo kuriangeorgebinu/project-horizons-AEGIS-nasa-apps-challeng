@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AEGIS Mission Control</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%235a9fd7'/><text x='16' y='21' font-size='14' text-anchor='middle' fill='white'>◈</text></svg>">
-<link rel="stylesheet" href="css/aegis.css?v=17">
+<link rel="stylesheet" href="css/aegis.css?v=18">
 <style>/* Paints that reference SVG defs inside this page: must stay in the page (see css/aegis.css) */
 .hero-done{stroke:url(#hg-done);filter:url(#hg-glow);}
 .hero-ship-body{filter:url(#hg-glow);}
@@ -45,8 +45,6 @@
     </nav>
     <div class="mission-day">Day <span id="mission-day-num">54</span></div>
     <span id="api-status" style="font-size:.7rem;padding:.25rem .5rem;border-radius:12px;background:rgba(128,128,128,.2);cursor:help;" title="Backend connection status">⏳ Connecting…</span>
-    <span id="ai-mode" class="ai-mode" hidden title="">AI …</span>
-    <button class="run-demo-btn" id="run-demo-btn" onclick="runStory(event.shiftKey ? 'full' : 'short')" title="The 2-minute judging cut: predict, prevent, protect, and ECHO's check-in. Shift+click for the full 3-minute version. Phone calls are logged, never dialled.">▶ Run demo · 2 min</button>
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Light / dark mode">🌙</button>
   </header>
 
@@ -371,7 +369,7 @@
   </div>
 
   <!-- ECHO: crew companion against isolation (MIRROR detects, ECHO responds) -->
-  <section class="echo-panel" id="echo-panel" data-mode="checkin" data-level="calm" aria-labelledby="echo-title">
+  <section class="echo-panel" id="echo-panel" data-mode="companion" data-level="calm" aria-labelledby="echo-title">
     <div class="echo-head">
       <div class="echo-avatar" aria-hidden="true">
         <svg viewBox="0 0 80 80">
@@ -389,43 +387,16 @@
         <h2 class="echo-title" id="echo-title">ECHO</h2>
         <div class="echo-with" id="echo-with">with Commander Chen · Day 54</div>
       </div>
-      <div class="echo-modes" role="group" aria-label="ECHO mode (set automatically)">
-        <span class="echo-mode" data-m="companion" title="Companion: talk to ECHO about anything">Companion</span>
-        <span class="echo-mode" data-m="checkin" title="Check-in: the daily 'How are you feeling?'">Check-in</span>
-        <span class="echo-mode" data-m="support" title="Support (crisis) mode: after an emergency, poor sleep, a low check-in or distress, ECHO checks in on its own and offers coping steps and the escalation path">Support</span>
-      </div>
     </div>
 
     <div class="echo-chat" id="echo-chat" role="log" aria-live="polite" aria-label="Conversation with ECHO"></div>
-
-    <div class="echo-feel" id="echo-feel">
-      <button type="button" class="echo-feel-btn" id="echo-feel-btn" onclick="echoToggleMoods()">💬 How are you feeling?</button>
-      <div class="echo-moods" id="echo-moods" role="group" aria-label="How are you feeling?">
-        <button type="button" onclick="echoCheckin(1)" title="Rough"><span>😣</span>Rough</button>
-        <button type="button" onclick="echoCheckin(2)" title="Low"><span>😔</span>Low</button>
-        <button type="button" onclick="echoCheckin(3)" title="Okay"><span>😐</span>Okay</button>
-        <button type="button" onclick="echoCheckin(4)" title="Good"><span>🙂</span>Good</button>
-        <button type="button" onclick="echoCheckin(5)" title="Great"><span>😄</span>Great</button>
-      </div>
-    </div>
-
-    <div class="echo-support" id="echo-support" hidden>
-      <div class="es-title">Small things that help</div>
-      <ul class="es-steps" id="es-steps"></ul>
-      <div class="es-actions">
-        <button type="button" class="es-btn primary" id="es-onboard" onclick="echoShare('onboard')">Talk to Dr. Nakamura</button>
-        <button type="button" class="es-btn" id="es-ground" onclick="echoShare('ground')">Private note to the flight surgeon</button>
-        <button type="button" class="es-btn ghost" onclick="echoDismiss()">I'm okay for now</button>
-      </div>
-      <div class="es-path" id="es-path">Escalation: the medical officer on board first, then the flight surgeon at mission control, a signal delay away.</div>
-    </div>
 
     <form class="echo-form" onsubmit="event.preventDefault(); echoSend();">
       <input type="text" id="echo-input" maxlength="500" autocomplete="off" placeholder="Talk to ECHO…" aria-label="Message to ECHO">
       <button type="submit" class="echo-send" aria-label="Send to ECHO">Send</button>
     </form>
-    <div class="echo-foot" id="echo-foot" title="Check-ins and chats live only in this session's memory. Nothing is logged or sent to mission control unless you choose to share. One exception: if you say you might harm yourself, ECHO alerts the medical officer.">
-      🔒 Private unless you choose to share · ECHO is an AI companion, not a counsellor
+    <div class="echo-foot" id="echo-foot" title="Chats live only in this session's memory. Nothing is logged or sent to mission control. One exception: if you say you might harm yourself, ECHO alerts the medical officer.">
+      🔒 Private · ECHO is an AI companion, not a counsellor
     </div>
   </section>
 
@@ -696,19 +667,19 @@
   </div><!-- End Agent Insights Page -->
 </main>
 
-<script src="js/theme.js?v=16"></script>
-<script src="js/insights.js?v=16"></script>
-<script src="js/voice.js?v=16"></script>
-<script src="js/live-alerts.js?v=16"></script>
-<script src="js/predict.js?v=16"></script>
-<script src="js/cascade-config.js?v=16"></script>
-<script src="js/mission-bar.js?v=16"></script>
-<script src="js/emergency.js?v=16"></script>
-<script src="js/call-panel.js?v=16"></script>
-<script src="js/cascade-map.js?v=16"></script>
-<script src="js/trends.js?v=16"></script>
-<script src="js/hr-chart.js?v=16"></script>
-<script src="js/whatif.js?v=16"></script>
+<script src="js/theme.js?v=17"></script>
+<script src="js/insights.js?v=17"></script>
+<script src="js/voice.js?v=17"></script>
+<script src="js/live-alerts.js?v=17"></script>
+<script src="js/predict.js?v=17"></script>
+<script src="js/cascade-config.js?v=17"></script>
+<script src="js/mission-bar.js?v=17"></script>
+<script src="js/emergency.js?v=17"></script>
+<script src="js/call-panel.js?v=17"></script>
+<script src="js/cascade-map.js?v=17"></script>
+<script src="js/trends.js?v=17"></script>
+<script src="js/hr-chart.js?v=17"></script>
+<script src="js/whatif.js?v=17"></script>
 
 <!-- HR Graph Modal -->
 <div id="hrModal" class="graph-modal" role="dialog" aria-labelledby="modal-title" onclick="if(event.target===this)closeHRGraph()">
@@ -789,10 +760,10 @@
   </div>
 </div>
 
-<script src="js/spacecraft-link.js?v=16"></script>
+<script src="js/spacecraft-link.js?v=17"></script>
 
-<script src="js/echo.js?v=16"></script>
-<script src="js/story.js?v=16"></script>
+<script src="js/echo.js?v=17"></script>
+<script src="js/story.js?v=17"></script>
 
 <!-- Emergency edge glow + live call panel (AEGIS phoning the flight surgeon) -->
 <div class="emergency-edge" aria-hidden="true"></div>
@@ -809,7 +780,7 @@
 
 <!-- AEGIS API Client - connects frontend to backend -->
 <script src="aegis-api-client.js?v=12"></script>
-<script src="js/cascade-map-3d.js?v=16"></script>
+<script src="js/cascade-map-3d.js?v=17"></script>
 
 </body>
 </html>

@@ -101,7 +101,7 @@ one click away.
 | **Ask the agents** | One row: ask any agent a question by voice or text; it answers from the live readings, in its own voice. |
 | **Evidence & data** | Closed by default: the datasets behind the numbers (Inspiration4 IL-6, Curiosity RAD and Chang'e-4 radiation, NASA limits and risks), each with its source link and the result of testing the rule against it, plus the full accuracy report. Linked from the demo bar. |
 | **What-If simulator** | Next to the map. Sliders for hypothetical readings (heart rate, oxygen, IL-6, sleep, 24 h radiation) for the selected crew member. The real agent rules judge them exactly as they would live and say which protocol AEGIS would choose; nothing is saved and no alert is raised. |
-| **Run demo** | One click plays the story end to end in 2 minutes (the judging cut; Shift+click, or `?demo=full` in the URL, for the full 3-minute version), with chapter captions and a Stop button: radiation creeps up, AEGIS predicts a cascade, the prevention plan avoids it, a solar storm forces the storm shelter, and ECHO checks in on the Commander afterwards. Calls are logged, never dialled, during the run. |
+| **Run demo** | **Shift + P** plays the story end to end in 2 minutes (the judging cut; Shift + Alt + P, or `?demo=full` in the URL, for the full 3-minute version), with chapter captions and a Stop button: radiation creeps up, AEGIS predicts a cascade, the prevention plan avoids it, a solar storm forces the storm shelter, and ECHO checks in on the Commander afterwards. Calls are logged, never dialled, during the run. |
 | **Spacecraft simulation** | Outside the judging path: a separate 2D view of the ship that shows a confirmed protocol being carried out on board (opens when a protocol is confirmed by hand, not during the demo). |
 | **Phone alarm** | On critical alerts AEGIS phones the on-call flight surgeon (Twilio) and shows the call live on screen. |
 
@@ -165,11 +165,13 @@ connected and **🔴 Offline** when it isn't. Click anywhere once so the browser
 
 ### Demo shortcuts (on the dashboard)
 
-The quickest way to see everything: click **▶ Run demo · 2 min** in the header (Shift+click for the full 3-minute version; phone calls logged,
-never dialled). Click **■ Stop** to end it early.
+The quickest way to see everything: press **Shift + P** on the dashboard to play the 2-minute story (Shift + Alt + P, or `?demo=full`
+in the URL, for the full 3-minute version; phone calls logged, never dialled). Press **Shift + P** again, or **■ Stop** in the demo bar, to end it early.
+There is no demo button on the page, so visitors see the plain dashboard.
 
 | Keys | Scenario |
 |---|---|
+| **Shift + P** | Play the scripted 2-minute story (Shift + Alt + P = full cut); press again to stop |
 | **Shift + B** | Slow build-up for the selected crew member → early warning, countdown, then "Start prevention plan" |
 | **Shift + D** | Cascade for the selected crew member, built over ~100 s (same pace as the 2-minute demo) → early warning with countdown and "Start prevention plan" (cascade avoided); left alone it becomes the full cascade → recovery plan |
 | **Shift + M** | Medical emergency (low oxygen) for the selected crew member → medical response |

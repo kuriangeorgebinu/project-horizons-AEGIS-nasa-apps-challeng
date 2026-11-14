@@ -141,3 +141,11 @@ function stopStory() {
     });
   const btn = document.getElementById('run-demo-btn'); if (btn) { btn.classList.remove('on'); btn.textContent = '▶ Run demo · 2 min'; }
 }
+
+// The header button is gone (Nov 13); the demo still runs from the keyboard for testing and recording:
+// Shift+P = the 2-minute cut, Shift+Alt+P = the full cut, press again to stop. Also ?demo=full in the URL.
+document.addEventListener('keydown', e => {
+  if (!e.shiftKey || e.ctrlKey || e.metaKey || e.code !== 'KeyP') return;
+  const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+  e.preventDefault(); runStory(e.altKey ? 'full' : 'short');
+});
