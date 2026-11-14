@@ -73,6 +73,9 @@ class VitalsSimulator:
         self._crew_baselines = {}
         # Store previous vitals for smoothing (T6 fix)
         self._previous_vitals = {}
+        # Cascade moment: crew ids whose build-up cascade has fired (whole monitored set out together)
+        self._cascade_fired = set()
+        self._recover_from_fired = False
     
     def _get_baseline(self, crew_id: str) -> dict:
         """Get or create baseline vitals for a crew member."""
@@ -147,62 +150,76 @@ class VitalsSimulator:
             return max(lo, min(hi, result))
         
         # Generate vitals with natural variation and smoothing
-        hr_base = baseline["heart_rate"] + (circadian_factor * 5) + (activity_factor * 20)
-        hr_raw = self._bounded_random(
-            hr_base + scenario_mods.get("heart_rate", 0),
-            3, 30, 180  # Reduced spread from 5 to 3; floor below the 40 bpm bradycardia limit
-        )
+        def _raw_values(scenario_mods):
+            hr_base = baseline["heart_rate"] + (circadian_factor * 5) + (activity_factor * 20)
+            hr_raw = self._bounded_random(
+                hr_base + scenario_mods.get("heart_rate", 0),
+                3, 30, 180  # Reduced spread from 5 to 3; floor below the 40 bpm bradycardia limit
+            )
         
-        bp_sys_raw = self._bounded_random(
-            baseline["bp_systolic"] + (activity_factor * 15) + scenario_mods.get("bp_systolic", 0),
-            4, 85, 190  # Reduced spread
-        )
+            bp_sys_raw = self._bounded_random(
+                baseline["bp_systolic"] + (activity_factor * 15) + scenario_mods.get("bp_systolic", 0),
+                4, 85, 190  # Reduced spread
+            )
         
-        bp_dia_raw = self._bounded_random(
-            baseline["bp_diastolic"] + (activity_factor * 8) + scenario_mods.get("bp_diastolic", 0),
-            3, 50, 120
-        )
+            bp_dia_raw = self._bounded_random(
+                baseline["bp_diastolic"] + (activity_factor * 8) + scenario_mods.get("bp_diastolic", 0),
+                3, 50, 120
+            )
         
-        spo2_raw = self._bounded_random(
-            baseline["spo2"] + scenario_mods.get("spo2", 0),
-            0.3, 88, 100  # Reduced spread
-        )
+            spo2_raw = self._bounded_random(
+                baseline["spo2"] + scenario_mods.get("spo2", 0),
+                0.3, 88, 100  # Reduced spread
+            )
         
-        temp_raw = self._bounded_random(
-            baseline["temperature"] + (activity_factor * 0.3) + scenario_mods.get("temperature", 0),
-            0.1, 35.5, 40  # Reduced spread
-        )
+            temp_raw = self._bounded_random(
+                baseline["temperature"] + (activity_factor * 0.3) + scenario_mods.get("temperature", 0),
+                0.1, 35.5, 40  # Reduced spread
+            )
         
-        rr_raw = self._bounded_random(
-            baseline["respiratory_rate"] + (activity_factor * 4) + scenario_mods.get("respiratory_rate", 0),
-            1, 10, 35
-        )
+            rr_raw = self._bounded_random(
+                baseline["respiratory_rate"] + (activity_factor * 4) + scenario_mods.get("respiratory_rate", 0),
+                1, 10, 35
+            )
         
-        stress_raw = self._bounded_random(
-            baseline["stress_base"] + (activity_factor * 15) + scenario_mods.get("stress", 0),
-            5, 0, 100
-        )
+            stress_raw = self._bounded_random(
+                baseline["stress_base"] + (activity_factor * 15) + scenario_mods.get("stress", 0),
+                5, 0, 100
+            )
         
-        sleep_raw = self._bounded_random(
-            baseline["sleep_quality"] + scenario_mods.get("sleep", 0),
-            3, 0, 100
-        )
+            sleep_raw = self._bounded_random(
+                baseline["sleep_quality"] + scenario_mods.get("sleep", 0),
+                3, 0, 100
+            )
         
-        hydration_raw = self._bounded_random(
-            75 + scenario_mods.get("hydration", 0),
-            5, 0, 100
-        )
+            hydration_raw = self._bounded_random(
+                75 + scenario_mods.get("hydration", 0),
+                5, 0, 100
+            )
         
-        # Daily dose centred on the mission's normal background (aegis_mission: 1.84 mSv/day in Mars
-        # transit, Curiosity RAD) plus any scenario enhancement.
-        radiation_raw = self._bounded_random(
-            aegis_mission.background() + scenario_mods.get("radiation", 0),
-            0.1, 0, 60
-        )
-        
+            # Daily dose centred on the mission's normal background (aegis_mission: 1.84 mSv/day in Mars
+            # transit, Curiosity RAD) plus any scenario enhancement.
+            radiation_raw = self._bounded_random(
+                aegis_mission.background() + scenario_mods.get("radiation", 0),
+                0.1, 0, 60
+            )
+            return (hr_raw, bp_sys_raw, bp_dia_raw, spo2_raw, temp_raw, rr_raw, stress_raw, sleep_raw,
+                    hydration_raw, radiation_raw)
+
+        (hr_raw, bp_sys_raw, bp_dia_raw, spo2_raw, temp_raw, rr_raw, stress_raw, sleep_raw,
+         hydration_raw, radiation_raw) = _raw_values(scenario_mods)
+        # Cascade moment: when the build-up's next domain crosses on this tick (radiation reaches the SOLARIS
+        # warning, or heart rate passes PULSE's 100 bpm), the cascade fires and the person's whole monitored set
+        # goes out together on this same reading, instead of one metric after another after the alert.
+        if self._cascade_fires_now(crew_member.id, hr_raw, radiation_raw):
+            scenario_mods = self._get_scenario_modifiers(crew_member.id)
+            (hr_raw, bp_sys_raw, bp_dia_raw, spo2_raw, temp_raw, rr_raw, stress_raw, sleep_raw,
+             hydration_raw, radiation_raw) = _raw_values(scenario_mods)
+        fired = crew_member.id in self._cascade_fired
+
         # Apply smoothing (R3: bypass for affected vitals during anomaly/scenario)
         cardiac_bypass = (anomaly_active and self.config.inject_anomaly == "cardiac") or \
-            self.config.scenario == "cascade_demo"   # heart rate reacts at once in the cascade demo
+            self.config.scenario == "cascade_demo" or fired   # heart rate reacts at once in the cascade demo
         radiation_bypass = (anomaly_active and self.config.inject_anomaly == "radiation") or scenario_active \
             or self.story_fast_settle
         
@@ -210,12 +227,12 @@ class VitalsSimulator:
             heart_rate=int(smooth("heart_rate", hr_raw, bypass=cardiac_bypass)),
             blood_pressure_systolic=int(smooth("bp_systolic", bp_sys_raw, bypass=cardiac_bypass)),
             blood_pressure_diastolic=int(smooth("bp_diastolic", bp_dia_raw, bypass=cardiac_bypass)),
-            spo2=round(smooth("spo2", spo2_raw), 1),
-            temperature=round(smooth("temperature", temp_raw), 1),
-            respiratory_rate=int(smooth("respiratory_rate", rr_raw)),
+            spo2=round(smooth("spo2", spo2_raw, bypass=fired), 1),
+            temperature=round(smooth("temperature", temp_raw, bypass=fired), 1),
+            respiratory_rate=int(smooth("respiratory_rate", rr_raw, bypass=fired)),
             stress_index=round(smooth("stress_index", stress_raw, bypass=scenario_active), 1),
             sleep_quality=round(smooth("sleep_quality", sleep_raw,
-                                       bypass=self.config.scenario == "cascade_demo"), 1),  # MIRROR joins at once
+                                       bypass=self.config.scenario == "cascade_demo" or fired), 1),  # MIRROR joins at once
             hydration_level=round(smooth("hydration_level", hydration_raw), 1),
             radiation_dose_24h=round(smooth("radiation_dose_24h", radiation_raw, bypass=radiation_bypass), 2),
             # OSSEO's static bone-density context is attached when vitals are read (database._vitals_in),
@@ -251,6 +268,8 @@ class VitalsSimulator:
         self.story_fast_settle = False
         self._crew_baselines = {}
         self._previous_vitals = {}
+        self._cascade_fired = set()
+        self._recover_from_fired = False
 
     def buildup_progress(self) -> float:
         """0..1 progress of the build-up toward the cascade end state (reverses during prevent_recovery)."""
@@ -272,6 +291,7 @@ class VitalsSimulator:
             return False
         p = self.buildup_progress()       # reverse the drift from wherever it has got to
         self.recovery_from_p = p
+        self._recover_from_fired = crew_id in self._cascade_fired   # recover the whole set from the fired state
         config = self.config.model_copy()
         config.scenario = "prevent_recovery"
         self.set_config(config)
@@ -332,6 +352,41 @@ class VitalsSimulator:
             return self.config.inject_crew_id or "crew-001"
         return None
 
+    # The whole monitored set at the cascade moment (relative to this crew member's baseline): heart rate,
+    # SpO2, blood pressure, temperature and respiration out of their normal ranges together with the build-up's
+    # radiation, stress and sleep end state (IL-6 is modelled from stress and radiation, so it is out too).
+    # Amber, not critical: clear of each normal-range edge so noise doesn't flicker, well below critical limits.
+    def _cascade_end_state(self, crew_id: str, scenario: str) -> dict:
+        b = self._crew_baselines.get(crew_id, {})
+        g = lambda k, d: b.get(k, DEFAULT_BASELINE.get(k, d))
+        hr_end = 108 if scenario == "cascade_demo" else 104
+        return {
+            "radiation": 3.0 if scenario != "cascade_demo" else _rng.uniform(2.2, 2.8),
+            "stress": max(30, 76 - g("stress_base", 30)),
+            "heart_rate": max(15, hr_end - g("heart_rate", 68)),
+            "sleep": -25,
+            "spo2": 93.5 - g("spo2", 98.0),                       # PULSE low-oxygen warning is < 95 %
+            "bp_systolic": 144 - g("bp_systolic", 118),           # normal 90-140 mmHg
+            "bp_diastolic": 93 - g("bp_diastolic", 76),           # normal 60-90 mmHg
+            "temperature": 38.2 - g("temperature", 36.6),         # normal 36.1-37.8 °C
+            "respiratory_rate": 23 - g("respiratory_rate", 15),   # normal 12-20 breaths per minute
+        }
+
+    def _cascade_fires_now(self, crew_id: str, hr_raw: float, radiation_raw: float) -> bool:
+        """True on the reading where the build-up's cascade fires for its target (latched until the scenario
+        changes): radiation reaches the SOLARIS warning or heart rate passes 100 bpm, with sleep (and the IL-6
+        it drives) already out, so this is the third domain. Before that the build-up is unchanged, so the
+        forecast, the countdown and the PREVENT-1 window come first exactly as before."""
+        sc = self.config.scenario
+        if sc not in ("buildup_demo", "cascade_demo") or crew_id != (self.config.inject_crew_id or "crew-001"):
+            return False
+        if crew_id in self._cascade_fired:
+            return False
+        if radiation_raw >= aegis_mission.radiation_thresholds()["warning"] or hr_raw > 100:
+            self._cascade_fired.add(crew_id)
+            return True
+        return False
+
     def _get_scenario_modifiers(self, crew_id: str = None) -> dict:
         """Get vital sign modifiers based on active scenario (plus the solar storm layer, see the end)."""
         mods = {}
@@ -358,7 +413,9 @@ class VitalsSimulator:
             # Builds over CASCADE_BUILD_SECONDS (not all at once), so the forecast with its countdown and the
             # PREVENT-1 window come first, exactly as in the story demo; left alone it ends as the full cascade.
             target = self.config.inject_crew_id or "crew-001"
-            if crew_id is None or crew_id == target:
+            if (crew_id or target) == target and (crew_id or target) in self._cascade_fired:
+                mods.update(self._cascade_end_state(crew_id or target, "cascade_demo"))   # fired: all out at once
+            elif crew_id is None or crew_id == target:
                 p = self.buildup_progress()
                 # Keep radiation amber: background 1.84 + 2.2-2.8 = ~4.0-4.6 mSv/24h, above the SOLARIS
                 # warning (2 x background = 3.68) but well below shelter (9.2), so it builds a cascade
@@ -384,7 +441,14 @@ class VitalsSimulator:
             # third domain crosses at ~3.7 min.
             # prevent_recovery (PREVENT-1 started): the drift reverses back to baseline over RECOVERY_SECONDS.
             target = self.config.inject_crew_id or "crew-001"
-            if crew_id is None or crew_id == target:
+            if (crew_id or target) == target and (crew_id or target) in self._cascade_fired:
+                mods.update(self._cascade_end_state(crew_id or target, "buildup_demo"))   # fired: all out at once
+            elif (crew_id is None or crew_id == target) and self.config.scenario == "prevent_recovery" \
+                    and self._recover_from_fired:
+                # PREVENT-1 started after the cascade fired: the whole set comes back down together
+                f = self.buildup_progress() / self.recovery_from_p if self.recovery_from_p else 0.0
+                mods.update({k: v * f for k, v in self._cascade_end_state(crew_id or target, "buildup_demo").items()})
+            elif crew_id is None or crew_id == target:
                 p = self.buildup_progress()
                 b = self._crew_baselines.get(crew_id or target, {})
                 mods["radiation"] = 3.0 * p     # 1.84 -> ~4.8 mSv/24h (amber, below shelter)
@@ -514,6 +578,9 @@ class VitalsSimulator:
         if config.scenario != old_scenario or self.spe_on() != old_spe:
             self.scenario_started_at = datetime.utcnow()
             self._previous_vitals = {}
+            self._cascade_fired = set()
+            if config.scenario != "prevent_recovery":
+                self._recover_from_fired = False
             if old_scenario not in ("buildup_demo", "prevent_recovery") or config.scenario is None:
                 self.config.inject_anomaly = None
                 self.config.anomaly_crew_id = None
