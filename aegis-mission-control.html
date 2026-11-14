@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AEGIS Mission Control</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%235a9fd7'/><text x='16' y='21' font-size='14' text-anchor='middle' fill='white'>◈</text></svg>">
-<link rel="stylesheet" href="css/aegis.css?v=16">
+<link rel="stylesheet" href="css/aegis.css?v=17">
 <style>/* Paints that reference SVG defs inside this page: must stay in the page (see css/aegis.css) */
 .hero-done{stroke:url(#hg-done);filter:url(#hg-glow);}
 .hero-ship-body{filter:url(#hg-glow);}
@@ -254,7 +254,7 @@
   <div class="vitals-panel">
     <div class="vitals-title">Live Vitals · Commander Chen</div>
     
-    <div class="vitals-legend">Each metric is monitored by one specialist agent · AEGIS combines them per crew member · <b>WNL</b> = within normal limits (the shaded band on each bar) · <b>History ▾</b> on any row shows its past readings and where it is heading<br><span class="src-tag sim">SIM</span> simulated feed in this demo (a real sensor would supply it) · <span class="src-tag model">MODELLED</span> estimated from other readings, no sensor</div>
+    <div class="vitals-legend"><b>WNL</b> = within normal limits (shaded band) · <b>History ▾</b> = past readings + forecast · <span class="src-tag sim">SIM</span> simulated feed · <span class="src-tag model">MODELLED</span> estimated, no sensor</div>
 
     <div class="vital-row" data-metric="heart_rate" onclick="openTrend('heart_rate')">
       <div class="vital-label"><span class="vl-name">Heart</span><span class="agent-tag pulse" title="Monitored by PULSE">PULSE</span><span class="src-tag sim" title="Simulated heart-rate feed (wearable ECG / chest strap on a real mission)">SIM</span></div>
@@ -276,7 +276,7 @@
     </div>
     
     <div class="vital-row" data-metric="blood_pressure_systolic" onclick="openTrend('blood_pressure_systolic')" title="Shown alongside PULSE's readings; PULSE's alert rules use heart rate and SpO₂, so this one is displayed against its normal limits but doesn't raise alerts yet.">
-      <div class="vital-label"><span class="vl-name">Blood pressure</span><span class="agent-tag pulse" title="Shown with PULSE (not yet in its alert rules)">PULSE</span><span class="src-tag sim" title="Simulated blood-pressure feed (cuff or wearable on a real mission)">SIM</span></div>
+      <div class="vital-label"><span class="vl-name" title="Blood pressure (systolic / diastolic)">BP</span><span class="agent-tag pulse" title="Shown with PULSE (not yet in its alert rules)">PULSE</span><span class="src-tag sim" title="Simulated blood-pressure feed (cuff or wearable on a real mission)">SIM</span></div>
       <div class="vital-value bp" style="color:var(--muted)" id="bp-value">…</div>
       <div class="vital-bar" id="bp-bar"><div class="vital-fill" id="bp-fill" style="width:0%;background:var(--green)"></div><div class="vb-band" id="bp-band"></div><div class="vb-marker" id="bp-marker"></div></div>
       <div class="vital-status" style="color:var(--muted)" id="bp-status">Connecting…</div>

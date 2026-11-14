@@ -1232,3 +1232,36 @@ body.acked::before{animation:none;opacity:.35;}
 /* When the vitals column is taller than the map, centre the map block under the panel header (no empty band) */
 .graph-panel>.cm-svg,.graph-panel>.cm3d{margin-top:auto;}
 .graph-panel>.cm-hint{margin-bottom:auto;}
+
+/* ── Compact live vitals (Nov 13): 7 rows + bone panel must fit beside the Cascade Map at desktop sizes,
+      keeping the WNL bands and readable numbers. Overrides the earlier vitals rules above. ── */
+.vitals-panel{gap:.4rem;padding:1.05rem 1.2rem;}
+.vitals-title{margin-bottom:0;}
+.vitals-legend{font-size:.68rem;line-height:1.35;margin:0 0 .15rem;}
+.vital-row{gap:.6rem;padding:.08rem .3rem;}
+.vital-label{width:96px;flex-direction:row;flex-wrap:wrap;align-items:center;column-gap:4px;row-gap:1px;font-size:.8rem;line-height:1.05;}
+.vl-name{flex-basis:100%;font-size:.9rem;white-space:nowrap;}
+.vital-label .agent-tag{font-size:.5rem;gap:3px;}
+.vital-label .src-tag{margin-left:0;font-size:.48rem;padding:0 .22rem;line-height:1.35;}
+.vital-value{width:70px;font-size:1.55rem;letter-spacing:-.4px;}
+.vital-value.bp{min-width:70px;font-size:1.12rem;letter-spacing:-.5px;}
+.vital-value .vv-unit{font-size:.58rem;}
+#hr-sparkline{margin:0 2px !important;}
+.vital-bar{height:10px;min-width:80px;border-radius:5px;}
+.vb-band{border-radius:5px;}
+.vb-marker{width:13px;height:13px;margin:-6.5px 0 0 -6.5px;}
+.vital-status{width:auto;min-width:62px;font-size:.76rem;}
+.vital-more{font-size:.62rem;padding:.04rem .4rem;}
+.radiation-section{margin-top:auto;padding-top:.55rem;}
+.rad-header{font-size:.9rem;margin-bottom:.3rem;}
+#rad-value,#rad24-value{font-size:1rem;}
+.rad-bar{height:9px;}
+.rad-sub{margin-top:.3rem;font-size:.68rem;}
+.bmd-demo-heading{padding:.42rem .75rem;}
+.bmd-demo-summary{padding:.38rem .75rem;}
+/* The Cascade Map keeps its own height: a taller vitals column never stretches it */
+.graph-panel{align-self:start;}
+@media (max-width:640px){.vital-row{flex-wrap:wrap;row-gap:.15rem;}.vital-value{width:64px;font-size:1.4rem;}
+  .vital-status{flex:1 0 auto;text-align:left;margin-left:calc(96px + .6rem);}
+  #hr-sparkline{display:none;}
+  .rad-header{gap:.4rem;}.rad-header>*:last-child{white-space:nowrap;}#rad-value{font-size:.95rem;}}
