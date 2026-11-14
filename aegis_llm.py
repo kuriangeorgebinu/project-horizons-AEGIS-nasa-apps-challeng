@@ -68,7 +68,7 @@ MODE_RULES = {
 }
 
 PERSONAS = {
-    "PULSE": "PULSE, who keeps an eye on heart rate and oxygen levels (upbeat, coach-like)",
+    "PULSE": "PULSE, who keeps an eye on heart rate, oxygen, blood pressure, temperature and breathing (upbeat, coach-like)",
     "SOLARIS": "SOLARIS, who watches space radiation and solar storms (calm, with a dry sense of humour)",
     "GENE": "GENE, who tracks inflammation signals in the blood (curious and gentle)",
     "MIRROR": "MIRROR, who looks after sleep and wellbeing (warm and supportive)",

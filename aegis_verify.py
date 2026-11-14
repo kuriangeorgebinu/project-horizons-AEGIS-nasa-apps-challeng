@@ -154,10 +154,11 @@ _TIME_MAX = {"sec": 300, "secs": 300, "second": 300, "seconds": 300, "min": 120,
 
 # What a number measures, from the unit after it or the metric named just before it
 _TAG_UNIT = [("hr", r"bpm|beats"), ("spo2", r"%|percent"), ("rad", r"msv|millisieverts?"),
-             ("il6", r"pg/ml|picograms?"), ("bp", r"mmhg"), ("temp", r"°c|degrees?")]
+             ("il6", r"pg/ml|picograms?"), ("bp", r"mmhg"), ("temp", r"°c|degrees?"), ("rr", r"breaths?")]
 _TAG_WORD = [("hr", r"heart[\s-]*rate|pulse|\bhr\b"), ("spo2", r"spo2|oxygen|saturation|\bo2\b"),
              ("sleep", r"sleep"), ("il6", r"il-?6|interleukin|inflammation"), ("rad", r"radiation|dose|msv"),
-             ("bp", r"blood pressure|systolic|diastolic"), ("temp", r"temperature"), ("stress", r"stress")]
+             ("bp", r"blood pressure|systolic|diastolic"), ("temp", r"temperature"), ("rr", r"respirat\w*|breathing"),
+             ("stress", r"stress")]
 
 
 def _tag(text: str, start: int, end: int) -> Optional[str]:

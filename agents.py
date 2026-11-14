@@ -92,11 +92,12 @@ class BaseAgent:
         """Anonymised context for the model: ID + role, mission day, vitals. No names."""
         role = getattr(crew_member.role, "value", crew_member.role)
         v = crew_member.vitals
-        # Dashboard-metrics scope: only the five Live Vitals metrics go to the model
+        # Dashboard-metrics scope: only the Live Vitals metrics go to the model (the same readings as the panel)
         parts = []
         if v:
             parts.append(f"heart rate {v.heart_rate} bpm")
             parts.append(f"SpO2 {v.spo2}%")
+            parts += PULSEAgent.monitored_status(v)    # blood pressure, temperature, respiration (PULSE, simulated)
             if v.sleep_quality is not None:
                 parts.append(f"sleep quality {v.sleep_quality:.0f}/100")
             if v.radiation_dose_24h is not None:
@@ -393,7 +394,8 @@ class PULSEAgent(BaseAgent):
                 "pillar": "PROTECT"
             })
         
-        # Dashboard-metrics scope: PULSE evaluates Heart and SpO2 only (no blood pressure / deconditioning model)
+        # PULSE raises alerts on Heart and SpO2. Blood pressure, temperature and respiration are in its monitored
+        # set too (see monitored_status): reported against their normal-range bands, without new alert rules.
         # SpO2 analysis
         spo2 = vitals.spo2
         if spo2 < VITAL_THRESHOLDS["spo2"]["critical_low"]:
@@ -414,6 +416,41 @@ class PULSEAgent(BaseAgent):
             })
         
         return findings
+
+    # Everything PULSE monitors. Heart rate and SpO2 raise findings (analyze); blood pressure, temperature and
+    # respiration are reported with their normal-range status from VITAL_THRESHOLDS (same bands as the panel).
+    MONITORED = ("heart_rate", "spo2", "blood_pressure", "temperature", "respiratory_rate")
+
+    @staticmethod
+    def _band(value, th) -> str:
+        if value is None:
+            return "no reading"
+        if value < th["low"] or value > th["high"]:
+            return "out of normal range"
+        return "within normal limits"
+
+    @classmethod
+    def monitored_status(cls, vitals) -> list[str]:
+        """Blood pressure, temperature and respiration as the panel shows them, with their WNL status."""
+        if not vitals:
+            return []
+        out = []
+        sys_, dia = vitals.blood_pressure_systolic, vitals.blood_pressure_diastolic
+        if sys_ is not None and dia is not None:
+            ts, td = VITAL_THRESHOLDS["blood_pressure_systolic"], VITAL_THRESHOLDS["blood_pressure_diastolic"]
+            st = "within normal limits" if cls._band(sys_, ts) == cls._band(dia, td) == "within normal limits" \
+                else "out of normal range"
+            out.append(f"blood pressure {sys_}/{dia} mmHg ({st}; normal {ts['low']}-{ts['high']} systolic, "
+                       f"{td['low']}-{td['high']} diastolic)")
+        if vitals.temperature is not None:
+            t = VITAL_THRESHOLDS["temperature"]
+            out.append(f"temperature {vitals.temperature:.1f} °C ({cls._band(vitals.temperature, t)}; "
+                       f"normal {t['low']}-{t['high']} °C)")
+        if vitals.respiratory_rate is not None:
+            r = VITAL_THRESHOLDS["respiratory_rate"]
+            out.append(f"respiration {vitals.respiratory_rate} breaths per minute "
+                       f"({cls._band(vitals.respiratory_rate, r)}; normal {r['low']}-{r['high']} breaths per minute)")
+        return out
 
     # Fixed titles per metric (the live value stays in the description/rationale), so the
     # "same crew + same title" de-duplication works instead of creating a new card per reading.
@@ -1227,7 +1264,7 @@ class AEGISAgent(BaseAgent):
                 "AEGIS": "Hey! AEGIS here. Ask me how anyone on the crew is doing, or who needs a hand most.",
                 "SOLARIS": "Hi, SOLARIS here. Ask me about radiation or solar storms, and whether anyone should take cover.",
                 "GENE": "Hi, GENE here. I watch for signs of inflammation in the blood. Ask me how anyone's doing.",
-                "PULSE": "Hey, PULSE here! Heart rate and oxygen are my thing. Who should I check on?",
+                "PULSE": "Hey, PULSE here! Heart rate, oxygen, blood pressure, temperature and breathing are my thing. Who should I check on?",
                 "MIRROR": "Hi, MIRROR here. I look after sleep and how everyone's holding up. What would you like to know?",
                 "OSSEO": "OSSEO here. I show historical study cohort means and synthetic regional DXA examples; neither is a measurement for you, and I do not provide a live bone monitor or clinical alert.",
             }
@@ -1341,7 +1378,7 @@ class AEGISAgent(BaseAgent):
             "health at all). If it's about the crew's health, answer only what was asked, in plain everyday words, "
             "If something should be done, only mention an action that already appears in the findings or open alerts above; "
             "never give new medical instructions, medicines, doses or procedures (say the flight surgeon will decide). "
-            "Use only these units with numbers: mSv, pg/mL, bpm, percent, hours, minutes, days. "
+            "Use only these units with numbers: mSv, pg/mL, bpm, percent, mmHg, °C, breaths per minute, hours, minutes, days. "
             "If you don't have the data for it, say so simply and share what you do know."
         )
         answer = aegis_llm.chat(prompt, persona=agent_name, words=60, mode="chat", timeout=20)   # 20 s total, retries included
@@ -1374,6 +1411,12 @@ class AEGISAgent(BaseAgent):
             if findings:
                 answer = f"Here's what I'm seeing for the {role(member)}: " + "; ".join(
                     f.get("message", "").rstrip(".") for f in findings[:3]) + "."
+                asked = [x for x in PULSEAgent.monitored_status(member.vitals)
+                         if _re_mod.search({"blood": r"blood pressure|\bbp\b|systolic|diastolic",
+                                            "temperature": r"temperature|\btemp\b|fever",
+                                            "respiration": r"respirat|breath"}[x.split()[0]], q_lower)]
+                if asked:
+                    answer += " " + ("; ".join(asked)).capitalize() + "."
             else:
                 answer = (f"Good news: everything I track for the {role(member)} looks normal right now. "
                           + self._rules_readout(agent_name, member))
@@ -1406,6 +1449,9 @@ class AEGISAgent(BaseAgent):
                          f"for the mission so far, out of the {aegis_mission.CAREER_LIMIT_MSV:.0f} mSv career limit.")
         if agent_name in ("PULSE", "AEGIS"):
             parts.append(f"Heart rate {v.heart_rate} bpm, blood oxygen {v.spo2:.0f} percent.")
+            extra = PULSEAgent.monitored_status(v)
+            if extra:
+                parts.append(("; ".join(extra)).capitalize() + ".")
         if agent_name in ("MIRROR", "AEGIS") and v.sleep_quality is not None:
             parts.append(f"Sleep score {v.sleep_quality:.0f} out of 100.")
         if agent_name in ("GENE",):
