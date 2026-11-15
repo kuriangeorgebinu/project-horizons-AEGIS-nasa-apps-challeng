@@ -16,7 +16,7 @@
  "panels": [
   {
    "type": "row",
-   "title": "Model \u00b7 DeepSeek",
+   "title": "Model",
    "id": 2,
    "collapsed": false,
    "gridPos": {
@@ -29,13 +29,13 @@
   },
   {
    "type": "stat",
-   "title": "DeepSeek",
+   "title": "Model",
    "id": 3,
    "datasource": {
     "type": "prometheus",
     "uid": "prometheus"
    },
-   "description": "Whether the backend has a DeepSeek key and AEGIS_LLM is not off. OFF means every answer comes from the rules.",
+   "description": "Whether the backend has a model key and AEGIS_LLM is not off. OFF means every answer comes from the rules.",
    "gridPos": {
     "h": 4,
     "w": 4,
@@ -102,7 +102,7 @@
     "type": "prometheus",
     "uid": "prometheus"
    },
-   "description": "Share of DeepSeek calls that returned an answer.",
+   "description": "Share of model calls that returned an answer.",
    "gridPos": {
     "h": 4,
     "w": 4,
@@ -165,7 +165,7 @@
     "type": "prometheus",
     "uid": "prometheus"
    },
-   "description": "How long ago DeepSeek last answered successfully (since the backend last restarted).",
+   "description": "How long ago the model last answered successfully (since the backend last restarted).",
    "gridPos": {
     "h": 4,
     "w": 4,
@@ -291,7 +291,7 @@
     "type": "prometheus",
     "uid": "prometheus"
    },
-   "description": "Replies to the crew (chat with the agents + ECHO) written by the rules instead of DeepSeek.",
+   "description": "Replies to the crew (chat with the agents + ECHO) written by the rules instead of the model.",
    "gridPos": {
     "h": 4,
     "w": 4,
@@ -348,7 +348,7 @@
   },
   {
    "type": "stat",
-   "title": "DeepSeek calls (1 h)",
+   "title": "Model calls (1 h)",
    "id": 8,
    "datasource": {
     "type": "prometheus",
@@ -401,7 +401,7 @@
   },
   {
    "type": "timeseries",
-   "title": "DeepSeek calls by outcome (per 5 min)",
+   "title": "Model calls by outcome (per 5 min)",
    "id": 9,
    "datasource": {
     "type": "prometheus",
@@ -451,7 +451,7 @@
   },
   {
    "type": "timeseries",
-   "title": "DeepSeek latency",
+   "title": "Model latency",
    "id": 10,
    "datasource": {
     "type": "prometheus",
@@ -517,7 +517,7 @@
     "type": "prometheus",
     "uid": "prometheus"
    },
-   "description": "ask = Chat with the agents, echo = ECHO companion. 'rules' means DeepSeek was off, failed or its reply failed the fact check.",
+   "description": "ask = Chat with the agents, echo = ECHO companion. 'rules' means the model was off, failed or its reply failed the fact check.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -1632,5 +1632,5 @@
    }
   }
  ],
- "description": "Is the AEGIS backend healthy, is DeepSeek answering, are the agents running, and what is the mission state."
+ "description": "Is the AEGIS backend healthy, is the model answering, are the agents running, and what is the mission state."
 }
