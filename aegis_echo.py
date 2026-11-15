@@ -454,7 +454,7 @@ def chat(crew_id: str, message: str) -> dict:
         source = "rules"
     else:
         text = _ai_reply(message, m, f, history)
-        source = "deepseek" if text else "rules"
+        source = "model" if text else "rules"
     if not text:
         text = _scripted(message, m, f)
     _remember(crew_id, "echo", text)

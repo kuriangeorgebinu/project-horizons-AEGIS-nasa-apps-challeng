@@ -33,7 +33,7 @@ if ENABLED:
                             buckets=(0.5, 1, 2, 3, 5, 8, 12, 15, 20, 25, 30, 45, 60))
     LLM_ENABLED = Gauge("aegis_llm_enabled", "1 if DeepSeek is configured and switched on")
     LLM_LAST_SUCCESS = Gauge("aegis_llm_last_success_timestamp_seconds", "Unix time of the last successful DeepSeek call")
-    ANSWERS = Counter("aegis_answers_total", "Replies shown to the crew, by surface (ask, echo) and source (deepseek, rules)",
+    ANSWERS = Counter("aegis_answers_total", "Replies shown to the crew, by surface (ask, echo) and source (model, rules)",
                       ["surface", "source"])
     ANALYSIS_RUNS = Counter("aegis_analysis_runs_total", "Agent analysis passes over the whole crew", ["result"])
     ANALYSIS_DURATION = Histogram("aegis_analysis_duration_seconds", "Duration of one analysis pass",
@@ -73,7 +73,7 @@ def llm_call(ok: bool, latency: float, error: str | None = None) -> None:
 
 def answer(surface: str, source: str | None) -> None:
     if ENABLED:
-        ANSWERS.labels(surface, "deepseek" if source == "deepseek" else "rules").inc()
+        ANSWERS.labels(surface, "model" if source == "model" else "rules").inc()
 
 
 def analysis(duration: float, ok: bool) -> None:

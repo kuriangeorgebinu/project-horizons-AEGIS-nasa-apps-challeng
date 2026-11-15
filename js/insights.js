@@ -315,8 +315,8 @@ async function askAgent(agentKey, question, fallbackText, opts = {}) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
     if (seq !== _askSeq) return;
-    VOICE.nextTag = { ai: data.source === 'deepseek',
-      title: (data.source === 'deepseek' ? 'Worded by a cloud AI service from the live readings' : 'Written by the rules (cloud AI off or unavailable)') +
+    VOICE.nextTag = { ai: data.source === 'model',
+      title: (data.source === 'model' ? 'Worded by a cloud AI service from the live readings' : 'Written by the rules (cloud AI off or unavailable)') +
              ` · agents consulted: ${(data.agents_consulted || []).join(', ')} · ${data.latency_s}s` };
     VOICE.nextSpeaker = agent;                 // each agent answers in its own voice
     typeResponse(withIntro(agent, data.answer || fallbackText || 'No answer available.'), true, onDone);
