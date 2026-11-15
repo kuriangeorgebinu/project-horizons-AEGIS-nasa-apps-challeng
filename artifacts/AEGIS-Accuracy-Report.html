@@ -58,7 +58,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <header style="display:grid;gap:.7rem">
   <div class="eyebrow">Project Horizons · NASA Space Apps 2026</div>
   <h1>AEGIS Accuracy Report</h1>
-  <p class="meta">Second run, 11 Oct 2026, after the Step 1 fixes. Same tests as the first run, against the live code. AI model: DeepSeek (deepseek-flash). Scripts: <code>eval/run_eval.py</code>, <code>aegis_verify.py</code>, <code>eval/verify_step1*.py</code>. Raw output: <code>eval/results.json</code> (first run kept as <code>eval/results.before-step1.json</code>).</p>
+  <p class="meta">Second run, 11 Oct 2026, after the Step 1 fixes. Same tests as the first run, against the live code. AI model: the configured cloud model. Scripts: <code>eval/run_eval.py</code>, <code>aegis_verify.py</code>, <code>eval/verify_step1*.py</code>. Raw output: <code>eval/results.json</code> (first run kept as <code>eval/results.before-step1.json</code>).</p>
   <p class="lede">We test two things. First, whether the agents' <b>rules</b> give the right answer on real measured data from NASA. Second, whether the <b>AI wording</b> stays true to the data and sources it is given. The first run found two rules that were wrong. This run shows what changed after fixing them, including what still fails.</p>
 </header>
 
@@ -70,7 +70,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="verdict ok"><span class="num">9 of 10</span><span class="lbl">AI recommendations that pass every fact check (8 on the first try). The tenth falls back to the rule-based advice.</span></div>
     <div class="verdict ok"><span class="num">184 of 195</span><span class="lbl">Planted hallucinations the checker caught. Numbers, citations and medicines: all caught. Paraphrased actions: 73 of 84.</span></div>
     <div class="verdict ok"><span class="num">12 of 12</span><span class="lbl">Voice answers whose numbers all match the live data on the first try.</span></div>
-    <div class="verdict warn"><span class="num">2 of 10</span><span class="lbl">First drafts that pinned a sentence to a passage that does not say it. Still DeepSeek's main weakness; the checker caught both.</span></div>
+    <div class="verdict warn"><span class="num">2 of 10</span><span class="lbl">First drafts that pinned a sentence to a passage that does not say it. Still the model's main weakness; the checker caught both.</span></div>
   </div>
   <p class="note">Both rule problems from the first run are fixed and re-tested. The AI layer is also safer: recommendation cards now show the approved protocol steps word for word, so a mis-paraphrased action can no longer reach the crew. The biggest open limit is unchanged: the vital signs are simulated and IL-6 is modelled, so none of this is a clinical validation.</p>
 </section>
@@ -92,7 +92,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 <section>
   <h2>1 · How the fact checker works</h2>
-  <p>Every DeepSeek recommendation passes through <code>aegis_verify.py</code> before it reaches the dashboard. It does not ask another AI whether the text looks right. Each check compares the text mechanically against exactly what the model was given.</p>
+  <p>Every model-worded recommendation passes through <code>aegis_verify.py</code> before it reaches the dashboard. It does not ask another AI whether the text looks right. Each check compares the text mechanically against exactly what the model was given.</p>
   <div class="checks">
     <div class="check"><b>Numbers</b><span>Every number must appear in the crew readings, thresholds or evidence (rounding allowed; "about" allows 5%). Advice durations like "2 hours" are exempt.</span></div>
     <div class="check"><b>Citations</b><span>Each sentence that cites [n] must be about the same thing as passage n (MiniLM similarity ≥ 0.30).</span></div>
@@ -159,7 +159,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 <section>
   <h2>3 · AI recommendations under the checker</h2>
-  <p>Ten scenarios covering all four specialists, each run through the real rule engine, the real knowledge-base search and DeepSeek. Doses and IL-6 levels were updated to the new scale.</p>
+  <p>Ten scenarios covering all four specialists, each run through the real rule engine, the real knowledge-base search and the model. Doses and IL-6 levels were updated to the new scale.</p>
   <div class="tbl"><table>
     <thead><tr><th>#</th><th>Scenario</th><th>First draft</th><th>Final</th><th>What was flagged</th></tr></thead>
     <tbody>
@@ -224,7 +224,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <section>
   <h2>7 · Still open</h2>
   <ol>
-    <li><b>Citations:</b> prompt DeepSeek to leave calculated projections uncited, or allow the findings themselves as a citable source.</li>
+    <li><b>Citations:</b> prompt the model to leave calculated projections uncited, or allow the findings themselves as a citable source.</li>
     <li><b>Voice focus:</b> map role words ("engineer", "medical officer") to crew members the way surnames are mapped.</li>
     <li><b>Action audit:</b> a small entailment model would make the paraphrase check meaningful (one-time ~100 MB download). Not needed for safety now that steps are shown verbatim.</li>
     <li><b>Real data for PREDICT:</b> replay a continuous physiological dataset (for example an analog-mission or bed-rest study) through the trend engine.</li>

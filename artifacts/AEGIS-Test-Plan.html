@@ -201,7 +201,7 @@ Invoke-RestMethod http://127.0.0.1:8000/api/crew/crew-001/biomarkers</pre></div>
       <li>Amber border, 🔮 <strong>“Early warning: trouble likely in ~N min · Commander Chen”</strong>.</li>
       <li>Plain sentence such as “Commander Chen's sleep is already off, inflammation is rising and radiation dose is going up…”.</li>
       <li>Agent badges; forecast ones are dashed with ⏱.</li>
-      <li>A purple DeepSeek note appears within a few seconds.</li>
+      <li>A purple model note appears within a few seconds.</li>
       <li>A spoken “Heads up…” line, and a <strong>🛡️ Start prevention plan</strong> button.</li></ul></div>
   </div>
 </div>
@@ -266,7 +266,7 @@ $p.top.upcoming | Format-Table agent, label, eta_min</pre></div>
 <pre>Invoke-RestMethod "http://127.0.0.1:8000/api/recommendations?limit=50" |
   ? title -like 'Prevention plan*' | Select status, title, actions, evidence
 Invoke-RestMethod "http://127.0.0.1:8000/api/alerts?unacknowledged_only=true"</pre></div>
-    <div><div class="lbl">Expected</div><ul><li>One prevention plan with <code>status = accepted</code>, 2–4 actions and 4 evidence entries; within ~10 s its rationale starts with “🧠 DeepSeek (AEGIS)”.</li><li>Open alerts list is empty.</li><li><code>/api/simulation</code> shows <code>prevent_recovery</code>, then back to normal after about 3 minutes.</li></ul></div>
+    <div><div class="lbl">Expected</div><ul><li>One prevention plan with <code>status = accepted</code>, 2–4 actions and 4 evidence entries; within ~10 s its rationale starts with “🧠 Model (AEGIS)”.</li><li>Open alerts list is empty.</li><li><code>/api/simulation</code> shows <code>prevent_recovery</code>, then back to normal after about 3 minutes.</li></ul></div>
   </div>
 </div>
 
@@ -280,7 +280,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/alerts?unacknowledged_only=true"</p
     <div><div class="lbl">Expected</div><ul>
       <li>Early warning first (3.2).</li>
       <li>Then briefly <strong>“Early warning: it's happening now”</strong>.</li>
-      <li>Then a red <strong>⚡ “Health cascade: N problems at once · Commander Chen”</strong> at about 230 s, with a DeepSeek explanation and a <strong>Start recovery plan</strong> button.</li>
+      <li>Then a red <strong>⚡ “Health cascade: N problems at once · Commander Chen”</strong> at about 230 s, with a model explanation and a <strong>Start recovery plan</strong> button.</li>
       <li>Record the lead time: early warning to cascade (expected ≈ 2½–3 min).</li></ul></div>
   </div>
 </div>
@@ -313,7 +313,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/alerts?unacknowledged_only=true"</p
   <div class="grid">
     <div><div class="lbl">Steps</div><ol><li><kbd>Shift</kbd>+<kbd>N</kbd>, wait 60 s, then <kbd>Shift</kbd>+<kbd>S</kbd>.</li><li>When the alert appears, click <strong>Send everyone to the storm shelter</strong>.</li></ol></div>
     <div><div class="lbl">Expected</div><ul>
-      <li>Within about 5–10 s: ☢ <strong>“Radiation storm: take shelter now”</strong>, with a SOLARIS DeepSeek note.</li>
+      <li>Within about 5–10 s: ☢ <strong>“Radiation storm: take shelter now”</strong>, with a SOLARIS model note.</li>
       <li>No health-cascade card during the storm.</li>
       <li>Sim runs SHELTER-1 and reports “4/4 crew secured in shelter”.</li>
       <li>All four shelter alerts are cleared; panel goes to All clear; 0 open alerts.</li></ul></div>
@@ -329,7 +329,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/alerts?unacknowledged_only=true"</p
     <div><div class="lbl">Steps</div><ol><li><kbd>Shift</kbd>+<kbd>N</kbd>, wait 60 s, then <kbd>Shift</kbd>+<kbd>M</kbd>.</li><li>Optionally select Dr. Nakamura to watch SpO₂ fall.</li><li>Click <strong>Start medical response</strong>.</li></ol></div>
     <div><div class="lbl">Expected</div><ul>
       <li>SpO₂ for Nakamura falls below 90% within about 30 s.</li>
-      <li>⚕ <strong>“Critical low blood oxygen · Dr. Nakamura”</strong>: “oxygen level is 89%, below the safe line of 90%…”, plus a PULSE DeepSeek note.</li>
+      <li>⚕ <strong>“Critical low blood oxygen · Dr. Nakamura”</strong>: “oxygen level is 89%, below the safe line of 90%…”, plus a PULSE model note.</li>
       <li>The button says <strong>Start medical response</strong> (not shelter, not recovery).</li>
       <li>Sim runs “MEDIC-1: Medical Response · Dr. K. Nakamura” (to Medbay).</li>
       <li>Spoken: “Done. Dr. Nakamura is on the way to the medical bay…”.</li>
@@ -345,7 +345,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/alerts?unacknowledged_only=true"</p
   <div class="grid">
     <div><div class="lbl">Steps</div><ol><li>During a scenario (e.g. after 30 s of <kbd>Shift</kbd>+<kbd>D</kbd>), scroll to Active Recommendations.</li></ol></div>
     <div><div class="lbl">Expected</div><ul>
-      <li>Each card: title, full purple DeepSeek note (no “…” cut-off), all 2–4 steps, and “Cited sources” links.</li>
+      <li>Each card: title, full purple model note (no “…” cut-off), all 2–4 steps, and “Cited sources” links.</li>
       <li>Text talks <em>about</em> the crew member by role (“the Commander's…”), never “you”.</li>
       <li>No codes like PREVENT-1 or IL-6 in the explanation unless explained in plain words.</li></ul></div>
   </div>
@@ -386,7 +386,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/alerts?unacknowledged_only=true"</p
 
 <!-- ============================================================ -->
 <h2 id="s9">9 · Voice Terminal</h2>
-<p class="sub">Type each question in the box and press Ask. Answers should come back in about 2–4 s, sound like a person, and show the “LIVE · DEEPSEEK” tag.</p>
+<p class="sub">Type each question in the box and press Ask. Answers should come back in about 2–4 s, sound like a person, and show the “LIVE · MODEL” tag.</p>
 
 <table>
   <tr><th>#</th><th>Agent selected</th><th>Ask</th><th>Expected</th></tr>
@@ -510,7 +510,7 @@ Invoke-RestMethod http://127.0.0.1:8000/api/crew/crew-00X/trends?series=false</p
   <div class="tc-head"><span class="id">12.1</span><h3>AI switched off</h3><span class="tag">fail-safe</span></div>
   <div class="grid">
     <div><div class="lbl">Steps</div><ol><li>Stop the backend and start it with <code>$env:AEGIS_LLM='off'</code>.</li><li>Run 7.1 and ask “hi” and “How is Nakamura doing?”.</li></ol></div>
-    <div><div class="lbl">Expected</div><ul><li>Everything still works with rule-based text; no purple DeepSeek notes.</li><li>Answers show “LIVE · RULES”.</li><li>Afterwards, restart without the variable.</li></ul></div>
+    <div><div class="lbl">Expected</div><ul><li>Everything still works with rule-based text; no purple model notes.</li><li>Answers show “LIVE · RULES”.</li><li>Afterwards, restart without the variable.</li></ul></div>
   </div>
 </div>
 
@@ -579,7 +579,7 @@ Invoke-RestMethod $B/api/simulation                           # active scenario
 Invoke-RestMethod $B/api/predict                              # forecasts for all crew
 Invoke-RestMethod "$B/api/alerts?unacknowledged_only=true"   # open alerts
 Invoke-RestMethod $B/api/recommendations/pending              # pending recommendations
-Invoke-RestMethod $B/api/llm/status                           # DeepSeek calls, errors, latency
+Invoke-RestMethod $B/api/llm/status                           # model calls, errors, latency
 Invoke-RestMethod -Method Post $B/api/simulation/scenario/nominal
 Invoke-RestMethod -Method Post $B/api/ask -ContentType application/json `
   -Body '{"question":"How is Nakamura doing?","agent":"AEGIS","crew_id":"crew-004"}'</pre>
