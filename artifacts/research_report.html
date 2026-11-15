@@ -14,8 +14,8 @@
     --bg3: #151d35;
     --card: #131929;
     --border: #1e2d50;
-    --nasa-blue: #0b3d91;
-    --nasa-red: #fc3d21;
+    --brand-blue: #2563a8;
+    --brand-red: #c4522d;
     --accent: #1a6bc7;
     --accent2: #2e8fff;
     --text: #e8eaf6;
@@ -47,7 +47,7 @@
     overflow-x: auto;
   }
   .nav-brand {
-    font-weight: 700; font-size: 14px; color: var(--nasa-red);
+    font-weight: 700; font-size: 14px; color: var(--brand-red);
     letter-spacing: .05em; white-space: nowrap; margin-right: 1.5rem;
     text-transform: uppercase;
   }
@@ -72,11 +72,11 @@
     content: '';
     position: absolute; inset: 0;
     background: radial-gradient(ellipse at 60% 40%, rgba(11,61,145,.35) 0%, transparent 60%),
-                radial-gradient(ellipse at 30% 70%, rgba(252,61,33,.15) 0%, transparent 50%);
+                radial-gradient(ellipse at 30% 70%, rgba(196,82,45,.15) 0%, transparent 50%);
     pointer-events: none;
   }
   .hero-badge {
-    display: inline-block; background: var(--nasa-red);
+    display: inline-block; background: var(--brand-red);
     color: #fff; font-size: 11px; font-weight: 700;
     letter-spacing: .1em; text-transform: uppercase;
     padding: .25rem .75rem; border-radius: 2px; margin-bottom: 1rem;
@@ -107,11 +107,11 @@
     font-size: 1.4rem; font-weight: 700;
     color: #fff; margin-bottom: 1.5rem;
     padding-bottom: .6rem;
-    border-bottom: 2px solid var(--nasa-blue);
+    border-bottom: 2px solid var(--brand-blue);
     display: flex; align-items: center; gap: .6rem;
   }
   h2 .sec-num {
-    background: var(--nasa-blue); color: #fff;
+    background: var(--brand-blue); color: #fff;
     font-size: 11px; font-weight: 700;
     padding: .2rem .5rem; border-radius: 3px;
     letter-spacing: .05em;
@@ -139,7 +139,7 @@
   }
   .callout.trophy::before { background: var(--yellow); }
   .callout.focus::before { background: var(--accent2); }
-  .callout.risk::before { background: var(--nasa-red); }
+  .callout.risk::before { background: var(--brand-red); }
   .callout.idea::before { background: var(--green); }
   .callout-icon { font-size: 1.6rem; margin-bottom: .5rem; display: block; }
   .callout-label {
@@ -173,7 +173,7 @@
   .project-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .6rem; }
   .project-name { font-size: 1rem; font-weight: 700; color: #fff; }
   .project-year {
-    font-size: 11px; font-weight: 700; background: var(--nasa-blue);
+    font-size: 11px; font-weight: 700; background: var(--brand-blue);
     color: #fff; padding: .2rem .5rem; border-radius: 3px; white-space: nowrap;
   }
   .project-award {
@@ -202,7 +202,7 @@
     display: flex; gap: .9rem; align-items: flex-start;
   }
   .pattern-num {
-    background: var(--nasa-blue); color: #fff;
+    background: var(--brand-blue); color: #fff;
     font-size: 11px; font-weight: 800;
     min-width: 24px; height: 24px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -222,7 +222,7 @@
     border-radius: 8px; padding: 1.1rem;
   }
   .ds-name { font-size: .95rem; font-weight: 700; color: var(--accent2); margin-bottom: .3rem; }
-  .ds-url { font-size: .78rem; color: var(--nasa-red); margin-bottom: .5rem; }
+  .ds-url { font-size: .78rem; color: var(--brand-red); margin-bottom: .5rem; }
   .ds-desc { font-size: .82rem; color: var(--text-muted); line-height: 1.5; }
   .ds-tag {
     display: inline-block; margin-top: .6rem;
@@ -253,7 +253,7 @@
     display: flex; gap: .9rem; align-items: flex-start;
   }
   .rec-num {
-    font-size: 1.1rem; font-weight: 800; color: var(--nasa-red);
+    font-size: 1.1rem; font-weight: 800; color: var(--brand-red);
     min-width: 28px; flex-shrink: 0; margin-top: 1px;
   }
   .rec-title { font-size: .92rem; font-weight: 700; color: #fff; margin-bottom: .25rem; }
@@ -766,9 +766,9 @@
         label: 'Frequency among winners & finalists',
         data: [18, 16, 12, 10, 9, 7, 8, 11, 7, 4],
         backgroundColor: [
-          'rgba(46,143,255,0.7)', 'rgba(46,143,255,0.7)', 'rgba(252,61,33,0.7)',
+          'rgba(46,143,255,0.7)', 'rgba(46,143,255,0.7)', 'rgba(196,82,45,0.7)',
           'rgba(46,143,255,0.6)', 'rgba(0,230,118,0.7)', 'rgba(46,143,255,0.5)',
-          'rgba(252,61,33,0.6)', 'rgba(46,143,255,0.5)', 'rgba(46,143,255,0.4)',
+          'rgba(196,82,45,0.6)', 'rgba(46,143,255,0.5)', 'rgba(46,143,255,0.4)',
           'rgba(139,92,246,0.7)'
         ],
         borderColor: 'rgba(255,255,255,0.1)',
@@ -810,10 +810,10 @@
         {
           label: 'Mission Severity (NASA HRP)',
           data: [9, 8, 7, 8, 9, 7],
-          backgroundColor: 'rgba(252,61,33,0.18)',
-          borderColor: 'rgba(252,61,33,0.85)',
+          backgroundColor: 'rgba(196,82,45,0.18)',
+          borderColor: 'rgba(196,82,45,0.85)',
           borderWidth: 2,
-          pointBackgroundColor: 'rgba(252,61,33,1)',
+          pointBackgroundColor: 'rgba(196,82,45,1)',
           pointRadius: 4,
         },
         {
@@ -855,7 +855,7 @@
     { label: 'Research & Design',       start: 0,  end: 10, color: 'rgba(139,92,246,0.8)' },
     { label: 'Core Backend (FastAPI)',   start: 7,  end: 21, color: 'rgba(11,61,145,0.85)' },
     { label: 'Frontend Dashboard',      start: 14, end: 30, color: 'rgba(46,143,255,0.8)' },
-    { label: 'ML / Analysis Engine',    start: 18, end: 38, color: 'rgba(252,61,33,0.8)' },
+    { label: 'ML / Analysis Engine',    start: 18, end: 38, color: 'rgba(196,82,45,0.8)' },
     { label: 'Integration & Polish',    start: 35, end: 49, color: 'rgba(0,200,100,0.8)' },
     { label: 'Demo Prep & Deploy',      start: 46, end: 53, color: 'rgba(255,214,0,0.8)' },
   ];

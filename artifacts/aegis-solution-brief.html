@@ -13,8 +13,8 @@
     --bg3: #f1f5f9;
     --card: #ffffff;
     --border: #e2e8f0;
-    --nasa-blue: #0b3d91;
-    --nasa-red: #fc3d21;
+    --brand-blue: #2563a8;
+    --brand-red: #c4522d;
     --accent: #0066cc;
     --accent2: #0066cc;
     --text: #1a202c;
@@ -57,10 +57,10 @@
   }
   .nav-logo {
     font-size: 15px; font-weight: 800; letter-spacing: .08em;
-    color: var(--nasa-blue); margin-right: 2rem; white-space: nowrap;
+    color: var(--brand-blue); margin-right: 2rem; white-space: nowrap;
     text-transform: uppercase;
   }
-  .nav-logo span { color: var(--nasa-red); }
+  .nav-logo span { color: var(--brand-red); }
   nav a {
     color: var(--text-muted); text-decoration: none;
     font-size: 12px; font-weight: 500; white-space: nowrap;
@@ -68,7 +68,7 @@
     border-bottom: 2px solid transparent; transition: all .2s;
     text-transform: uppercase; letter-spacing: .05em;
   }
-  nav a:hover { color: var(--text); border-color: var(--nasa-blue); }
+  nav a:hover { color: var(--text); border-color: var(--brand-blue); }
 
   /* ── HERO ── */
   .hero {
@@ -80,15 +80,15 @@
   }
   .hero-eyebrow {
     font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .15em; color: var(--nasa-red);
-    border: 1px solid rgba(252,61,33,.4); padding: .3rem 1rem;
+    letter-spacing: .15em; color: var(--brand-red);
+    border: 1px solid rgba(196,82,45,.4); padding: .3rem 1rem;
     border-radius: 2px; margin-bottom: 1.5rem; display: inline-block;
   }
   .hero h1 {
     font-size: clamp(3rem, 8vw, 6rem);
     font-weight: 900; letter-spacing: -.02em; line-height: 1;
     margin-bottom: .5rem;
-    background: linear-gradient(135deg, var(--nasa-blue) 0%, var(--accent) 50%, var(--purple) 100%);
+    background: linear-gradient(135deg, var(--brand-blue) 0%, var(--accent) 50%, var(--purple) 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
   }
@@ -98,7 +98,7 @@
     margin: 0 auto 1rem; line-height: 1.6;
   }
   .hero-full-name {
-    font-size: .85rem; color: var(--nasa-blue); letter-spacing: .05em;
+    font-size: .85rem; color: var(--brand-blue); letter-spacing: .05em;
     margin-bottom: 2.5rem; font-weight: 500;
   }
   .hero-tags { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
@@ -107,7 +107,7 @@
     padding: .35rem .9rem; border-radius: 3px; border: 1px solid;
   }
   .tag-blue { border-color: rgba(59,158,255,.5); color: var(--accent2); background: rgba(59,158,255,.08); }
-  .tag-red { border-color: rgba(252,61,33,.5); color: var(--nasa-red); background: rgba(252,61,33,.08); }
+  .tag-red { border-color: rgba(196,82,45,.5); color: var(--brand-red); background: rgba(196,82,45,.08); }
   .tag-purple { border-color: rgba(167,139,250,.5); color: var(--purple); background: rgba(167,139,250,.08); }
   .tag-green { border-color: rgba(0,230,118,.5); color: var(--green); background: rgba(0,230,118,.08); }
 
@@ -133,7 +133,7 @@
   .sec-pill {
     font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
     padding: .25rem .6rem; border-radius: 3px;
-    background: var(--nasa-blue); color: #fff;
+    background: var(--brand-blue); color: #fff;
   }
 
   h3 { font-size: 1.05rem; font-weight: 700; color: var(--text); margin: 1.8rem 0 .6rem; }
@@ -142,7 +142,7 @@
 
   /* ── PROBLEM BLOCK ── */
   .problem-block {
-    background: linear-gradient(135deg, rgba(252,61,33,.05) 0%, rgba(11,61,145,.05) 100%);
+    background: linear-gradient(135deg, rgba(196,82,45,.05) 0%, rgba(11,61,145,.05) 100%);
     border: 1px solid rgba(11,61,145,.2);
     border-radius: 10px; padding: 2rem;
     font-size: 1.05rem; line-height: 1.8;
@@ -160,7 +160,7 @@
     font-size: clamp(1.1rem, 2.5vw, 1.5rem);
     font-weight: 700; color: var(--text); line-height: 1.4;
   }
-  .tagline-text em { font-style: normal; color: var(--nasa-blue); }
+  .tagline-text em { font-style: normal; color: var(--brand-blue); }
 
   /* ── AGENT CARDS ── */
   .agent-grid { display: flex; flex-direction: column; gap: 1.5rem; }
@@ -255,7 +255,7 @@
     white-space: pre;
   }
   .arch-pre .c-blue { color: var(--accent); }
-  .arch-pre .c-red { color: var(--nasa-red); }
+  .arch-pre .c-red { color: var(--brand-red); }
   .arch-pre .c-purple { color: var(--gene-color); }
   .arch-pre .c-pulse { color: var(--pulse-color); }
   .arch-pre .c-solaris { color: var(--solaris-color); }
@@ -303,7 +303,7 @@
   .cascade-text { font-size: .86rem; color: var(--text-muted); line-height: 1.55; }
   .cascade-text strong { color: var(--text); }
   .cascade-alert {
-    background: linear-gradient(135deg, rgba(0,102,204,.08), rgba(252,61,33,.05));
+    background: linear-gradient(135deg, rgba(0,102,204,.08), rgba(196,82,45,.05));
     border: 1px solid rgba(0,102,204,.25);
     border-radius: 8px; padding: 1rem 1.25rem;
     margin-top: .5rem;
@@ -312,7 +312,7 @@
   }
   .cascade-alert-header {
     font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
-    color: var(--nasa-red); margin-bottom: .5rem;
+    color: var(--brand-red); margin-bottom: .5rem;
     display: flex; align-items: center; gap: .5rem;
   }
 
@@ -370,7 +370,7 @@
 
 
 <nav>
-  <span class="nav-logo"><span>NASA</span> · AEGIS</span>
+  <span class="nav-logo"><span>AEGIS</span> · Project Horizons</span>
   <a href="#problem">Problem</a>
   <a href="#solution">Solution</a>
   <a href="#agents">The Crew</a>
@@ -438,10 +438,10 @@
       </div>
       <div style="background:linear-gradient(135deg,rgba(220,38,38,.08),rgba(220,38,38,.02));border:1px solid rgba(220,38,38,.25);border-radius:10px;padding:1.5rem;position:relative;overflow:hidden;">
         <div style="position:absolute;top:.75rem;right:.75rem;font-size:2rem;opacity:.15;">⚡</div>
-        <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--nasa-red);margin-bottom:.4rem;">Tier 3</div>
+        <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--brand-red);margin-bottom:.4rem;">Tier 3</div>
         <div style="font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:.5rem;">PROTECT</div>
         <div style="font-size:.85rem;color:var(--text-muted);line-height:1.6;">When prevention fails, autonomous emergency protocols alert the crew and the on-call flight surgeon immediately (dashboard alarm + phone call). No Earth delay. A human confirms the protocol; auto-execution is a future option, not built.</div>
-        <div style="margin-top:.75rem;font-size:.75rem;font-weight:600;color:var(--nasa-red);">→ T+0: crew alerted · flight surgeon phoned · human confirms</div>
+        <div style="margin-top:.75rem;font-size:.75rem;font-weight:600;color:var(--brand-red);">→ T+0: crew alerted · flight surgeon phoned · human confirms</div>
       </div>
     </div>
 
@@ -809,7 +809,7 @@
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin:2rem 0;">
       <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;">
-        <div style="font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--nasa-red);margin-bottom:.75rem;">☁️ Prototype (Today)</div>
+        <div style="font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--brand-red);margin-bottom:.75rem;">☁️ Prototype (Today)</div>
         <div style="display:flex;flex-direction:column;gap:.6rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;"><span style="color:var(--text-muted);">Agent logic</span><span style="color:var(--text);font-weight:600;">Rule-based + statistical baselines</span></div>
           <div style="height:1px;background:var(--border);"></div>
