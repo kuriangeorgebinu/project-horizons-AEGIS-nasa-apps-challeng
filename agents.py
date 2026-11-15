@@ -306,7 +306,7 @@ class BaseAgent:
         check = aegis_verify.verify_note(text, context, menu=[alert.message or "", alert.title])
         if check["ok"]:
             db.update_alert_message(alert.id, f"{alert.message}\n\n{aegis_llm.AI_MARKER} ({self.agent_type.value}): {text}")
-        self._log_analysis(f"DeepSeek assessment {'added to' if check['ok'] else 'rejected for'} alert {alert.id}",
+        self._log_analysis(f"Model assessment {'added to' if check['ok'] else 'rejected for'} alert {alert.id}",
                            {"model": aegis_llm.model(), "alert_id": alert.id, "verified": check["ok"],
                             "problems": check["problems"][:4]})
 
@@ -1578,7 +1578,7 @@ class AEGISAgent(BaseAgent):
             if aegis_llm.submit(spec.llm_enrich_recommendation, member, rec, findings):
                 queued += 1
         if queued:
-            self._log_analysis(f"DeepSeek backfill queued for {queued} recommendations", {"queued": queued})
+            self._log_analysis(f"Model backfill queued for {queued} recommendations", {"queued": queued})
         return queued
 
     def _specialist_for(self, agent_type) -> "BaseAgent":
@@ -1615,7 +1615,7 @@ class AEGISAgent(BaseAgent):
         check = aegis_verify.verify_note(text, context, menu=menu)
         if check["ok"]:
             db.update_alert_message(alert.id, f"{alert.message}\n\n{aegis_llm.AI_MARKER} (AEGIS): {text}")
-        self._log_analysis(f"DeepSeek cascade explanation {'added to' if check['ok'] else 'rejected for'} {alert.id}",
+        self._log_analysis(f"Model cascade explanation {'added to' if check['ok'] else 'rejected for'} {alert.id}",
                            {"model": aegis_llm.model(), "alert_id": alert.id, "verified": check["ok"],
                             "problems": check["problems"][:4]})
 
@@ -1700,7 +1700,7 @@ class AEGISAgent(BaseAgent):
                                          ["Start the prevention plan PREVENT-1"])
         if check["ok"]:
             aegis_trends.NOTES[crew_member.id] = {"text": text, "at": datetime.utcnow().isoformat()}
-        self._log_analysis(f"DeepSeek PREDICT note for {crew_member.id} {'added' if check['ok'] else 'rejected'}",
+        self._log_analysis(f"Model PREDICT note for {crew_member.id} {'added' if check['ok'] else 'rejected'}",
                            {"chars": len(text), "verified": check["ok"], "problems": check["problems"][:4]})
 
     def rearm_cascades(self):

@@ -58,7 +58,8 @@ fi
 # Prometheus: our scrape config and alert rules, 7 days of data, listening on 127.0.0.1 only
 install -m 644 "$MON/prometheus.yml" /etc/prometheus/prometheus.yml
 install -m 644 "$MON/aegis-alerts.yml" /etc/prometheus/aegis-alerts.yml
-echo 'ARGS="--web.listen-address=127.0.0.1:9090 --storage.tsdb.retention.time=7d"' > /etc/default/prometheus
+# admin API on 127.0.0.1 only, so the deploy can delete retired series (see "monitoring check" below)
+echo 'ARGS="--web.listen-address=127.0.0.1:9090 --storage.tsdb.retention.time=7d --web.enable-admin-api"' > /etc/default/prometheus
 echo 'ARGS="--web.listen-address=127.0.0.1:9100"' > /etc/default/prometheus-node-exporter
 # Grafana: served under https://$HOST/grafana/, anonymous visitors can view (read-only), admin password kept on the box
 GPW="$BASE/shared/grafana-admin-password"
@@ -164,7 +165,13 @@ curl -fsS http://127.0.0.1:8000/health >/dev/null || { journalctl -u aegis -n 80
 echo "== monitoring check"
 for i in $(seq 1 30); do curl -fsS http://127.0.0.1:3000/grafana/api/health >/dev/null 2>&1 && break; sleep 2; done
 curl -fsS http://127.0.0.1:3000/grafana/api/health >/dev/null && echo "grafana healthy" || { journalctl -u grafana-server -n 40 --no-pager; echo "WARNING: grafana not healthy"; }
+for i in $(seq 1 30); do curl -fsS "http://127.0.0.1:9090/-/ready" >/dev/null 2>&1 && break; sleep 2; done
 curl -fsS "http://127.0.0.1:9090/-/ready" >/dev/null && echo "prometheus ready" || { journalctl -u prometheus -n 40 --no-pager; echo "WARNING: prometheus not ready"; }
+# Retired series: answers used to be labelled source="deepseek" (now "model"); drop the old series so no
+# Grafana time range shows it. Idempotent: deleting a series that no longer exists is a no-op.
+curl -fsS -X POST --data-urlencode 'match[]=aegis_answers_total{source="deepseek"}' 'http://127.0.0.1:9090/api/v1/admin/tsdb/delete_series' >/dev/null \
+  && curl -fsS -X POST 'http://127.0.0.1:9090/api/v1/admin/tsdb/clean_tombstones' >/dev/null \
+  && echo "prometheus: retired answer series removed" || echo "WARNING: could not remove retired series"
 
 echo "== keeping the 3 newest releases"
 ls -1dt "$BASE"/releases/* | tail -n +4 | xargs -r rm -rf

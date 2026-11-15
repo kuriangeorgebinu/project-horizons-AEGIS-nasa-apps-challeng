@@ -8,25 +8,25 @@ groups:
         labels: {severity: critical}
         annotations: {summary: "The AEGIS backend is not answering /metrics"}
 
-      - alert: DeepSeekFailing
+      - alert: ModelFailing
         expr: |
           sum(increase(aegis_llm_calls_total{outcome!="ok"}[10m])) / clamp_min(sum(increase(aegis_llm_calls_total[10m])), 1) > 0.5
           and sum(increase(aegis_llm_calls_total[10m])) >= 3
         for: 5m
         labels: {severity: warning}
-        annotations: {summary: "More than half of DeepSeek calls failed in the last 10 minutes (agents are answering from the rules)"}
+        annotations: {summary: "More than half of model calls failed in the last 10 minutes (agents are answering from the rules)"}
 
-      - alert: DeepSeekBusy
+      - alert: ModelBusy
         expr: sum(increase(aegis_llm_calls_total{outcome=~"busy|timeout"}[10m])) >= 3
         for: 5m
         labels: {severity: warning}
-        annotations: {summary: "DeepSeek is timing out or refusing calls as too busy"}
+        annotations: {summary: "The model is timing out or refusing calls as too busy"}
 
-      - alert: DeepSeekSlow
+      - alert: ModelSlow
         expr: histogram_quantile(0.9, sum(rate(aegis_llm_latency_seconds_bucket[10m])) by (le)) > 15
         for: 10m
         labels: {severity: warning}
-        annotations: {summary: "90% of DeepSeek calls take longer than 15 s"}
+        annotations: {summary: "90% of model calls take longer than 15 s"}
 
       - alert: AgentAnalysisStalled
         expr: time() - aegis_analysis_last_run_timestamp_seconds > 300

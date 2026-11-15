@@ -155,7 +155,12 @@ def init_database():
             cursor.execute("ALTER TABLE recommendations ADD COLUMN resolved_at TIMESTAMP")
         if "resolution" not in cols:
             cursor.execute("ALTER TABLE recommendations ADD COLUMN resolution TEXT")
-        cursor.execute("PRAGMA journal_mode = WAL")
+        cursor.execute("PRAGMA journal_mode = WAL").fetchall()
+        conn.commit()
+        # Stored AI notes, rationales and log lines from before Nov 14 named the provider; show "Model" instead
+        for table, col in (("alerts", "message"), ("recommendations", "rationale"), ("event_log", "message")):
+            cursor.execute(f"UPDATE {table} SET {col} = REPLACE(REPLACE({col}, '🧠 DeepSeek', '🧠 Model'), 'DeepSeek ', 'Model ') "
+                           f"WHERE {col} LIKE '%DeepSeek%'")
         conn.commit()
 
 

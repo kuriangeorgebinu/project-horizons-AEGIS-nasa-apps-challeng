@@ -33,9 +33,10 @@ function _crewDisplayName(crewId) {
 }
 
 // DeepSeek reasoning layer: the backend appends "🧠 DeepSeek (AGENT): ..." to alert messages
-const AI_MARKER = '🧠 DeepSeek';
+const AI_MARKER = '🧠 Model';
+const _AI_MARK_RE = /🧠 (?:Model|DeepSeek)/;   // older stored notes used the provider's name
 function _splitAi(text) {
-  const i = (text || '').indexOf(AI_MARKER);
+  const i = (text || '').search(_AI_MARK_RE);
   return i < 0 ? [String(text || '').trim(), ''] : [text.slice(0, i).trim(), text.slice(i).trim()];
 }
 function _renderAiNote(aiText) {
@@ -50,13 +51,13 @@ function _renderAiNote(aiText) {
     desc.insertAdjacentElement('afterend', el);
   }
   if (!aiText) { el.style.display = 'none'; el.textContent = ''; return; }
-  const m = aiText.match(/^🧠 DeepSeek\s*\(([^)]+)\):\s*([\s\S]*)$/);
+  const m = aiText.match(/^🧠 (?:Model|DeepSeek)\s*\(([^)]+)\):\s*([\s\S]*)$/);
   el.innerHTML = '';
   const tag = document.createElement('span');
   tag.className = 'alert-ai-tag';
-  tag.textContent = m ? `🧠 Cloud AI · ${m[1]}` : '🧠 Cloud AI';
+  tag.textContent = m ? `🧠 Model · ${m[1]}` : '🧠 Model';
   const body = document.createElement('span');
-  body.textContent = m ? m[2] : aiText.replace(AI_MARKER, '').trim();
+  body.textContent = m ? m[2] : aiText.replace(_AI_MARK_RE, '').trim();
   el.append(tag, body);
   el.style.display = '';
 }

@@ -28,7 +28,7 @@ from typing import Callable, Optional
 
 import httpx
 
-AI_MARKER = "🧠 DeepSeek"          # prefix the dashboard looks for
+AI_MARKER = "🧠 Model"          # prefix the dashboard looks for
 
 _executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="deepseek")
 _lock = threading.Lock()

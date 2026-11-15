@@ -354,8 +354,8 @@ const AEGIS_API = {
     // DeepSeek assessment (stored by the backend at the start of the rationale). Escaped: model output is untrusted.
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const aiHtml = rec => {
-      const m = (rec.rationale || '').match(/^🧠 DeepSeek\s*\(([^)]+)\):\s*([\s\S]*?)(?:\n\nVerification:|\n\nRule basis:|$)/);
-      return m ? `<div class="rec-ai" title="${esc(m[2].trim())}"><span class="rec-ai-tag">🧠 Cloud AI · ${esc(m[1])}</span>${verifyHtml(rec)}${esc(m[2].trim())}</div>`
+      const m = (rec.rationale || '').match(/^🧠 (?:Model|DeepSeek)\s*\(([^)]+)\):\s*([\s\S]*?)(?:\n\nVerification:|\n\nRule basis:|$)/);
+      return m ? `<div class="rec-ai" title="${esc(m[2].trim())}"><span class="rec-ai-tag">🧠 Model · ${esc(m[1])}</span>${verifyHtml(rec)}${esc(m[2].trim())}</div>`
                : '';
     };
     // Grounding check result (aegis_verify.py): numbers, citations, actions and medicines checked against the sources
