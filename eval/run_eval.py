@@ -26,11 +26,11 @@ sys.path.insert(0, str(ROOT))
 from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
-from models import CrewMember, Vitals, CrewRole                       # noqa: E402
-import agents as A                                                    # noqa: E402
-import aegis_verify as V                                              # noqa: E402
-import aegis_llm                                                      # noqa: E402
-import aegis_mission as M                                             # noqa: E402
+from app.models import CrewMember, Vitals, CrewRole  # noqa: E402
+import app.agents as A  # noqa: E402
+from app.services import verify as V  # noqa: E402
+from app.services import llm as aegis_llm  # noqa: E402
+from app import mission as M  # noqa: E402
 
 OUT = {"generated": time.strftime("%Y-%m-%d %H:%M"), "model": None}
 NO_LLM = "--no-llm" in sys.argv

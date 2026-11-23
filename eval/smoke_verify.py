@@ -1,6 +1,7 @@
 import sys, json
-sys.path.insert(0, r"C:\Users\kgeor\Desktop\project-horizons-AEGIS-nasa-apps-challeng")
-import aegis_verify as V
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app.services import verify as V
 
 menu = ["Move to designated storm shelter area NOW", "Don personal radiation monitoring device",
         "Await all-clear from Mission Control", "Log exposure event in radiation tracking system"]
