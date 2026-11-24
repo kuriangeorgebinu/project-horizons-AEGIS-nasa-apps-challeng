@@ -102,7 +102,7 @@ def _refresh_state() -> None:
     except Exception:
         pass
     try:
-        import database as db
+        from app import database as db
         sev = db.count_open_alerts()               # whole table, every severity (incl. info)
         for k in ("critical", "high", "medium", "low", "info"):
             ALERTS_OPEN.labels(k).set(sev.get(k, 0))
@@ -122,7 +122,7 @@ def _refresh_state() -> None:
     except Exception:
         pass
     try:
-        from simulator import get_simulator
+        from app.simulator import get_simulator
         sim = get_simulator()
         SIM_RUNNING.set(1 if getattr(sim, "running", False) else 0)
         SIM_SCENARIO.set(1 if (getattr(sim.config, "scenario", None) or getattr(sim.config, "spe_active", False)) else 0)
