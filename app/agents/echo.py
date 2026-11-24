@@ -30,9 +30,9 @@ import time
 from datetime import datetime, timedelta
 from typing import Optional
 
-import aegis_llm
-import aegis_mission
-import database as db
+from app.services import llm as aegis_llm
+from app import mission as aegis_mission
+from app import database as db
 
 _lock = threading.Lock()
 _STATE: dict = {}                 # crew_id -> state dict (memory only: private, cleared on demo reset)
@@ -401,7 +401,7 @@ def _ai_reply(text: str, m, f: dict, history: list) -> Optional[str]:
         return None
     allowed = {str(f.get("sleep")), str(f.get("mission_day")), str(f.get("mission_days")), "4", "5", "3", "10"}
     nums = set(re.findall(r"\d+", out))
-    import aegis_verify
+    from app.services import verify as aegis_verify
     med = aegis_verify.check_medicine(out, "")
     if (_MED_WORDS.search(out) or not med["ok"] or not nums <= allowed or len(out) > 500
             or ACUTE.search(_normalize(out)) or DISTRESS.search(out)):
@@ -468,7 +468,7 @@ def chat(crew_id: str, message: str) -> dict:
 def db_note(crew_id: str, message: str) -> None:
     """Log THAT something was shared (never the chat itself)."""
     try:
-        from models import EventType
+        from app.models import EventType
         db.log_event(EventType.SYSTEM, message, details={"crew_member_id": crew_id, "source": "ECHO"})
     except Exception:
         pass

@@ -46,3 +46,41 @@ def demo_bmd_payload() -> dict:
         "nasa_total_body_reference": deepcopy(NASA_TOTAL_BODY_REFERENCE),
         "comparisons": deepcopy(DEMO_BMD_COMPARISONS),
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OSSEO Agent (bone-health comparison context) — moved here from agents.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+from .base import BaseAgent
+from app.models import CrewMember, Recommendation, AgentType
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OSSEO Agent (bone-health comparison context)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class OsseoAgent(BaseAgent):
+    """OSSEO presents historical cohort and synthetic DXA context without clinical alerts."""
+    
+    agent_type = AgentType.OSSEO
+    specialty = "bone_health_context"
+    
+    def analyze(self, crew_member: CrewMember) -> list[dict]:
+        """Report fixture provenance; no validated real-time bone monitor or diagnosis is available."""
+        v = crew_member.vitals
+        demo = getattr(v, "bone_density_demo", None) if v else None
+        if not demo:
+            return []
+        return [{
+            "type": "context",
+            "metric": "bone_density",
+            "value": demo.data_status,
+            "message": ("OSSEO shows historical NASA-study total-body cohort means and synthetic regional DXA examples; "
+                        "neither is a measurement for this crew member or a NASA-wide norm. "
+                        "No validated real-time in-flight bone monitor or clinical alert is available."),
+        }]
+    
+    def get_recommendations(self, crew_member: CrewMember, findings: list[dict]) -> list[Recommendation]:
+        """Synthetic example data does not support recommendations or alerts."""
+        return []

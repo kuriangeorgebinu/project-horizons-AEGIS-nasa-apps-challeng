@@ -100,7 +100,7 @@ def status() -> dict:
 
 def _record(ok: bool, latency: float, error: Optional[str] = None):
     try:
-        import aegis_metrics
+        from app.services import metrics as aegis_metrics
         aegis_metrics.llm_call(ok, latency, error)
     except Exception:
         pass

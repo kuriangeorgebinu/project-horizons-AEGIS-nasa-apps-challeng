@@ -5,7 +5,7 @@ import json, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-import aegis_verify as V
+from app.services import verify as V
 
 R = json.loads((ROOT / "eval" / "results.json").read_text())
 T = [t for t in R["B_traces"] if t.get("history")]

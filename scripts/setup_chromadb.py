@@ -10,15 +10,24 @@ import os
 import re
 from pathlib import Path
 
+# Run as `python scripts/setup_chromadb.py`: the repo root must be on
+# sys.path for the `app.*` imports below.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from app.config import CHROMA_DIR as config_CHROMA_DIR, DATA_DIR as config_DATA_DIR
+from app.services.rag import COLLECTION_DESCRIPTIONS, COLLECTION_NAMES
+from app.services.rag import EMBEDDING_MODEL as rag_EMBEDDING_MODEL
+
 import chromadb
 from chromadb.utils import embedding_functions
 
 # Configuration
-DATA_DIR = Path(__file__).parent / "data"
-CHROMA_DIR = Path(__file__).parent / "chroma_db"
+DATA_DIR = config_DATA_DIR
+CHROMA_DIR = config_CHROMA_DIR
 
 # Use sentence-transformers for embeddings (runs locally, no API key needed)
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL = rag_EMBEDDING_MODEL
 
 
 def setup_chroma():
@@ -32,26 +41,12 @@ def setup_chroma():
     
     # Create collections for different document types
     collections = {
-        "countermeasures": client.get_or_create_collection(
-            name="countermeasures",
+        name: client.get_or_create_collection(
+            name=name,
             embedding_function=embedding_fn,
-            metadata={"description": "Space health countermeasures and interventions"}
-        ),
-        "risks": client.get_or_create_collection(
-            name="risks",
-            embedding_function=embedding_fn,
-            metadata={"description": "NASA HRP spaceflight health risks"}
-        ),
-        "citations": client.get_or_create_collection(
-            name="citations",
-            embedding_function=embedding_fn,
-            metadata={"description": "NASA research citations and sources"}
-        ),
-        "protocols": client.get_or_create_collection(
-            name="protocols",
-            embedding_function=embedding_fn,
-            metadata={"description": "Medical protocols and procedures"}
+            metadata={"description": COLLECTION_DESCRIPTIONS[name]},
         )
+        for name in COLLECTION_NAMES
     }
     
     return client, collections

@@ -37,3 +37,6 @@ tts_cache/
 # Other IDE and others
 .vscode/
 chroma_db/
+
+# Local verification venv for the refactor (never commit)
+.venv-refactor/

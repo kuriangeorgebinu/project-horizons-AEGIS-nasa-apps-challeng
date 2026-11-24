@@ -166,7 +166,7 @@ def call(message: str, key: str, reason: str = "alert", source: str = "rules") -
         HISTORY.insert(0, rec)
         del HISTORY[30:]
     try:
-        import aegis_metrics
+        from app.services import metrics as aegis_metrics
         aegis_metrics.phone_alarm(rec.get("status"))
     except Exception:
         pass

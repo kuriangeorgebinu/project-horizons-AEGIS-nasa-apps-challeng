@@ -11,11 +11,12 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
+
+from app.config import DB_PATH as config_DB_PATH
 from typing import Optional
 import uuid
 
-from aegis_osseo import demo_bmd_payload
-from models import (
+from app.models import (
     CrewMember, CrewRole, HealthStatus, Vitals,
     Recommendation, RecommendationStatus, RecommendationPillar,
     Event, EventType, Alert, AlertSeverity, AgentType
@@ -24,7 +25,7 @@ from models import (
 # Database path
 # AEGIS_DB_PATH lets a server keep the database outside the code folder, so a redeploy keeps the mission's
 # history (e.g. each person's received radiation dose) instead of starting a fresh database.
-DB_PATH = Path(os.getenv("AEGIS_DB_PATH") or (Path(__file__).parent / "aegis.db"))
+DB_PATH = config_DB_PATH
 
 
 def get_connection() -> sqlite3.Connection:
@@ -178,6 +179,10 @@ def _vitals_json(vitals) -> str:
 
 
 def _vitals_in(raw):
+    # Imported lazily: app.agents.osseo imports app.agents.base, and base
+    # imports this module, so a top-level import would be circular
+    # (base -> database -> osseo -> base).
+    from app.agents.osseo import demo_bmd_payload
     vitals = json.loads(raw) if raw else None
     if vitals is not None:
         vitals.pop("bone_density_demo", None)

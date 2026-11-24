@@ -22,6 +22,8 @@ import time
 from collections import OrderedDict
 from pathlib import Path
 
+from app.config import TTS_CACHE_DIR
+
 # agent -> (voice, language). Picked for character: a steady lead, a calm physicist, a gentle
 # British clinician, an upbeat coach, a warm Irish counsellor and a soft, friendly companion.
 VOICES = {
@@ -48,7 +50,7 @@ def _mode() -> str:
 
 
 def _cache_dir() -> Path:
-    d = Path(os.getenv("AEGIS_TTS_CACHE") or (Path(__file__).parent / "tts_cache"))
+    d = TTS_CACHE_DIR
     try:
         d.mkdir(parents=True, exist_ok=True)
     except OSError:
