@@ -13,8 +13,8 @@ import json
 from datetime import datetime
 from typing import Optional
 
-import aegis_mission
-import database as db
+from app import mission as aegis_mission
+from app import database as db
 
 WINDOW_POINTS = 24      # ~2 min at the 5 s simulator tick: the window the trend is fitted on
 SERIES_POINTS = 120     # ~10 min of history for the click-to-expand chart

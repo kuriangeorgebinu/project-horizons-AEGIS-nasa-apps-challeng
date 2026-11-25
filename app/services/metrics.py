@@ -97,16 +97,16 @@ def http(method: str, route: str, status: int, duration: float) -> None:
 def _refresh_state() -> None:
     """Mission-state gauges, read when Prometheus scrapes (cheap SQLite reads)."""
     try:
-        import aegis_llm
+        from app.services import llm as aegis_llm
         LLM_ENABLED.set(1 if aegis_llm.enabled() else 0)
     except Exception:
         pass
     try:
-        import database as db
+        from app import database as db
         sev = db.count_open_alerts()               # whole table, every severity (incl. info)
         for k in ("critical", "high", "medium", "low", "info"):
             ALERTS_OPEN.labels(k).set(sev.get(k, 0))
-        from models import RecommendationStatus
+        from app.models import RecommendationStatus
         per: dict = {}
         for r in db.get_recommendations(status=RecommendationStatus.PENDING, limit=500):
             k = getattr(r.agent, "value", str(r.agent))
@@ -122,7 +122,7 @@ def _refresh_state() -> None:
     except Exception:
         pass
     try:
-        from simulator import get_simulator
+        from app.simulator import get_simulator
         sim = get_simulator()
         SIM_RUNNING.set(1 if getattr(sim, "running", False) else 0)
         SIM_SCENARIO.set(1 if (getattr(sim.config, "scenario", None) or getattr(sim.config, "spe_active", False)) else 0)

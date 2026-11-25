@@ -12,11 +12,11 @@ from datetime import datetime
 from typing import Optional
 import math
 
-from models import (
+from app.models import (
     CrewMember, Vitals, HealthStatus, SimulationConfig, SimulationState
 )
-import database as db
-import aegis_mission
+from app import database as db
+from app import mission as aegis_mission
 
 
 # ─────────────────────────────────────────────────────────────────────────────

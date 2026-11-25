@@ -3,7 +3,7 @@ import json, re, sys, urllib.request
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-import aegis_verify as V
+from app.services import verify as V
 
 B = "http://127.0.0.1:8000"
 get = lambda p: json.loads(urllib.request.urlopen(B + p, timeout=20).read())

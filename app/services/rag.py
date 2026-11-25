@@ -7,14 +7,24 @@ Simple interface for querying the ChromaDB knowledge base.
 
 import re
 from pathlib import Path
+
+from app.config import CHROMA_DIR as config_CHROMA_DIR, DATA_DIR as config_DATA_DIR
 from typing import Optional
 
 import chromadb
 from chromadb.utils import embedding_functions
 
 # Configuration
-CHROMA_DIR = Path(__file__).parent / "chroma_db"
+CHROMA_DIR = config_CHROMA_DIR
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+
+COLLECTION_NAMES = ("countermeasures", "risks", "citations", "protocols")
+COLLECTION_DESCRIPTIONS = {
+    "countermeasures": "Space health countermeasures and interventions",
+    "risks": "NASA HRP spaceflight health risks",
+    "citations": "NASA research citations and sources",
+    "protocols": "Medical protocols and procedures",
+}
 
 
 class AEGISKnowledgeBase:
@@ -34,22 +44,10 @@ class AEGISKnowledgeBase:
                 model_name=EMBEDDING_MODEL
             )
             self._collections = {
-                "countermeasures": self._client.get_or_create_collection(
-                    name="countermeasures",
-                    embedding_function=self._embedding_fn
-                ),
-                "risks": self._client.get_or_create_collection(
-                    name="risks", 
-                    embedding_function=self._embedding_fn
-                ),
-                "citations": self._client.get_or_create_collection(
-                    name="citations",
-                    embedding_function=self._embedding_fn
-                ),
-                "protocols": self._client.get_or_create_collection(
-                    name="protocols",
-                    embedding_function=self._embedding_fn
+                name: self._client.get_or_create_collection(
+                    name=name, embedding_function=self._embedding_fn
                 )
+                for name in COLLECTION_NAMES
             }
     
     def query(
@@ -253,8 +251,8 @@ class AEGISKnowledgeBase:
         added = {}
         try:
             import json as _json
-            import setup_chromadb as sc
-            data = Path(__file__).parent / "data"
+            from scripts import setup_chromadb as sc
+            data = config_DATA_DIR
             kb = _json.loads((data / "aegis_knowledge_base.json").read_text(encoding="utf-8"))
             # chroma_db/ is not in the repository (it is rebuilt, not shipped): on a fresh checkout or a new
             # server release, build the whole knowledge base from data/ once, exactly as setup_chromadb.py does.

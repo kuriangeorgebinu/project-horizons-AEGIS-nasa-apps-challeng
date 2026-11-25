@@ -1,6 +1,7 @@
 """Step 1 live check of the scenarios: cascade_demo (amber, no shelter), spe_event (shelter), buildup timing."""
 import sys, time
-sys.path.insert(0, __file__.rsplit("\\", 1)[0])
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from verify_step1 import get, post, crew_line, alerts  # noqa: E402  (runs the nominal checks first)
 
 

@@ -156,7 +156,7 @@ serving the wrong folder gives a 404):
 
 ```powershell
 cd path\to\project-horizons-AEGIS-nasa-apps-challeng
-python -m http.server 8080 --bind 127.0.0.1
+python -m http.server 8080 --bind 127.0.0.1 --directory web
 ```
 
 Open **http://127.0.0.1:8080/aegis-mission-control.html** (port **8080**, with the file name). Port 8000 is the
@@ -281,21 +281,36 @@ Without Twilio keys the alarm is logged ("would have called") instead of dialled
 
 ```
 project-horizons-AEGIS-nasa-apps-challeng/
-├── main.py                       # FastAPI backend (all routes under /api)
-├── agents.py                     # PULSE, GENE, MIRROR, SOLARIS + AEGIS coordinator
-├── aegis_trends.py               # PREDICT: trends, time-to-limit forecasts, predicted cascade
-├── aegis_llm.py                  # DeepSeek client (chat + tool calling), agent personas
-├── aegis_verify.py               # Fact checker for AI output (numbers, citations, actions, medicines)
-├── aegis_notify.py               # Phone alarm (Twilio voice call) + call_flight_surgeon tool
-├── aegis_echo.py                 # ECHO crew companion: companion / check-in / support modes, private by default
-├── aegis_rag.py                  # Knowledge-base retrieval (ChromaDB, all-MiniLM-L6-v2)
-├── simulator.py                  # Vitals simulator and demo scenarios
-├── database.py                   # SQLite storage (aegis.db, created on first run)
-├── models.py                     # Pydantic models
-├── setup_chromadb.py             # Builds the knowledge base into chroma_db/
-├── aegis-mission-control.html    # Dashboard (crew strip, Cascade Map, vitals, status + actions, ECHO, ask row, evidence)
-├── aegis-api-client.js           # Dashboard ↔ backend client
-├── aegis-spacecraft-sim-2d.html  # 2D spacecraft: protocols carried out on board
+├── main.py                       # Thin shim: the real FastAPI app lives in app.main (uvicorn main:app still works)
+├── app/
+│   ├── config.py                 # Repo-root paths (DB, Chroma, TTS cache) + env overrides
+│   ├── main.py                   # FastAPI backend (all routes under /api)
+│   ├── database.py               # SQLite storage (aegis.db, created on first run)
+│   ├── models.py                 # Pydantic models
+│   ├── simulator.py              # Vitals simulator and demo scenarios
+│   ├── mission.py                # Mission profiles / radiation environments
+│   ├── agents/                   # PULSE, GENE, MIRROR, SOLARIS, OSSEO, ECHO + AEGIS coordinator
+│   │   ├── base.py               # Shared agent base
+│   │   ├── pulse.py  gene.py  solaris.py  mirror.py  osseo.py  echo.py
+│   │   └── coordinator.py        # AEGIS coordinator
+│   └── services/
+│       ├── rag.py                # Knowledge-base retrieval (ChromaDB, all-MiniLM-L6-v2)
+│       ├── llm.py                # DeepSeek client (chat + tool calling), agent personas
+│       ├── verify.py             # Fact checker for AI output (numbers, citations, actions, medicines)
+│       ├── notify.py             # Phone alarm (Twilio voice call) + call_flight_surgeon tool
+│       ├── trends.py             # PREDICT: trends, time-to-limit forecasts, predicted cascade
+│       ├── guard.py              # Request guard: rate limiting + admin auth
+│       ├── metrics.py            # Prometheus metrics (GET /metrics)
+│       └── tts.py                # Amazon Polly TTS + voice cache
+├── scripts/
+│   ├── setup_chromadb.py         # Builds the knowledge base into chroma_db/
+│   └── reset_demo.py             # Resets the demo data
+├── web/
+│   ├── aegis-mission-control.html    # Dashboard (crew strip, Cascade Map, vitals, status + actions, ECHO, ask row, evidence)
+│   ├── aegis-spacecraft-sim-2d.html  # 2D spacecraft: protocols carried out on board
+│   ├── aegis-api-client.js           # Dashboard ↔ backend client
+│   ├── css/aegis.css
+│   └── js/                           # Dashboard scripts (theme, insights, voice, predict, cascade-map, …)
 ├── chroma_db/                    # Vector database (knowledge base)
 ├── data/
 │   ├── aegis_knowledge_base.json # Countermeasures, protocols, medications
@@ -356,8 +371,8 @@ baseline (3/4 real Inspiration4 post-flight rises detected, up from 0/4, with 1/
 ## Troubleshooting
 
 - **404 when opening the dashboard** - the page server was started from the wrong folder, or the URL is wrong.
-  Stop it, `cd` into the project folder (the one that contains `aegis-mission-control.html`), start
-  `python -m http.server 8080 --bind 127.0.0.1` again, and open
+  Stop it, `cd` into the project folder (the dashboard now lives in `web/`), start
+  `python -m http.server 8080 --bind 127.0.0.1 --directory web` again, and open
   http://127.0.0.1:8080/aegis-mission-control.html. Opening http://127.0.0.1:8000 shows the API status, not the
   dashboard.
 - **Dashboard shows 🔴 Offline** - the backend isn't running on port 8000, or the page was opened as a file.
