@@ -145,7 +145,7 @@ async def lifespan(app: FastAPI):
     
     print("✅ AEGIS Backend Ready!")
     print("   API:       http://127.0.0.1:8000  (docs at /docs)")
-    print("   Dashboard: serve the project folder with  python -m http.server 8080 --bind 127.0.0.1")
+    print("   Dashboard: serve the web folder with  python -m http.server 8080 --bind 127.0.0.1 --directory web")
     print("              then open http://127.0.0.1:8080/aegis-mission-control.html")
     
     yield
