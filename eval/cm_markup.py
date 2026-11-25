@@ -3,7 +3,7 @@ import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-F = ROOT / "aegis-mission-control.html"
+F = ROOT / "web" / "aegis-mission-control.html"
 C = (320, 165)
 NODES = [  # key, label, icon, x, y, aria
     ("solaris", "SOLARIS", "☀", 130, 80, "SOLARIS, radiation"),
