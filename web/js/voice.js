@@ -439,10 +439,108 @@ function speak(text) {
   ttsSayAll(text, 'aegis', { fallback: browser });
 }
 
-// Voice input was removed: the agents are chatted with by typing. These stay as no-ops for old callers.
-function toggleListening() { document.getElementById('askInput')?.focus(); }
-function startListening() {}
-function stopListening() {}
+// Voice input: the mic records on this machine, /api/transcribe turns it into
+// text with a local Whisper model (nothing leaves the machine), and the text is
+// asked exactly as if it was typed. Voice input used to be cloud speech
+// recognition, which is why it was removed; this brings it back offline.
+// The dashboard is served on port 8080 and the backend on 8000, so the
+// request goes to AEGIS_API.BASE_URL, not to this page's own origin.
+let _micRecorder = null, _micChunks = [], _micStream = null, _micTimer = null;
+const MIC_MAX_MS = 60000;   // one question at a time; auto-stops at 60 s
+
+function _micStatus(msg) {
+  const st = document.getElementById('voiceStatus');
+  if (st) { st.hidden = false; st.textContent = msg; }
+}
+
+function _micButton(recording) {
+  const btn = document.getElementById('micBtn');
+  if (!btn) return;
+  btn.classList.toggle('recording', !!recording);
+  btn.textContent = recording ? '🔴' : '🎙️';
+  btn.setAttribute('aria-pressed', String(!!recording));
+  btn.title = recording ? 'Tap to stop recording' : 'Ask by voice — tap, speak, tap again to stop; transcribed on this machine and sent';
+}
+
+async function toggleMic() {
+  if (_micRecorder && _micRecorder.state === 'recording') { stopMic(); return; }
+  await startMic();
+}
+
+async function startMic() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    _micStatus('Voice input needs the dashboard served over http — open http://127.0.0.1:8080/aegis-mission-control.html, not the file directly.');
+    return;
+  }
+  if (typeof MediaRecorder === 'undefined') {
+    _micStatus("This browser can't record audio — type your question instead.");
+    return;
+  }
+  try {
+    _micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    _micStatus('Microphone blocked — allow mic access for this page and try again.');
+    return;
+  }
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || '';
+  _micChunks = [];
+  try {
+    _micRecorder = new MediaRecorder(_micStream, mime ? { mimeType: mime } : undefined);
+  } catch (e) {
+    _micStream.getTracks().forEach(t => t.stop());
+    _micStatus("This browser can't record audio — type your question instead.");
+    return;
+  }
+  _micRecorder.ondataavailable = ev => { if (ev.data && ev.data.size) _micChunks.push(ev.data); };
+  _micRecorder.onstop = () => {
+    const blob = new Blob(_micChunks, { type: (_micRecorder && _micRecorder.mimeType) || 'audio/webm' });
+    _micChunks = [];
+    _sendMicAudio(blob);
+  };
+  _micRecorder.start(250);
+  _micButton(true);
+  _micStatus('Listening… tap the mic again to stop.');
+  _micTimer = setTimeout(stopMic, MIC_MAX_MS);
+}
+
+function stopMic() {
+  clearTimeout(_micTimer);
+  if (_micRecorder && _micRecorder.state === 'recording') _micRecorder.stop();
+  if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+  _micButton(false);
+}
+
+async function _sendMicAudio(blob) {
+  if (!blob || !blob.size) { _micStatus("Didn't hear anything — try again."); return; }
+  _micStatus('Transcribing… (the first time also downloads the voice model, so it takes a while)');
+  const base = (typeof AEGIS_API !== 'undefined' && AEGIS_API.BASE_URL) || '';
+  const form = new FormData();
+  form.append('file', blob, 'question.webm');
+  let res;
+  try {
+    res = await fetch(base + '/api/transcribe', { method: 'POST', body: form });
+  } catch (e) {
+    _micStatus("Couldn't reach the backend — is it running on port 8000?");
+    return;
+  }
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    _micStatus((data && data.detail) || 'Transcription failed — type your question instead.');
+    return;
+  }
+  const text = ((data && data.text) || '').trim();
+  if (!text) { _micStatus("Didn't catch that — try again, a little closer to the mic."); return; }
+  const input = document.getElementById('askInput');
+  if (input) input.value = text;
+  _micStatus('');
+  submitTypedQuestion();
+}
+
+// Old callers: voice input is back, so these now start/stop the mic.
+function toggleListening() { toggleMic(); }
+function startListening() { startMic(); }
+function stopListening() { stopMic(); }
 
 function processCommand(raw) {
   raw = (raw || '').trim();

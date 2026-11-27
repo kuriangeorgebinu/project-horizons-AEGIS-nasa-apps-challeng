@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Literal, Optional
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
@@ -44,6 +44,7 @@ from app import mission as aegis_mission
 aegis_mission.IL6_SMOOTHING = True     # the live dashboard: modest IL-6 smoothing (see aegis_mission.il6_smoothed)
 from app.agents import echo as aegis_echo
 from app.services import tts as aegis_tts
+from app.services import stt as aegis_stt
 from app.services import metrics as aegis_metrics
 from app.services import guard as aegis_guard
 import os as _os
@@ -257,6 +258,34 @@ async def tts(text: str = Query(..., min_length=1, max_length=aegis_tts.MAX_CHAR
         raise HTTPException(status_code=503, detail=str(e))
     return Response(content=audio, media_type="audio/mpeg",
                     headers={"Cache-Control": "public, max-age=86400"})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Speech-to-text (dashboard mic): offline Whisper, nothing leaves the machine.
+# The browser records the mic and posts the clip here; the transcript goes
+# back and the dashboard asks the agent with it, exactly as if it was typed.
+# First use downloads the Whisper model (~150 MB for the default base model),
+# so the first transcription is slow — after that the model stays loaded.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/stt/status")
+async def stt_status():
+    return aegis_stt.status()
+
+
+@app.post("/api/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    if not aegis_stt.enabled():
+        raise HTTPException(status_code=503, detail="Speech-to-text is switched off (AEGIS_STT=off)")
+    data = await file.read()
+    try:
+        result = await asyncio.to_thread(aegis_stt.transcribe_bytes, data, file.filename or "audio.webm")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    aegis_metrics.stt("empty" if not result.get("text") else "ok", result.get("duration"))
+    return result
 
 
 @app.get("/health")

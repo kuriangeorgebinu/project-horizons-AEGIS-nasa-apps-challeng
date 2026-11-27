@@ -62,6 +62,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Se
 .ask-input:focus{outline:none;border-color:var(--aegis);}
 .ask-btn{background:rgba(90,159,215,.15);color:var(--aegis);border:1px solid var(--aegis);border-radius:10px;padding:.5rem .9rem;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;}
 .ask-btn:disabled{opacity:.5;cursor:wait;}
+.mic-btn{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:.5rem .6rem;font:inherit;font-size:.85rem;line-height:1;cursor:pointer;}
+.mic-btn.recording{border-color:#d9653f;color:#d9653f;animation:mic-pulse 1.2s ease-in-out infinite;}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,101,63,.45);}50%{box-shadow:0 0 0 6px rgba(217,101,63,0);}}
 .response-source{margin-left:.5rem;font-size:.65rem;letter-spacing:1px;padding:.1rem .45rem;border-radius:8px;background:rgba(160,152,200,.15);color:var(--gene);}
 .response-source.rules{background:rgba(90,159,215,.12);color:var(--aegis);}
 

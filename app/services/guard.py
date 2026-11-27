@@ -45,6 +45,7 @@ LIMITS = [
     ("POST", r"^/api/simulation/scenario/", "demo", 6, 20),
     ("POST", r"^/api/ask$", "llm", 15, 60),
     ("POST", r"^/api/echo/[^/]+/(chat|checkin)$", "llm", 15, 60),
+    ("POST", r"^/api/transcribe$", "stt", 10, 30),   # CPU-heavy: local Whisper, stricter than /api/ask
     ("POST", r"^/api/whatif$", "whatif", 20, 80),
     ("POST", r"^/api/echo/[^/]+/(share|dismiss)$", "echo-act", 6, 30),
     ("POST", r"^/api/recommendations/[^/]+/action$", "act", 30, 120),
