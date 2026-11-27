@@ -349,7 +349,7 @@
     </section>
   </div>
 
-  <!-- Chat with the agents (typed; the agents still answer aloud unless muted) -->
+  <!-- Chat with the agents (type, or tap the mic to speak — transcribed on this machine; the agents still answer aloud unless muted) -->
   <div class="voice-panel chat-panel" id="ask-panel">
     <div class="voice-title">Chat with the agents
       <select id="voiceSelect" class="voice-select" onchange="chooseVoice(this.value)" aria-label="Voice of the selected agent" title="Voice of the selected agent (★ = most natural available)"></select>
@@ -360,6 +360,7 @@
     <form class="ask-form" id="askForm" onsubmit="event.preventDefault(); submitTypedQuestion();">
       <input type="text" id="askInput" class="ask-input" maxlength="500" autocomplete="off"
              placeholder="Message AEGIS… e.g. &quot;How is Nakamura's radiation?&quot;" aria-label="Message to the selected agent">
+      <button type="button" class="mic-btn" id="micBtn" onclick="toggleMic()" aria-label="Ask by voice" title="Ask by voice — tap, speak, tap again to stop; transcribed on this machine and sent">🎙️</button>
       <button type="submit" class="ask-btn" aria-label="Send">Send</button>
     </form>
     <div class="chat-foot" title="The agents' rules make every decision on board from the live readings. A cloud AI service only words the answer, and that wording is fact-checked against the readings and sources; if it fails, the rule-based answer is shown.">

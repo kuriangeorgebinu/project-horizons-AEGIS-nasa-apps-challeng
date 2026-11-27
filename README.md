@@ -98,7 +98,7 @@ one click away.
 | **Live Vitals** | Heart rate, oxygen, modelled IL-6, sleep and radiation for the selected person, tagged SIM or MODELLED, with the same values and words as the rings; click a reading for its trend and forecast. |
 | **Status** | One card for what's happening and what we're doing: the live alert with its one-click protocol, the early warning with the prevention plan, or "Steady", then the recommended actions (rule-approved, worded by DeepSeek, fact-checked, with sources; accept, defer or dismiss). An action that leaves the list stays for two minutes saying why (accepted, or resolved because the reading went back within range). |
 | **ECHO** | The crew companion: chat, daily check-in and support mode (see above). Each crew member keeps their own conversation. |
-| **Ask the agents** | One row: ask any agent a question by voice or text; it answers from the live readings, in its own voice. |
+| **Ask the agents** | One row: ask any agent a question by voice or text; it answers from the live readings, in its own voice. Tap 🎙️ to speak — the mic records on this machine and a local Whisper model transcribes it (POST `/api/transcribe`, nothing leaves the machine), then the question is sent as if typed. |
 | **Evidence & data** | Closed by default: the datasets behind the numbers (Inspiration4 IL-6, Curiosity RAD and Chang'e-4 radiation, NASA limits and risks), each with its source link and the result of testing the rule against it, plus the full accuracy report. Linked from the demo bar. |
 | **What-If simulator** | Next to the map. Sliders for hypothetical readings (heart rate, oxygen, IL-6, sleep, 24 h radiation) for the selected crew member. The real agent rules judge them exactly as they would live and say which protocol AEGIS would choose; nothing is saved and no alert is raised. |
 | **Run demo** | **Shift + P** plays the story end to end in 2 minutes (the judging cut; Shift + Alt + P, or `?demo=full` in the URL, for the full 3-minute version), with chapter captions and a Stop button: radiation creeps up, AEGIS predicts a cascade, the prevention plan avoids it, a solar storm forces the storm shelter, and ECHO checks in on the Commander afterwards. Calls are logged, never dialled, during the run. |
@@ -301,6 +301,7 @@ project-horizons-AEGIS-nasa-apps-challeng/
 │       ├── trends.py             # PREDICT: trends, time-to-limit forecasts, predicted cascade
 │       ├── guard.py              # Request guard: rate limiting + admin auth
 │       ├── metrics.py            # Prometheus metrics (GET /metrics)
+│       ├── stt.py                # Dashboard mic: offline Whisper transcription (POST /api/transcribe)
 │       └── tts.py                # Amazon Polly TTS + voice cache
 ├── scripts/
 │   ├── setup_chromadb.py         # Builds the knowledge base into chroma_db/
@@ -381,6 +382,13 @@ baseline (3/4 real Inspiration4 post-flight rises detected, up from 0/4, with 1/
 - **Port 8000 in use** - `netstat -ano | findstr :8000`, then `taskkill /PID <pid> /F`.
 - **No voice** - click the page once (browsers block speech until you interact); pick a voice in the Voice
   Terminal if the list is empty.
+- **Microphone doesn't work / the mic button does nothing** - the dashboard must be served over http
+  (step 4), not opened as a file, and the browser must be allowed to use the mic. On the public site the
+  mic is rate-limited (10 transcriptions a minute per visitor).
+- **First transcription is slow** - the first mic use downloads the Whisper model (~150 MB for the
+  default `base` model) and then it stays loaded. Pick a smaller model with `AEGIS_STT_MODEL=tiny`
+  (~75 MB) or a more accurate one with `small` (~500 MB) in `.env`; `AEGIS_STT=off` switches the mic off.
+- **Transcription fails** - `pip install -r requirements.txt` (faster-whisper), then restart the backend.
 - **Knowledge base errors** - rebuild it: `python setup_chromadb.py`.
 
 ---

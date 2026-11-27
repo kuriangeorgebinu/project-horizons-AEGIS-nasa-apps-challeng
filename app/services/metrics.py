@@ -40,6 +40,10 @@ if ENABLED:
                                   buckets=(0.5, 1, 2, 5, 10, 20, 40, 80, 160))
     ANALYSIS_LAST = Gauge("aegis_analysis_last_run_timestamp_seconds", "Unix time of the last analysis pass")
     PHONE_ALARM = Counter("aegis_phone_alarm_total", "Phone alarm attempts by status", ["status"])
+    STT_REQUESTS = Counter("aegis_stt_total", "Dashboard mic transcriptions by outcome (ok, empty, error)",
+                           ["result"])
+    STT_DURATION = Histogram("aegis_stt_duration_seconds", "Duration of transcribed audio",
+                             buckets=(1, 2, 5, 10, 20, 40, 60))
     ALERTS_OPEN = Gauge("aegis_alerts_open", "Unacknowledged alerts", ["severity"])
     RECS_PENDING = Gauge("aegis_recommendations_pending", "Pending recommendations", ["agent"])
     CREW_STATUS = Gauge("aegis_crew_members", "Crew members by health status", ["status"])
@@ -86,6 +90,13 @@ def analysis(duration: float, ok: bool) -> None:
 def phone_alarm(status: str) -> None:
     if ENABLED:
         PHONE_ALARM.labels(status or "unknown").inc()
+
+
+def stt(result: str, duration: float | None = None) -> None:
+    if ENABLED:
+        STT_REQUESTS.labels(result or "unknown").inc()
+        if duration is not None:
+            STT_DURATION.observe(max(0.0, duration))
 
 
 def http(method: str, route: str, status: int, duration: float) -> None:
